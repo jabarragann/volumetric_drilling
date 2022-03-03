@@ -5,3 +5,7 @@ build/
 .idea/
 
 *.pyc
+
+# EDT files
+*.edt
+*.ply
