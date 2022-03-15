@@ -4,11 +4,11 @@
 template <typename T>
 struct Array3d
 {
-protected:
+
+public:
     T *data;
     unsigned width, height, length;
 
-public:
     Array3d()
     {
         data = NULL;
