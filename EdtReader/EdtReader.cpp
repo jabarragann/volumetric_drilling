@@ -13,10 +13,10 @@ bool read_data_type(FILE *fp, unsigned int dim, std::string name)
     cout << line << " " << d << endl;
     return d == dim && name == std::string(line);
 }
-void edt_reader(string file_name)
+void edt_reader(string file_name, float **values_buffer, unsigned int *res)
 {
     int Dim = 3;
-    unsigned int res[3];
+    // unsigned int res[3];
     char error_msg[100];
 
     FILE *fp = fopen(file_name.c_str(), "rb");
@@ -46,7 +46,7 @@ void edt_reader(string file_name)
             }
             res[d] = r;
         }
-        printf("grid resolution: (%d,%d,%d)\n", res[0], res[1], res[2]);
+
         // Read the transformation
         float x;
         for (int j = 0; j < Dim + 1; j++)
@@ -67,36 +67,25 @@ void edt_reader(string file_name)
                 throw runtime_error("Could not read end of line");
         }
 
-        Array3d<float> edtGrid(res[0], res[1], res[2]);
+        // value(x,y,z) = array(x+y*res[0]+z*res[0]*res[1])
 
-        float *values_buffer;
+        // float *values_buffer;
 
         int total_values = res[0] * res[1] * res[2];
-        values_buffer = (float *)malloc(sizeof(float) * total_values);
-        // values = NewPointer<DataType>(_Resolution(res));
+        *values_buffer = (float *)malloc(sizeof(float) * total_values);
+        // *values_buffer = new float[total_values];
         // Read the grid values
-        cout << "obtaining values" << endl;
-        fread(values_buffer, sizeof(float), total_values, fp);
+        fread(*values_buffer, sizeof(float), total_values, fp);
         fclose(fp);
 
-        for (int i = 0; i < 10; i++)
-        {
-            printf("%d %0.6f\n", i, values_buffer[i]);
-        }
+        // // buffer = values_buffer;
+        // Array3d<float> edtGrid(*values_buffer, res[0], res[1], res[2]);
+        // // grid = edtGrid;
+        // edtGrid.print_resolution();
+
+        // for (int i = 0; i < 10; i++)
+        // {
+        //     printf("%d %0.6f\n", i, edtGrid(i, 0, 0));
+        // }
     }
-}
-
-int main()
-{
-    cout << "Edt reader\n";
-
-    string file_name = "./../grids/ear3_171.edt";
-
-    char error_msg[100];
-    sprintf(error_msg, "Reading %s", &file_name[0]);
-    cout << error_msg << endl;
-
-    edt_reader(file_name);
-
-    return 0;
 }
