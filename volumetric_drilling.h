@@ -122,6 +122,14 @@ private:
     cLabel* m_drillSizeText;
     cLabel* m_drillControlModeText;
 
+    cPanel* m_distancePanel;
+    cLabel* m_distanceText;
+
+    cTransform world_T_voxel;
+    cTransform voxel_T_tool;
+
+    double m_distance_object = 0;
+
     // current and maximum distance between proxy and goal spheres
     double m_currError = 0;
     double m_maxError = 0;

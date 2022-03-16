@@ -157,7 +157,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     // A warning pop-up that shows up while drilling at critical region
     m_warningPopup = new cPanel();
-    m_warningPopup->set(m_mainCamera->m_width/2, m_mainCamera->m_height/5);
+    m_warningPopup->set(m_mainCamera->m_width/1.9, m_mainCamera->m_height/5);
     m_warningPopup->setColor(cColorf(0.6,0,0));
     m_warningPopup->setLocalPos(m_mainCamera->m_width*0.3, m_mainCamera->m_height*0.6, 0);
     m_mainCamera->getFrontLayer()->addChild(m_warningPopup);
@@ -175,7 +175,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_drillSizePanel = new cPanel();
     m_drillSizePanel->setSize(170, 50);
     m_drillSizePanel->setCornerRadius(10, 10, 10, 10);
-    m_drillSizePanel->setLocalPos(40,60);
+    m_drillSizePanel->setLocalPos(20,60);
     m_drillSizePanel->setColor(cColorf(1, 1, 1));
     m_drillSizePanel->setTransparencyLevel(0.8);
     m_mainCamera->getFrontLayer()->addChild(m_drillSizePanel);
@@ -193,6 +193,23 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_drillControlModeText->setFontScale(.5);
     m_drillControlModeText->setText("Drill Control Mode = Haptic Device / Keyboard");
     m_mainCamera->getFrontLayer()->addChild(m_drillControlModeText);
+
+    // A panel to display current distance to from the object
+    m_distancePanel = new cPanel();
+    m_distancePanel->setSize(240, 40);
+    m_distancePanel->setCornerRadius(10, 10, 10, 10);
+    m_distancePanel->setLocalPos(18,400);
+    m_distancePanel->setColor(cColorf(1, 1, 1));
+    m_distancePanel->setTransparencyLevel(0.8);
+    m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
+
+    m_distanceText = new cLabel(font);
+    m_distanceText->setLocalPos(20,400);
+    m_distanceText->m_fontColor.setRed();
+    m_distanceText->setFontScale(.75);
+    m_distanceText->setText("/Bone distance: " + cStr(m_distance_object) + " mm");
+    m_mainCamera->getFrontLayer()->addChild(m_distanceText);
+
 
     // Get drills initial pose
     T_d = m_drillRigidBody->getLocalTransform();
@@ -431,6 +448,36 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     // send forces to haptic device
     if (getOverrideDrillControl() == false){
         m_toolCursorList[0]->applyToDevice();
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////
+    // EDT calculation
+    ////////////////////////////////////////////////////////////////////////
+
+
+    //Tool tip location in world frame
+    cout << "Tool frame position(in world frame)" << endl;
+    cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
+    
+    //Object frame location in world frame
+    //cout << "Object frame position(in world frame)" << endl;
+    //cout<< m_voxelObj->getLocalPos().x() << ", "<< m_voxelObj->getLocalPos().y() << ", "<< m_voxelObj->getLocalPos().z() << endl;
+
+    cTransform world_T_voxel = m_voxelObj->getLocalTransform();
+    world_T_voxel.invert();
+
+    cTransform voxel_T_tool = world_T_voxel * T_d;
+
+    cout << "Tool frame position(in voxel frame)" << endl;
+    cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
+
+    // check wether the tool is inside the voxel
+    if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5){
+
+        int index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * 512);
+        int index_y = round((voxel_T_tool.getLocalPos().y() + 0.5) * 512);
+        int index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * 512);
     }
 
 }
