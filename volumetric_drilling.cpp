@@ -108,8 +108,10 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         return -1;
     }
     else{
-        m_burrMesh = new cShapeSphere(0.043); // 2mm by default with 1 AMBF unit = 0.049664 m
-        m_burrMesh->setRadius(0.043);
+        //m_burrMesh = new cShapeSphere(0.043); // 2mm by default with 1 AMBF unit = 0.049664 m
+        //m_burrMesh->setRadius(0.043);
+        m_burrMesh = new cShapeSphere(0.02014); // 2mm by default with 1 AMBF unit = 0.049664 m
+        m_burrMesh->setRadius(0.02014);
         m_burrMesh->m_material->setBlack();
         m_burrMesh->m_material->setShininess(0);
         m_burrMesh->m_material->m_specular.set(0, 0, 0);
@@ -229,6 +231,34 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     voxelCount[2] = m_volumeObject->getVoxelCount().get(2);
 
     m_drillingPub -> volumeProp(dim, voxelCount);
+
+    //*******************
+    // EDT Loading
+    //*******************
+    cout << "Loading EDT ...\n";
+    cout << "voxel count: " << voxelCount[0] << "," << voxelCount[1] << "," << voxelCount[2] << "\n";
+    printf("Dimensions %0.3f %0.3f %0.3f\n", dim[0], dim[1], dim[2]);
+
+    string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
+    char error_msg[100];
+    sprintf(error_msg, "Reading %s", &file_name[0]);
+    cout << error_msg << endl;
+
+    // Read data in Array3D
+    float *values_buffer;
+    unsigned int res[3];
+    edt_reader(file_name, &values_buffer, res);
+    edtGrid1.data = values_buffer;
+    edtGrid1.width =res[0];
+    edtGrid1.height =res[1];
+    edtGrid1.length =res[2];
+    
+    edtres = edtGrid1.width;
+    edtGrid1.print_resolution();
+    for (int i = 0; i < 10; i++)
+    {
+        printf("Grid 1: %d %0.6f\n", i, edtGrid1(i, 0, i));
+    }
 
     return 1;
 }
@@ -457,8 +487,8 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
 
 
     //Tool tip location in world frame
-    cout << "Tool frame position(in world frame)" << endl;
-    cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
+    // cout << "Tool frame position(in world frame)" << endl;
+    // cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
     
     //Object frame location in world frame
     //cout << "Object frame position(in world frame)" << endl;
@@ -475,10 +505,20 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     // check wether the tool is inside the voxel
     if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5){
 
-        int index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * 512);
-        int index_y = round((voxel_T_tool.getLocalPos().y() + 0.5) * 512);
-        int index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * 512);
+        cout << "EDT working ..." << endl;
+        int index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * edtres);
+        int index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * edtres);
+        int index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * edtres);
+        cout << index_x << "," << index_y << "," << index_z << endl;
+        
+        m_distance_object = edtGrid1(index_x, index_y, index_z);
+        cout << "burr_size:" << m_currDrillSize << endl;
+        m_distanceText->setText("Distance: " + cStr(m_distance_object - 0.5 * m_currDrillSize) + " mm");
     }
+    else{
+        m_distanceText->setText("Distance: Out of boundary!!");
+    }
+    
 
 }
 
@@ -513,7 +553,9 @@ void afVolmetricDrillingPlugin::toolCursorInit(const afWorldPtr a_afWorld){
 
             // if the haptic device has a gripper, enable it as a user switch
             m_hapticDevice->setEnableGripperUserSwitch(true);
-            m_toolCursorList[i]->setRadius(0.043); // Set the correct radius for the tip which is not from the list of cursor radii
+            // m_toolCursorList[i]->setRadius(0.043); // Set the correct radius for the tip which is not from the list of cursor radii
+            m_toolCursorList[i]->setRadius(0.02014); // Set the correct radius for the tip which is not from the list of cursor radii
+
         }
         else
         {

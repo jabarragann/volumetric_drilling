@@ -51,6 +51,8 @@ find_package(catkin COMPONENTS vdrilling_msgs)
 include_directories(${AMBF_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS})
+#EDT reader
+include_directories(EdtReader)
 
 link_directories(${AMBF_LIBRARY_DIRS})
 
@@ -60,7 +62,12 @@ add_definitions(${AMBF_DEFINITIONS})
 message("---> LIBS " ${catkin_INCLUDE_DIRS})
 message("---> FOUND ? " ${catkin_vdrilling_msgs_FOUND})
 
-add_library(volumetric_drilling SHARED volumetric_drilling.cpp volumetric_drilling.h collision_publisher.h collision_publisher.cpp)
+#add_library(volumetric_drilling SHARED volumetric_drilling.cpp volumetric_drilling.h collision_publisher.h collision_publisher.cpp)
+add_library(volumetric_drilling SHARED
+            volumetric_drilling.cpp volumetric_drilling.h 
+            collision_publisher.h collision_publisher.cpp
+            ./EdtReader/EdtReader.h ./EdtReader/EdtReader.cpp)
+            
 add_dependencies(volumetric_drilling ${catkin_EXPORTED_TARGETS})
 target_link_libraries (volumetric_drilling ${Boost_LIBRARIES} ${AMBF_LIBRARIES} ${catkin_LIBRARIES})
 
