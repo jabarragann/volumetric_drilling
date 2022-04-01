@@ -6,3 +6,9 @@ From ear3_171 execute
 ..\..\..\..\EDT\Bin\x64\MarchingCubes.exe --in .\ear3_171.edt --out .\ear3_171.ply --value 0
 
 ./../../../EDT/cmake-build/bin/EDTFromGrid --in .\ear3_171.txt --id 255 249 219 --out .\ear3_171.edt
+
+
+
+#Blue anatomy
+# Run from the ear3_171 folder
+./../../../../EDT/cmake-build/bin/EDTFromGrid --in ./ear3_171.txt --id 110 184 209 --out ./ear3_171.edt
