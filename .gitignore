@@ -10,3 +10,6 @@ build/
 # EDT files
 *.edt
 *.ply
+
+
+*resources/volumes/
