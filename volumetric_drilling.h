@@ -2,6 +2,7 @@
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
 #include "collision_publisher.h"
+#include "EdtReader/EdtReader.h"
 
 using namespace std;
 using namespace ambf;
@@ -121,6 +122,16 @@ private:
     cPanel* m_drillSizePanel;
     cLabel* m_drillSizeText;
     cLabel* m_drillControlModeText;
+
+    cPanel* m_distancePanel;
+    cLabel* m_distanceText;
+
+    cTransform world_T_voxel;
+    cTransform voxel_T_tool;
+
+    double m_distance_object = 0;
+    Array3d<float> edtGrid1;
+    int edtres;
 
     // current and maximum distance between proxy and goal spheres
     double m_currError = 0;
