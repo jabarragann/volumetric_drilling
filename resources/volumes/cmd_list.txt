@@ -15,3 +15,6 @@ From ear3_171 execute
 
 ./../../../../EDT/cmake-build/bin/EDTFromGrid --in ./ear3_171.txt --id 100 4 4 --out ./ear3_171_red.edt
 
+
+
+./../../../../EDT/cmake-build/bin/EDTFromGrid --in ./cube512_480.txt --id 255 255 255 --out ./cube512_480.edt

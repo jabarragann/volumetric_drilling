@@ -239,17 +239,18 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     cout << "voxel count: " << voxelCount[0] << "," << voxelCount[1] << "," << voxelCount[2] << "\n";
     printf("Dimensions %0.3f %0.3f %0.3f\n", dim[0], dim[1], dim[2]);
 
-    string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/cube512_256.edt";
+    // string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/cube512_256.edt";
     // /string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
     // string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
     string file_names[3];
-    file_names[0]= "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
-    file_names[1]= "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_red.edt";
-    file_names[2]= "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_pink.edt";
+    //file_names[0]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
+    file_names[0]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/cube512_480.edt";
+    file_names[1]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
+    file_names[2]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
 
 
     char error_msg[100];
-    sprintf(error_msg, "Reading %s", &file_name[0]);
+    sprintf(error_msg, "Reading %s", &file_names[0]);
     cout << error_msg << endl;
 
     // Read data in Array3D
@@ -388,7 +389,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     // Also orient the force to match the camera rotation
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
-    
+    //force = force_new;
     m_toolCursorList[0]->setDeviceLocalForce(force);
     
 
@@ -529,9 +530,9 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5){
 
         // cout << "EDT working ..." << endl;
-        index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * edtres);
+        index_x =  round((voxel_T_tool.getLocalPos().x() + 0.5) * edtres);
         index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * edtres);
-        index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * edtres);
+        index_z =  round((voxel_T_tool.getLocalPos().z() + 0.5) * edtres);
         // cout << index_x << "," << index_y << "," << index_z << endl;
         
         m_distance_object1 = edtGrid1(index_x, index_y, index_z);
@@ -553,44 +554,64 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
         //Force direction
         double sum;
 
-        //Check whether it is on the boundary
-        if(1 < index_x && index_x < edtGrid1.width-1 && 
-            1 < index_y && index_y < edtGrid1.length-1 &&
-            1 < index_z && index_z < edtGrid1.height-1){
+        //Check whether it is not on the boundary
+        // if(1 < index_x && index_x < edtres-1 && 
+        //     1 < index_y && index_y < edtres-1 &&
+        //     1 < index_z && index_z < edtres -1){
                 
-                sum = 0;
-                force_direction = {0,0,0};
-                for (int i=0;i<direction.size();i++){
+        //         cout << "index0: " << index_x << "," << index_y << "," << index_z << ":" << m_distance_object1 << endl;
+
+        //         sum = 0;
+        //         force_direction = {0,0,0};
+        //         for (int i=0;i<direction.size();i++){
                     
-                    //Check for the distance value
-                    int index_x_tmp = index_x + direction[i][0];
-                    int index_y_tmp = index_y + direction[i][1];
-                    int index_z_tmp = index_z + direction[i][2];
+        //             //Check for the distance value
+        //             int index_x_tmp = index_x + direction[i][0];
+        //             int index_y_tmp = index_y + direction[i][1];
+        //             int index_z_tmp = index_z + direction[i][2];
 
-                    if (edtGrid1(index_x_tmp, index_y_tmp, index_z_tmp) < m_distance_object1){
-                        sum += 1.0;
-                        
-                        force_direction[0] = force_direction[0] + direction[i][0];
-                        force_direction[1] = force_direction[1] + direction[i][1];
-                        force_direction[2] = force_direction[2] + direction[i][2];
-                    }
+        //             if (edtGrid1(index_x_tmp, index_y_tmp, index_z_tmp) < m_distance_object1){
+        //                 sum += 1.0;
+        //                 cout << "index" << sum << ":" << index_x_tmp << "," << index_y_tmp << ","<< index_z_tmp  << ":" << edtGrid1(index_x_tmp, index_y_tmp, index_z_tmp) << endl;
+        //                 force_direction[0] = force_direction[0] + direction[i][0];
+        //                 force_direction[1] = force_direction[1] + direction[i][1];
+        //                 force_direction[2] = force_direction[2] + direction[i][2];
+        //             }
 
-                }
-            cout << "Force direction: " << force_direction[0]/sum << "," << force_direction[1]/sum << "," << force_direction[2]/sum << endl;
+        //         }
+        //     if (sum > 0){
+        //         cout << "Force direction: " << force_direction[0]/sum << "," << force_direction[1]/sum << "," << force_direction[2]/sum << endl;
 
-            //Frame transformation 
-            force_direction[0] = force_direction[0]/sum;
-            force_direction[1] = -force_direction[1]/sum;
-            force_direction[2] = force_direction[2]/sum;
+        //     //Frame transformation(Voxel -> Object)
+        //     force_direction[0] = force_direction[0]/sum;
+        //     force_direction[1] = -force_direction[1]/sum;
+        //     force_direction[2] = force_direction[2]/sum;
 
-            force_edt.set(exp(m_distance_object1) *  force_direction[1], exp(m_distance_object1) * -force_direction[2],exp(m_distance_object1) * -force_direction[0]);
+        //     }
+        //     //Frame transformation(Object -> World )
+        //     double a = -exp(-0.001 * (m_distance_object1- m_currDrillSize));
+        //     force_edt.set(a *  force_direction[1], a* -force_direction[2],a * -force_direction[0]);
       
-            }
+            
+        //     }
+        cout <<"(0,0,0)" <<edtGrid1(0,0,0) << endl;
+        cout <<"(16,16,0)" <<edtGrid1(16,16,0) << endl;
+        cout <<"(20,20,0)" <<edtGrid1(20,20,0) << endl;
+        cout <<"(24,24,0)" <<edtGrid1(24,24,0) << endl;
+        cout <<"(480,480,0)" <<edtGrid1(480,480,0) << endl;
+        
+        cout <<"(0,0,0)" <<edtGrid1(0,0,0) << endl;
+        cout <<"(0,16,16)" <<edtGrid1(0,16,16) << endl;
+        cout <<"(0,20,20)" <<edtGrid1(0,20,20) << endl;
+        cout <<"(0,24,24)" <<edtGrid1(0,24,24) << endl;
+        cout <<"(0,480,480)" <<edtGrid1(0,480,480) << endl;
 
     
     }
+    //When it is out of boundary;
     else{
         m_distanceText->setText("Distance: Out of boundary!!");
+        force_edt.set(0, 0, 0);
     }
     
 

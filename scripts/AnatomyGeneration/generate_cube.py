@@ -8,8 +8,8 @@ if __name__ == "__main__":
     # fmt: off
     parser = argparse.ArgumentParser(description="Description of your program")
     parser.add_argument("-s", "--resolution", help="Image resolution", default=512)
-    parser.add_argument("-c", "--cuberes", help="Cube resolution", default=256)
-    parser.add_argument("-f", "--dirname", help="directory name", default="cube512_256")
+    parser.add_argument("-c", "--cuberes", help="Cube resolution", default=480)
+    parser.add_argument("-f", "--dirname", help="directory name", default="cube512_480")
     parser.add_argument("-r", "--root", help="Location where you want to save the images",
                         default="resources/volumes/")
     # fmt: on
@@ -32,11 +32,14 @@ if __name__ == "__main__":
         with open((root / args.dirname).with_suffix(".txt"), "w") as f:
 
             for i in range(args.resolution):
-                img = np.zeros((args.resolution, args.resolution, 4), dtype=np.uint8)
-                # img[:, :, -1] = 25
-                img = cv2.rectangle(
-                    img, (init_p, init_p), (init_p + cube_res, init_p + cube_res), (255, 255, 255, 255), -1
-                )
+                if i < 16 or i > 480 + 16:
+                    img = np.zeros((args.resolution, args.resolution, 4), dtype=np.uint8)
+                else:
+                    img = np.zeros((args.resolution, args.resolution, 4), dtype=np.uint8)
+                    # img[:, :, -1] = 25
+                    img = cv2.rectangle(
+                        img, (init_p, init_p), (init_p + cube_res, init_p + cube_res), (255, 255, 255, 255), -1
+                    )
                 img_name = f"plane00{counter}.png"
                 f.write(img_name + "\n")
                 cv2.imwrite(str(root / img_name), img)

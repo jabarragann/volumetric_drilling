@@ -16,7 +16,7 @@ VOLUME mastoidectomy_volume_high:
   scale: 1.0
   dimensions: {x: 1.0, y: 1.0, z: 1.0}
   images:
-    path: ../resources/volumes/cube512_256/
+    path: ../resources/volumes/cube512_480/
     prefix: plane00
     format: png
     count: 512
