@@ -21,12 +21,14 @@ int main()
         }
     }
 
+    printf("Accessing data via pointer.\n");
     float *ptr = grid.data;
     for (int i = 0; i < 6; i++)
     {
         printf("%d %.6f\n", i, *ptr);
         ptr++;
     }
+    printf("\n");
 
     // Test data accessing methods
     printf("Test data accessing methods.\n");
