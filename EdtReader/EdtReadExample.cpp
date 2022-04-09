@@ -17,7 +17,7 @@ int main()
     float *values_buffer;
     unsigned int res[3];
     edt_reader(file_name, &values_buffer, res);
-    Array3d<float> edtGrid1(values_buffer, res[0], res[1], res[2]);
+    Array3d<float> edtGrid1(values_buffer, res);
 
     edtGrid1.print_resolution();
     for (int i = 0; i < 10; i++)

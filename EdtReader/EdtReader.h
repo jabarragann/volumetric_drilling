@@ -8,40 +8,28 @@ struct Array3d
 
 public:
     T *data;
-    unsigned width, height, length;
+    unsigned res[3];
 
     Array3d()
     {
         data = NULL;
-        width = 0;  // res[0]
-        height = 0; // res[1]
-        length = 0; // res[2]
+        res[0] = 0;
+        res[1] = 0;
+        res[2] = 0;
     }
-    Array3d(const Array3d<T> &other)
+    Array3d(unsigned *resolution)
     {
-        unsigned x, size = other.width * other.height * other.length;
-        data = new T[size];
-        width = other.width;
-        height = other.height;
-        length = other.length;
-        for (x = 0; x < size; ++x)
-        {
-            data[x] = other.data[x];
-        }
+        this->res[0] = *resolution;
+        this->res[1] = *(resolution + 1);
+        this->res[2] = *(resolution + 2);
+        this->data = new T[res[0] * res[1] * res[2]];
     }
-    Array3d(unsigned w, unsigned h, unsigned l)
+    Array3d(T *data_pt, unsigned *resolution)
     {
-        width = w;
-        height = h;
-        length = l;
-        data = new T[width * length * height];
-    }
-    Array3d(T *data_pt, unsigned w, unsigned h, unsigned l)
-    {
-        width = w;
-        height = h;
-        length = l;
-        data = data_pt;
+        this->res[0] = *resolution;
+        this->res[1] = *(resolution + 1);
+        this->res[2] = *(resolution + 2);
+        this->data = data_pt;
     }
     ~Array3d()
     {
@@ -50,19 +38,19 @@ public:
     inline T &operator()(unsigned x, unsigned y, unsigned z)
     {
         // x+y*res[0]+z*res[0]*res[1]
-        return data[x + y * width + z * width * height];
+        return data[x + y * res[0] + z * res[0] * res[1]];
     }
     inline const T &operator()(unsigned x, unsigned y, unsigned z) const
     {
-        return data[x + y * width + z * width * height];
+        return data[x + y * res[0] + z * res[0] * res[1]];
     }
     inline unsigned size() const
     {
-        return width * height * length;
+        return res[0], res[1], res[2];
     }
     void print_resolution()
     {
-        printf("grid resolution: (%d,%d,%d)\n", width, height, length);
+        printf("grid resolution: (%d,%d,%d)\n", res[0], res[1], res[2]);
     }
 };
 
