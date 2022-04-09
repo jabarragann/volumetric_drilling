@@ -10,3 +10,9 @@ add_executable(
 add_executable(
   GridExample 
   GridExample.cpp)
+
+add_executable(
+  DisplayTinyEdt
+  EdtReader.cpp
+  DisplayTinyEdt.cpp)
+
