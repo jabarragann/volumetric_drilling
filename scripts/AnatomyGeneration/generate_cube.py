@@ -7,9 +7,9 @@ if __name__ == "__main__":
 
     # fmt: off
     parser = argparse.ArgumentParser(description="Description of your program")
-    parser.add_argument("-s", "--resolution", help="Image resolution", default=512)
-    parser.add_argument("-c", "--cuberes", help="Cube resolution", default=480)
-    parser.add_argument("-f", "--dirname", help="directory name", default="cube512_480")
+    parser.add_argument("-s", "--resolution", help="Image resolution", default=40)
+    parser.add_argument("-c", "--cuberes", help="Cube resolution", default=32)
+    parser.add_argument("-f", "--dirname", help="directory name", default="cube40_32")
     parser.add_argument("-r", "--root", help="Location where you want to save the images",
                         default="resources/volumes/")
     # fmt: on
@@ -17,6 +17,7 @@ if __name__ == "__main__":
 
     # define path
     root: Path = Path(args.root) / args.dirname
+    root = root.resolve()
 
     if not root.exists():
         root.mkdir(parents=True)
@@ -32,7 +33,7 @@ if __name__ == "__main__":
         with open((root / args.dirname).with_suffix(".txt"), "w") as f:
 
             for i in range(args.resolution):
-                if i < 16 or i > 480 + 16:
+                if i < init_p or i > cube_res + init_p:
                     img = np.zeros((args.resolution, args.resolution, 4), dtype=np.uint8)
                 else:
                     img = np.zeros((args.resolution, args.resolution, 4), dtype=np.uint8)
