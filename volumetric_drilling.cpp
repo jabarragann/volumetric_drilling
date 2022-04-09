@@ -242,11 +242,13 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     // string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/cube512_256.edt";
     // /string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
     // string file_name = "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
-    string file_names[3];
-    //file_names[0]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
-    file_names[0]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/cube512_480.edt";
-    file_names[1]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
-    file_names[2]= "/home/hishida3/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
+
+    // Hardcoded need to change the path
+    string file_names[4];
+    file_names[0]= "/home/ishida/git/volumetric_drilling/EdtReader/grids/cube512_480.edt";
+    file_names[1]= "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_blue.edt";
+    file_names[2]= "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_pink.edt";
+    file_names[3]= "/home/ishida/git/volumetric_drilling/EdtReader/grids/ear3_171_red.edt";
 
 
     char error_msg[100];
@@ -258,23 +260,23 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     unsigned int res[3];
     edt_reader(file_names[0], &values_buffer, res);
     edtGrid1.data = values_buffer;
-    edtGrid1.width =res[0];
-    edtGrid1.height =res[1];
-    edtGrid1.length =res[2];
+    edtGrid1.res[0] =res[0];
+    edtGrid1.res[1] =res[1];
+    edtGrid1.res[2] =res[2];
 
     edt_reader(file_names[1], &values_buffer, res);
     edtGrid2.data = values_buffer;
-    edtGrid2.width =res[0];
-    edtGrid2.height =res[1];
-    edtGrid2.length =res[2];
+    edtGrid2.res[0] =res[0];
+    edtGrid2.res[1] =res[1];
+    edtGrid2.res[2] =res[2];
 
     edt_reader(file_names[2], &values_buffer, res);
     edtGrid3.data = values_buffer;
-    edtGrid3.width =res[0];
-    edtGrid3.height =res[1];
-    edtGrid3.length =res[2];
+    edtGrid3.res[0] =res[0];
+    edtGrid3.res[1] =res[1];
+    edtGrid3.res[2] =res[2];
     
-    edtres = edtGrid1.width;
+    edtres = edtGrid1.res[0];
     edtGrid1.print_resolution();
     // for (int i = 0; i < 10; i++)
     // {
@@ -555,56 +557,56 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
         double sum;
 
         //Check whether it is not on the boundary
-        // if(1 < index_x && index_x < edtres-1 && 
-        //     1 < index_y && index_y < edtres-1 &&
-        //     1 < index_z && index_z < edtres -1){
+        if(1 < index_x && index_x < edtres-1 && 
+            1 < index_y && index_y < edtres-1 &&
+            1 < index_z && index_z < edtres -1){
                 
-        //         cout << "index0: " << index_x << "," << index_y << "," << index_z << ":" << m_distance_object1 << endl;
+                cout << "index0: " << index_x << "," << index_y << "," << index_z << ":" << m_distance_object1 << endl;
 
-        //         sum = 0;
-        //         force_direction = {0,0,0};
-        //         for (int i=0;i<direction.size();i++){
+                sum = 0;
+                force_direction = {0,0,0};
+                for (int i=0;i<direction.size();i++){
                     
-        //             //Check for the distance value
-        //             int index_x_tmp = index_x + direction[i][0];
-        //             int index_y_tmp = index_y + direction[i][1];
-        //             int index_z_tmp = index_z + direction[i][2];
+                    //Check for the distance value
+                    int index_x_tmp = index_x + direction[i][0];
+                    int index_y_tmp = index_y + direction[i][1];
+                    int index_z_tmp = index_z + direction[i][2];
 
-        //             if (edtGrid1(index_x_tmp, index_y_tmp, index_z_tmp) < m_distance_object1){
-        //                 sum += 1.0;
-        //                 cout << "index" << sum << ":" << index_x_tmp << "," << index_y_tmp << ","<< index_z_tmp  << ":" << edtGrid1(index_x_tmp, index_y_tmp, index_z_tmp) << endl;
-        //                 force_direction[0] = force_direction[0] + direction[i][0];
-        //                 force_direction[1] = force_direction[1] + direction[i][1];
-        //                 force_direction[2] = force_direction[2] + direction[i][2];
-        //             }
+                    if (edtGrid1(index_x_tmp, index_y_tmp, index_z_tmp) < m_distance_object1){
+                        sum += 1.0;
+                        cout << "index" << sum << ":" << index_x_tmp << "," << index_y_tmp << ","<< index_z_tmp  << ":" << edtGrid1(index_x_tmp, index_y_tmp, index_z_tmp) << endl;
+                        force_direction[0] = force_direction[0] + direction[i][0];
+                        force_direction[1] = force_direction[1] + direction[i][1];
+                        force_direction[2] = force_direction[2] + direction[i][2];
+                    }
 
-        //         }
-        //     if (sum > 0){
-        //         cout << "Force direction: " << force_direction[0]/sum << "," << force_direction[1]/sum << "," << force_direction[2]/sum << endl;
+                }
+            if (sum > 0){
+                cout << "Force direction: " << force_direction[0]/sum << "," << force_direction[1]/sum << "," << force_direction[2]/sum << endl;
 
-        //     //Frame transformation(Voxel -> Object)
-        //     force_direction[0] = force_direction[0]/sum;
-        //     force_direction[1] = -force_direction[1]/sum;
-        //     force_direction[2] = force_direction[2]/sum;
+            //Frame transformation(Voxel -> Object)
+            force_direction[0] = force_direction[0]/sum;
+            force_direction[1] = -force_direction[1]/sum;
+            force_direction[2] = force_direction[2]/sum;
 
-        //     }
-        //     //Frame transformation(Object -> World )
-        //     double a = -exp(-0.001 * (m_distance_object1- m_currDrillSize));
-        //     force_edt.set(a *  force_direction[1], a* -force_direction[2],a * -force_direction[0]);
+            }
+            //Frame transformation(Object -> World )
+            double a = -exp(-0.001 * (m_distance_object1- m_currDrillSize));
+            force_edt.set(a *  force_direction[1], a* -force_direction[2],a * -force_direction[0]);
       
             
-        //     }
-        cout <<"(0,0,0)" <<edtGrid1(0,0,0) << endl;
-        cout <<"(16,16,0)" <<edtGrid1(16,16,0) << endl;
-        cout <<"(20,20,0)" <<edtGrid1(20,20,0) << endl;
-        cout <<"(24,24,0)" <<edtGrid1(24,24,0) << endl;
-        cout <<"(480,480,0)" <<edtGrid1(480,480,0) << endl;
+            }
+        // cout <<"(0,0,0)" <<edtGrid1(0,0,0) << endl;
+        // cout <<"(16,16,0)" <<edtGrid1(16,16,0) << endl;
+        // cout <<"(20,20,0)" <<edtGrid1(20,20,0) << endl;
+        // cout <<"(24,24,0)" <<edtGrid1(24,24,0) << endl;
+        // cout <<"(480,480,0)" <<edtGrid1(480,480,0) << endl;
         
-        cout <<"(0,0,0)" <<edtGrid1(0,0,0) << endl;
-        cout <<"(0,16,16)" <<edtGrid1(0,16,16) << endl;
-        cout <<"(0,20,20)" <<edtGrid1(0,20,20) << endl;
-        cout <<"(0,24,24)" <<edtGrid1(0,24,24) << endl;
-        cout <<"(0,480,480)" <<edtGrid1(0,480,480) << endl;
+        // cout <<"(0,0,0)" <<edtGrid1(0,0,0) << endl;
+        // cout <<"(0,16,16)" <<edtGrid1(0,16,16) << endl;
+        // cout <<"(0,20,20)" <<edtGrid1(0,20,20) << endl;
+        // cout <<"(0,24,24)" <<edtGrid1(0,24,24) << endl;
+        // cout <<"(0,480,480)" <<edtGrid1(0,480,480) << endl;
 
     
     }

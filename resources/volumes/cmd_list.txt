@@ -18,3 +18,4 @@ From ear3_171 execute
 
 
 ./../../../../EDT/cmake-build/bin/EDTFromGrid --in ./cube512_480.txt --id 255 255 255 --out ./cube512_480.edt
+./../../../../EDT/build/bin/EDTFromGrid --in ./cube512_480.txt --id 255 255 255 --out ./cube512_480.edt
