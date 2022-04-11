@@ -129,9 +129,19 @@ private:
     cTransform world_T_voxel;
     cTransform voxel_T_tool;
 
-    double m_distance_object = 0;
+    double m_distance_object1 = 0;
+    double m_distance_object2 = 0;
+    double m_distance_object3 = 0;
     Array3d<float> edtGrid1;
+    Array3d<float> edtGrid2;
+    Array3d<float> edtGrid3;
     int edtres;
+
+    int index_x;
+    int index_y;
+    int index_z;
+    vector<double> force_direction{0,0,0};
+    cVector3d force_edt;
 
     // current and maximum distance between proxy and goal spheres
     double m_currError = 0;
