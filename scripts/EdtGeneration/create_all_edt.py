@@ -7,16 +7,16 @@ anatomy_dict = {
     "Incus": "0 255 149",
     "Stapes": "63 0 255",
     "Bony_Labyrinth": "91 123 91",
-    "IAC": "244 142 52",
+    "IAC": "244 142 52",  # orange structure
     "Superior_Vestibular_Nerve": "255 191 135",
     "Inferior_Vestibular_Nerve": "121 70 24",
     "Cochlear_Nerve": "219 244 52",
     "Facial_Nerve": "244 214 49",
     "Chorda_Tympani": "151 131 29",
     "ICA": "216 100 79",
-    "Sinus_+_Dura": "110 184 209",
+    "Sinus_+_Dura": "110 184 209",  # blue structure
     "Vestibular_Aqueduct": "91 98 123",
-    "TMJ": "100 0 0",
+    "TMJ": "100 0 0",  # dark red structure
     "EAC": "255 225 214",
 }
 

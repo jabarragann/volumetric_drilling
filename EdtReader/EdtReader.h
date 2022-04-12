@@ -33,6 +33,7 @@ public:
     }
     ~Array3d()
     {
+        printf("Array 3d destructor called \n");
         delete[] data;
     }
     inline T &operator()(unsigned x, unsigned y, unsigned z)

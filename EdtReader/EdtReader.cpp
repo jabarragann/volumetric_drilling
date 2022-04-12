@@ -10,7 +10,7 @@ bool read_data_type(FILE *fp, unsigned int dim, std::string name)
     int d;
     if (fscanf(fp, " %d %s ", &d, line) != 2)
         return false;
-    cout << line << " " << d << endl;
+    // cout << line << " " << d << endl;
     return d == dim && name == std::string(line);
 }
 // https://stackoverflow.com/questions/1398307/how-can-i-allocate-memory-and-return-it-via-a-pointer-parameter-to-the-calling
