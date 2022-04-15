@@ -357,8 +357,13 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // Also orient the force to match the camera rotation
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
-    force = force + force_new;
+    //force = force + force_new;
     m_toolCursorList[0]->setDeviceLocalForce(force);
+
+    cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
+    cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
+
+
 
     if (m_flagStart)
     {
@@ -557,41 +562,52 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             1 < index_z && index_z < edtres - 1)
         {
             sum = 0;
-            force_direction = {0, 0, 0};
-            for (int i = 0; i < direction.size(); i++)
-            {
+            //force_direction = {0, 0, 0};
+            // for (int i = 0; i < direction.size(); i++)
+            // {
 
-                // Check for the distance value
-                int index_x_tmp = index_x + direction[i][0];
-                int index_y_tmp = index_y + direction[i][1];
-                int index_z_tmp = index_z + direction[i][2];
+            //     // Check for the distance value
+            //     int index_x_tmp = index_x + direction[i][0];
+            //     int index_y_tmp = index_y + direction[i][1];
+            //     int index_z_tmp = index_z + direction[i][2];
 
-                if ((*(edt_list.list[min_index].edt_grid))(index_x_tmp, index_y_tmp, index_z_tmp) < min_distance)
-                {
-                    sum += 1.0;
-                    //cout << "index" << sum << ":" << index_x_tmp << "," << index_y_tmp << "," << index_z_tmp << ":" << (*(edt_list.list[min_index].edt_grid))(index_x_tmp, index_y_tmp, index_z_tmp) << endl;
-                    force_direction[0] = force_direction[0] + direction[i][0];
-                    force_direction[1] = force_direction[1] + direction[i][1];
-                    force_direction[2] = force_direction[2] + direction[i][2];
-                }
-            }
-            if (sum > 0)
-            {
-                cout << "Force direction: " << force_direction[0] / sum << "," << force_direction[1] / sum << "," << force_direction[2] / sum << endl;
+            //     if ((*(edt_list.list[min_index].edt_grid))(index_x_tmp, index_y_tmp, index_z_tmp) < min_distance)
+            //     {
+            //         sum += 1.0;
+            //         //cout << "index" << sum << ":" << index_x_tmp << "," << index_y_tmp << "," << index_z_tmp << ":" << (*(edt_list.list[min_index].edt_grid))(index_x_tmp, index_y_tmp, index_z_tmp) << endl;
+            //         force_direction[0] = force_direction[0] + direction[i][0];
+            //         force_direction[1] = force_direction[1] + direction[i][1];
+            //         force_direction[2] = force_direction[2] + direction[i][2];
+            //     }
+            // }
+            // if (sum > 0)
+            // {
+            //     cout << "Force direction: " << force_direction[0] / sum << "," << force_direction[1] / sum << "," << force_direction[2] / sum << endl;
 
-                // Frame transformation(Voxel -> Object)
-                force_direction[0] = force_direction[0] / sum;
-                force_direction[1] = -force_direction[1] / sum;
-                force_direction[2] = force_direction[2] / sum;
-            }
+            //     // Frame transformation(Voxel -> Object)
+            //     force_direction[0] = force_direction[0] / sum;
+            //     force_direction[1] = -force_direction[1] / sum;
+            //     force_direction[2] = force_direction[2] / sum;
+            // }
+
+            cVector3d force_dir;
+            force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x+1, index_y, index_z))-((*(edt_list.list[min_index].edt_grid))(index_x-1, index_y, index_z)), 
+            ((*(edt_list.list[min_index].edt_grid))(index_x, index_y+1, index_z))-((*(edt_list.list[min_index].edt_grid))(index_x, index_y-1, index_z)),
+            ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z+1))-((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z-1)));
+
+            force_dir.normalize();
             // Frame transformation(Object -> World )
             double offset = 2.0; //offset in mm
-            double a = 0.5 * exp(-0.001 * (min_distance - m_currDrillSize));
+            double a =0.5;// 0.2 * exp(-0.001 * (min_distance - m_currDrillSize));
+
+            // cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
+
             
-            double force_thres=2.0;
+            double force_thres=1.0;
             if (a > force_thres){a = force_thres;};
             
-            force_edt.set(-a * force_direction[1], -a * -force_direction[2], -a * -force_direction[0]);
+            // force_edt.set(-a * force_dir[1], -a * -force_dir[2], -a * -force_dir[0]);
+            force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
         }
 
 
