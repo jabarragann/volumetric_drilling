@@ -357,11 +357,12 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // Also orient the force to match the camera rotation
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
-    //force = force + force_new;
-    m_toolCursorList[0]->setDeviceLocalForce(force);
+    // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
+    force = force + force_new;
+    m_toolCursorList[0]->setDeviceLocalForce(force_new);
 
-    cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
-    cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
+    // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
+    // cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
 
 
 
@@ -550,18 +551,18 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_distanceText->m_fontColor.set(r, g, b);
         m_distanceText->setText("Closest structure: \n" + min_name + ": "+ cStr(min_distance - m_currDrillSize) + " mm\n");
 
-        vector<vector<int>> direction{
-            {1, 1, 1}, {1, 1, 0}, {1, 1, -1}, {1, 0, 1}, {1, 0, 0}, {1, 0, -1}, {1, -1, 1}, {1, -1, 0}, {1, -1, -1}, {0, 1, 1}, {0, 1, 0}, {0, 1, -1}, {0, 0, 1}, {0, 0, 0}, {0, 0, -1}, {0, -1, 1}, {0, -1, 0}, {0, -1, -1}, {-1, 1, 1}, {-1, 1, 0}, {-1, 1, -1}, {-1, 0, 1}, {-1, 0, 0}, {-1, 0, -1}, {-1, -1, 1}, {-1, -1, 0}, {-1, -1, -1}};
+        // vector<vector<int>> direction{
+        //     {1, 1, 1}, {1, 1, 0}, {1, 1, -1}, {1, 0, 1}, {1, 0, 0}, {1, 0, -1}, {1, -1, 1}, {1, -1, 0}, {1, -1, -1}, {0, 1, 1}, {0, 1, 0}, {0, 1, -1}, {0, 0, 1}, {0, 0, 0}, {0, 0, -1}, {0, -1, 1}, {0, -1, 0}, {0, -1, -1}, {-1, 1, 1}, {-1, 1, 0}, {-1, 1, -1}, {-1, 0, 1}, {-1, 0, 0}, {-1, 0, -1}, {-1, -1, 1}, {-1, -1, 0}, {-1, -1, -1}};
 
-        // Force direction
-        double sum;
+        // // Force direction
+        // double sum;
 
         // Check whether it is not on the boundary
         if (1 < index_x && index_x < edtres - 1 &&
             1 < index_y && index_y < edtres - 1 &&
             1 < index_z && index_z < edtres - 1)
         {
-            sum = 0;
+            //sum = 0;
             //force_direction = {0, 0, 0};
             // for (int i = 0; i < direction.size(); i++)
             // {
