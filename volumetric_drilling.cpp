@@ -359,7 +359,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
     // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
     force = force + force_new;
-    m_toolCursorList[0]->setDeviceLocalForce(force_new);
+    m_toolCursorList[0]->setDeviceLocalForce(force);
 
     // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
     // cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
@@ -551,46 +551,13 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_distanceText->m_fontColor.set(r, g, b);
         m_distanceText->setText("Closest structure: \n" + min_name + ": "+ cStr(min_distance - m_currDrillSize) + " mm\n");
 
-        // vector<vector<int>> direction{
-        //     {1, 1, 1}, {1, 1, 0}, {1, 1, -1}, {1, 0, 1}, {1, 0, 0}, {1, 0, -1}, {1, -1, 1}, {1, -1, 0}, {1, -1, -1}, {0, 1, 1}, {0, 1, 0}, {0, 1, -1}, {0, 0, 1}, {0, 0, 0}, {0, 0, -1}, {0, -1, 1}, {0, -1, 0}, {0, -1, -1}, {-1, 1, 1}, {-1, 1, 0}, {-1, 1, -1}, {-1, 0, 1}, {-1, 0, 0}, {-1, 0, -1}, {-1, -1, 1}, {-1, -1, 0}, {-1, -1, -1}};
-
-        // // Force direction
-        // double sum;
-
+        
         // Check whether it is not on the boundary
         if (1 < index_x && index_x < edtres - 1 &&
             1 < index_y && index_y < edtres - 1 &&
-            1 < index_z && index_z < edtres - 1)
+            1 < index_z && index_z < 169 - 1)
         {
-            //sum = 0;
-            //force_direction = {0, 0, 0};
-            // for (int i = 0; i < direction.size(); i++)
-            // {
-
-            //     // Check for the distance value
-            //     int index_x_tmp = index_x + direction[i][0];
-            //     int index_y_tmp = index_y + direction[i][1];
-            //     int index_z_tmp = index_z + direction[i][2];
-
-            //     if ((*(edt_list.list[min_index].edt_grid))(index_x_tmp, index_y_tmp, index_z_tmp) < min_distance)
-            //     {
-            //         sum += 1.0;
-            //         //cout << "index" << sum << ":" << index_x_tmp << "," << index_y_tmp << "," << index_z_tmp << ":" << (*(edt_list.list[min_index].edt_grid))(index_x_tmp, index_y_tmp, index_z_tmp) << endl;
-            //         force_direction[0] = force_direction[0] + direction[i][0];
-            //         force_direction[1] = force_direction[1] + direction[i][1];
-            //         force_direction[2] = force_direction[2] + direction[i][2];
-            //     }
-            // }
-            // if (sum > 0)
-            // {
-            //     cout << "Force direction: " << force_direction[0] / sum << "," << force_direction[1] / sum << "," << force_direction[2] / sum << endl;
-
-            //     // Frame transformation(Voxel -> Object)
-            //     force_direction[0] = force_direction[0] / sum;
-            //     force_direction[1] = -force_direction[1] / sum;
-            //     force_direction[2] = force_direction[2] / sum;
-            // }
-
+            
             cVector3d force_dir;
             force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x+1, index_y, index_z))-((*(edt_list.list[min_index].edt_grid))(index_x-1, index_y, index_z)), 
             ((*(edt_list.list[min_index].edt_grid))(index_x, index_y+1, index_z))-((*(edt_list.list[min_index].edt_grid))(index_x, index_y-1, index_z)),
@@ -598,16 +565,35 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
             force_dir.normalize();
             // Frame transformation(Object -> World )
-            double offset = 2.0; //offset in mm
-            double a =0.5;// 0.2 * exp(-0.001 * (min_distance - m_currDrillSize));
+            
+            
+            double max_force = 0.5; //in N
+            double offset = 5.0; //offset in mm
+            
+            // double a =max_force;// constant
+            // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
+
+            
+            double a;
+            if (min_distance <  offset){
+                a =max_force;// constant
+                // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
+                // a = max_force * (1 - (min_distance - m_currDrillSize) / offset) ;//Linear
+            }
+
+
 
             // cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
 
             
             double force_thres=1.0;
-            if (a > force_thres){a = force_thres;};
+            if (a > force_thres){
+                a = force_thres;
+                };
+            if (a < -force_thres){
+                a + -force_thres;
+            };
             
-            // force_edt.set(-a * force_dir[1], -a * -force_dir[2], -a * -force_dir[0]);
             force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
         }
 
