@@ -213,7 +213,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     m_distanceText = new cLabel(font);
     m_distanceText->setLocalPos(20, 400);
-    m_distanceText->m_fontColor.set(1.0,1.0,1.0);
+    m_distanceText->m_fontColor.set(1.0, 1.0, 1.0);
     m_distanceText->setFontScale(.75);
     m_distanceText->setText("/Bone distance: " + cStr(0.0) + " mm\n" + "/Bone distance: " + cStr(0.0) + "/Bone distance: " + cStr(0.0));
     m_mainCamera->getFrontLayer()->addChild(m_distanceText);
@@ -242,6 +242,13 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     //*******************
     this->edt_list.print_info();
     this->edt_list.load_all_grids();
+
+    // Sample access
+    unsigned int res[3];
+    this->edt_list.list[0].get_resolution(res);
+    printf("%s: (%d %d %d)\n", this->edt_list.list[0].name.c_str(),
+           this->edt_list.list[0].rgb[0], this->edt_list.list[0].rgb[1], this->edt_list.list[0].rgb[2]);
+    printf("resolution: %d %d %d\n", res[0], res[1], res[2]);
 
     return 1;
 }
@@ -363,8 +370,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
     // cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
-
-
 
     if (m_flagStart)
     {
@@ -510,94 +515,94 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * edtres);
         index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * edtres);
         index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * edtres);
-        //cout << index_x << "," << index_y << "," << index_z << endl;
+        // cout << index_x << "," << index_y << "," << index_z << endl;
 
         edt_list.list[0].m_dist_object = (*(edt_list.list[0].edt_grid))(index_x, index_y, index_z);
         edt_list.list[1].m_dist_object = (*(edt_list.list[1].edt_grid))(index_x, index_y, index_z);
         edt_list.list[2].m_dist_object = (*(edt_list.list[2].edt_grid))(index_x, index_y, index_z);
 
         std::string min_name = "XXX";
-        double min_distance = 1000; 
+        double min_distance = 1000;
         int min_index;
         double r, g, b;
-        for (int i=0; i < 3;i++){
+        for (int i = 0; i < 3; i++)
+        {
             double curr_distance = edt_list.list[i].m_dist_object;
 
-            if (min_distance > curr_distance){
+            if (min_distance > curr_distance)
+            {
 
                 min_distance = curr_distance;
                 min_name = edt_list.list[i].name;
                 min_index = i;
 
-                if (min_name == "Sinus_+_Dura"){
-                    r = 110.0/255.0;
-                    g = 184.0/255.0;
-                    b = 209.0/255.0;
-                } ;
-                if (min_name == "IAC"){
-                    r = 244/255.0;
-                    g = 142.0/255.0;
-                    b = 52.0/255.0;
-                } ;
-                if (min_name == "TMJ"){
-                    r = 100/255.0;
+                if (min_name == "Sinus_+_Dura")
+                {
+                    r = 110.0 / 255.0;
+                    g = 184.0 / 255.0;
+                    b = 209.0 / 255.0;
+                };
+                if (min_name == "IAC")
+                {
+                    r = 244 / 255.0;
+                    g = 142.0 / 255.0;
+                    b = 52.0 / 255.0;
+                };
+                if (min_name == "TMJ")
+                {
+                    r = 100 / 255.0;
                     g = 0.0;
                     b = 0.0;
-                } ;
+                };
             }
         }
 
         // cout << "burr_size:" << m_currDrillSize << endl;
         m_distanceText->m_fontColor.set(r, g, b);
-        m_distanceText->setText("Closest structure: \n" + min_name + ": "+ cStr(min_distance - m_currDrillSize) + " mm\n");
+        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
 
-        
         // Check whether it is not on the boundary
         if (1 < index_x && index_x < edtres - 1 &&
             1 < index_y && index_y < edtres - 1 &&
             1 < index_z && index_z < 169 - 1)
         {
-            
+
             cVector3d force_dir;
-            force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x+1, index_y, index_z))-((*(edt_list.list[min_index].edt_grid))(index_x-1, index_y, index_z)), 
-            ((*(edt_list.list[min_index].edt_grid))(index_x, index_y+1, index_z))-((*(edt_list.list[min_index].edt_grid))(index_x, index_y-1, index_z)),
-            ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z+1))-((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z-1)));
+            force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x + 1, index_y, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x - 1, index_y, index_z)),
+                          ((*(edt_list.list[min_index].edt_grid))(index_x, index_y + 1, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y - 1, index_z)),
+                          ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z + 1)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z - 1)));
 
             force_dir.normalize();
             // Frame transformation(Object -> World )
-            
-            
-            double max_force = 0.5; //in N
-            double offset = 5.0; //offset in mm
-            
+
+            double max_force = 0.5; // in N
+            double offset = 5.0;    // offset in mm
+
             // double a =max_force;// constant
             // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
 
-            
             double a;
-            if (min_distance <  offset){
-                a =max_force;// constant
+            if (min_distance < offset)
+            {
+                a = max_force; // constant
                 // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
                 // a = max_force * (1 - (min_distance - m_currDrillSize) / offset) ;//Linear
             }
 
-
-
             // cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
 
-            
-            double force_thres=1.0;
-            if (a > force_thres){
+            double force_thres = 1.0;
+            if (a > force_thres)
+            {
                 a = force_thres;
-                };
-            if (a < -force_thres){
+            };
+            if (a < -force_thres)
+            {
                 a + -force_thres;
             };
-            
+
             force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
         }
-
-
     }
     // When it is out of boundary;
     else

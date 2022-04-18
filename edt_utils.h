@@ -1,30 +1,34 @@
 #include <iostream>
+#include <vector>
 #include "EdtReader/EdtReader.h"
+#include <unordered_map>
+
+// To display color
+#include <algorithm>
+#include <sstream>
+#include <iterator>
 
 #define number_of_edt 3
 
-std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
-                                        "./edt_grids/Sinus_+_Dura.edt",
-                                        "./edt_grids/TMJ.edt"};
-
-std::string edt_names[number_of_edt] = {"IAC",
-                                        "Sinus_+_Dura",
-                                        "TMJ"};
+using std::string;
+using std::vector;
 
 class EdtContainer
 {
 public:
     float m_dist_object;
-    std::string path;
-    std::string name;
+    string path;
+    string name;
     Array3d<float> *edt_grid;
+    vector<int> rgb;
 
     EdtContainer() {}
-    EdtContainer(std::string p, std::string name)
+    EdtContainer(string p, string name, const vector<int> &rgb)
     {
         this->name = name;
         this->path = p;
         this->m_dist_object = 0.0;
+        this->rgb = std::vector<int>(rgb.begin(), rgb.end());
     }
 
     void load_grid()
@@ -38,26 +42,49 @@ public:
         //        Array3d<float> edtGrid(values_buffer, res);
         //        this->edt_grid = edtGrid;
     }
-
+    void get_resolution(unsigned int *resolution)
+    {
+        *resolution = (this->edt_grid)->res[0];
+        *(resolution + 1) = (this->edt_grid)->res[1];
+        *(resolution + 2) = (this->edt_grid)->res[2];
+    }
     void print_info()
     {
-        printf("name: %s || path: %s \n", this->name.c_str(), this->path.c_str());
+        // RGB vect to string
+        std::ostringstream vts;
+        std::copy(this->rgb.begin(), this->rgb.end(),
+                  std::ostream_iterator<int>(vts, ", "));
+
+        printf("name: %s || path: %s || color: %s \n", this->name.c_str(), this->path.c_str(), vts.str().c_str());
     }
 };
 
+std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
+                                        "./edt_grids/Sinus_+_Dura.edt",
+                                        "./edt_grids/TMJ.edt"};
+
+std::string edt_names[number_of_edt] = {"IAC",
+                                        "Sinus_+_Dura",
+                                        "TMJ"};
+// Save colors
 class EdtList
 {
 public:
     EdtContainer list[number_of_edt];
+    std::unordered_map<string, vector<int>> color_map;
 
     EdtList()
     {
+        color_map["IAC"] = vector<int>{244, 142, 52};
+        color_map["Sinus_+_Dura"] = vector<int>{110, 184, 209};
+        color_map["TMJ"] = vector<int>{100, 0, 0};
 
         printf("constructor\n");
         for (int i = 0; i < number_of_edt; i++)
         {
             printf("loading %d edt\n", i);
-            EdtContainer cont(edt_paths[i], edt_names[i]);
+            EdtContainer cont(edt_paths[i], edt_names[i], color_map[edt_names[i]]);
+
             list[i] = cont;
         }
     }
