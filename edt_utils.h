@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iterator>
 
-#define number_of_edt 3
+#define number_of_edt 5
 
 using std::string;
 using std::vector;
@@ -61,11 +61,15 @@ public:
 
 std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
                                         "./edt_grids/Sinus_+_Dura.edt",
-                                        "./edt_grids/TMJ.edt"};
+                                        "./edt_grids/TMJ.edt",
+                                        "./edt_grids/EAC.edt",
+                                        "./edt_grids/ICA.edt"};
 
 std::string edt_names[number_of_edt] = {"IAC",
                                         "Sinus_+_Dura",
-                                        "TMJ"};
+                                        "TMJ",
+                                        "EAC",
+                                        "ICA"};
 // Save colors
 class EdtList
 {
@@ -78,6 +82,8 @@ public:
         color_map["IAC"] = vector<int>{244, 142, 52};
         color_map["Sinus_+_Dura"] = vector<int>{110, 184, 209};
         color_map["TMJ"] = vector<int>{100, 0, 0};
+        color_map["EAC"] = vector<int>{255, 225, 214};
+        color_map["ICA"] = vector<int>{216, 100, 79};
 
         printf("constructor\n");
         for (int i = 0; i < number_of_edt; i++)

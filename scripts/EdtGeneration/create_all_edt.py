@@ -17,7 +17,7 @@ anatomy_dict = {
     "Sinus_+_Dura": "110 184 209",  # blue structure
     "Vestibular_Aqueduct": "91 98 123",
     "TMJ": "100 0 0",  # dark red structure
-    "EAC": "255 225 214",
+    "EAC": "255 225 214",  # Other big structure in the front
 }
 
 if __name__ == "__main__":
