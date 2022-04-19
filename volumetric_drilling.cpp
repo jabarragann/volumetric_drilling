@@ -511,60 +511,42 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     {
 
         // cout << "EDT working ..." << endl;
-        edtres = 171;
-        index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * edtres);
-        index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * edtres);
-        index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * edtres);
+        unsigned int res[3];
+        edt_list.list[0].get_resolution(res);
+        index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * res[0]);
+        index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * res[1]);
+        index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * res[2]);
         // cout << index_x << "," << index_y << "," << index_z << endl;
 
-        edt_list.list[0].m_dist_object = (*(edt_list.list[0].edt_grid))(index_x, index_y, index_z);
-        edt_list.list[1].m_dist_object = (*(edt_list.list[1].edt_grid))(index_x, index_y, index_z);
-        edt_list.list[2].m_dist_object = (*(edt_list.list[2].edt_grid))(index_x, index_y, index_z);
 
         std::string min_name = "XXX";
         double min_distance = 1000;
         int min_index;
-        double r, g, b;
-        for (int i = 0; i < 3; i++)
+        unsigned int min_color[3];
+        for (int i = 0; i < 5; i++)
         {
-            double curr_distance = edt_list.list[i].m_dist_object;
+            edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);;
 
-            if (min_distance > curr_distance)
+            if (min_distance > edt_list.list[i].m_dist_object)
             {
 
-                min_distance = curr_distance;
+                min_distance = edt_list.list[i].m_dist_object;
                 min_name = edt_list.list[i].name;
                 min_index = i;
-
-                if (min_name == "Sinus_+_Dura")
-                {
-                    r = 110.0 / 255.0;
-                    g = 184.0 / 255.0;
-                    b = 209.0 / 255.0;
-                };
-                if (min_name == "IAC")
-                {
-                    r = 244 / 255.0;
-                    g = 142.0 / 255.0;
-                    b = 52.0 / 255.0;
-                };
-                if (min_name == "TMJ")
-                {
-                    r = 100 / 255.0;
-                    g = 0.0;
-                    b = 0.0;
-                };
+                min_color[0] = edt_list.list[i].rgb[0];
+                min_color[1] = edt_list.list[i].rgb[1];
+                min_color[2] = edt_list.list[i].rgb[2];
             }
         }
 
         // cout << "burr_size:" << m_currDrillSize << endl;
-        m_distanceText->m_fontColor.set(r, g, b);
+        m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
         m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
 
         // Check whether it is not on the boundary
-        if (1 < index_x && index_x < edtres - 1 &&
-            1 < index_y && index_y < edtres - 1 &&
-            1 < index_z && index_z < 169 - 1)
+        if (1 < index_x && index_x < res[0] - 1 &&
+            1 < index_y && index_y < res[1] - 1 &&
+            1 < index_z && index_z < res[2] - 1)
         {
 
             cVector3d force_dir;
