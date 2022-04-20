@@ -162,6 +162,8 @@ private:
     cAudioBuffer* m_drillAudioBuffer = nullptr; //Added for audio
     cAudioDevice* m_drillAudioDevice = nullptr; //Added for audio
 
+    bool m_flag_sdf = true;
+
     // current and maximum distance between proxy and goal spheres
     double m_currError = 0;
     double m_maxError = 0;

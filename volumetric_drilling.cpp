@@ -255,8 +255,10 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     //********************
 
     arrow_force = new cMesh();
-    cCreateArrow(arrow_force, 0.1, 0.01, 0.05, 0.015,
+    if(m_flag_sdf){
+        cCreateArrow(arrow_force, 0.1, 0.01, 0.05, 0.015,
                 false, 32, cVector3d(1,0,0), cVector3d(0,0,0));
+    }
 
     m_worldPtr->addSceneObjectToWorld(arrow_force);
 
@@ -528,11 +530,11 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
 
             //*************************
-            // Audio 
+            // Audio Playing
             //*************************
             if (m_drillAudioSource){
 
-                if (min_distance - m_currDrillSize < 3.0){
+                if (min_distance - m_currDrillSize < 3.0 && m_flag_sdf){
                     //m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
                     m_drillAudioSource->play();
                 }
@@ -557,14 +559,16 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
     
-    if(force.x() > 0.0 && force_new.x() > 0.0){
-
-        // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
-        // cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
+    if (m_flag_sdf == false){
+        m_distanceText->setText("SDF assistance disabled");
+        force_edt.set(0, 0, 0);
+        arrow_force->clear();
 
     }
+    
     force = force + force_new;
-    m_toolCursorList[0]->setDeviceLocalForce(force_new);
+    
+    m_toolCursorList[0]->setDeviceLocalForce(force);
 
     if (m_flagStart)
     {
@@ -992,6 +996,16 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         {
             cerr << "INFO! RESETTING THE VOLUME" << endl;
             m_volumeObject->reset();
+        }
+
+
+        else if (a_key == GLFW_KEY_F)
+        {
+
+            cout << "Changed the SDF mode" << endl;
+            m_flag_sdf = m_flag_sdf -1;
+            cout << m_flag_sdf << endl;
+
         }
     }
     else
