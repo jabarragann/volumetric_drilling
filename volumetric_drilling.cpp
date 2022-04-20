@@ -270,13 +270,14 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_mainCamera->getInternalCamera()->attachAudioDevice(m_drillAudioDevice);
 
     m_drillAudioBuffer = new cAudioBuffer();
-    string drillAudioFilepath = "resources/sounds/beep-18.wav";
+    string drillAudioFilepath = "resources/sounds/beep-07a.wav";
+    // string drillAudioFilepath = "resources/sounds/fail-buzzer-04.wav";
     if (m_drillAudioBuffer->loadFromFile(drillAudioFilepath)){
         m_drillAudioSource = new cAudioSource();
 //        m_drillAudioBuffer->convertToMono();
         m_drillAudioSource->setAudioBuffer(m_drillAudioBuffer);
         m_drillAudioSource->setLoop(true);
-        m_drillAudioSource->setGain(2.0);
+        // m_drillAudioSource->setGain(2.0);
         // m_drillAudioSource->play();
     }
     else{
@@ -459,7 +460,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
         // cout << "burr_size:" << m_currDrillSize << endl;
         m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
-        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
+        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - 2 * m_currDrillSize) + " mm\n");
 
         // Check whether it is not on the boundary
         if (1 < index_x && index_x < res[0] - 1 &&
@@ -475,18 +476,18 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             force_dir.normalize();
             // Frame transformation(Object -> World )
 
-            double max_force = 0.8; // in N
+            double max_force = 1.5; // in N
             double offset = 5.0;    // offset in mm
 
             // double a =max_force;// constant
             // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
 
             double a = 0.0;
-            if (min_distance - m_currDrillSize < offset)
+            if (min_distance - 2 * m_currDrillSize < offset)
             {
                 // a = max_force; // constant
                 // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-                a = max_force * (1 - (min_distance - m_currDrillSize) / offset) ;//Linear
+                a = max_force * (1 - (min_distance - 2 * m_currDrillSize) / offset) ;//Linear
             }
 
             //cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
@@ -534,7 +535,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             //*************************
             if (m_drillAudioSource){
 
-                if (min_distance - m_currDrillSize < 3.0 && m_flag_sdf){
+                if (min_distance - 2 * m_currDrillSize < 3.0 && m_flag_sdf){
                     //m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
                     m_drillAudioSource->play();
                 }
@@ -557,7 +558,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // check if device remains stuck inside voxel object
     // Also orient the force to match the camera rotation
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
-    cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
     
     if (m_flag_sdf == false){
         m_distanceText->setText("SDF assistance disabled");
@@ -565,10 +565,11 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         arrow_force->clear();
 
     }
+    cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
     
     force = force + force_new;
     
-    m_toolCursorList[0]->setDeviceLocalForce(force);
+    m_toolCursorList[0]->setDeviceLocalForce(force_new);
 
     if (m_flagStart)
     {
