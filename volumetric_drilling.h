@@ -156,6 +156,8 @@ private:
     vector<double> force_direction{0, 0, 0};
     cVector3d force_edt;
 
+    cMesh* arrow_force;
+
     // current and maximum distance between proxy and goal spheres
     double m_currError = 0;
     double m_maxError = 0;

@@ -250,6 +250,17 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
            this->edt_list.list[0].rgb[0], this->edt_list.list[0].rgb[1], this->edt_list.list[0].rgb[2]);
     printf("resolution: %d %d %d\n", res[0], res[1], res[2]);
 
+    //*********************
+    // Force arrow 
+    //********************
+
+    arrow_force = new cMesh();
+    cCreateArrow(arrow_force, 0.1, 0.01, 0.05, 0.015,
+                false, 32, cVector3d(1,0,0), cVector3d(0,0,0));
+
+    m_worldPtr->addSceneObjectToWorld(arrow_force);
+
+
     return 1;
 }
 
@@ -267,6 +278,7 @@ void afVolmetricDrillingPlugin::graphicsUpdate()
         ((cTexture3d *)m_voxelObj->m_texture.get())->markForPartialUpdate(min, max);
         m_flagMarkVolumeForUpdate = false;
     }
+    arrow_force->setLocalPos(T_d.getLocalPos());
 }
 
 void afVolmetricDrillingPlugin::physicsUpdate(double dt)
@@ -360,16 +372,276 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_toolCursorList[i]->computeInteractionForces();
     }
 
+    // // check if device remains stuck inside voxel object
+    // // Also orient the force to match the camera rotation
+    // cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
+    // cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
+    
+    // if(force.x() > 0.0 && force_new.x() > 0.0){
+
+    //     cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
+    //     cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
+
+    // }
+    // force = force + force_new;
+    // m_toolCursorList[0]->setDeviceLocalForce(force_new);
+
+    // if (m_flagStart)
+    // {
+    //     if (force.length() != 0.0)
+    //     {
+
+    //         m_toolCursorList[0]->initialize();
+    //         m_counter = 0;
+    //     }
+    //     else
+    //     {
+    //         m_counter++;
+    //         if (m_counter > 10)
+    //             m_flagStart = false;
+    //     }
+    // }
+    // else
+    // {
+    //     if (force.length() > 10.0)
+    //     {
+    //         m_flagStart = true;
+    //     }
+    // }
+
+    // /////////////////////////////////////////////////////////////////////////
+    // // MANIPULATION
+    // /////////////////////////////////////////////////////////////////////////
+
+    // // compute transformation from world to tool (haptic device)
+    // cTransform world_T_tool = m_toolCursorList[0]->getDeviceLocalTransform();
+
+    // // get status of user switch
+    // bool button = m_toolCursorList[0]->getUserSwitch(1);
+    // //
+    // // STATE 1:
+    // // Idle mode - user presses the user switch
+    // //
+    // if ((m_controlMode == HAPTIC_IDLE) && (button == true))
+    // {
+    //     // check if at least one contact has occurred
+    //     if (m_toolCursorList[0]->m_hapticPoint->getNumCollisionEvents() > 0)
+    //     {
+    //         // get contact event
+    //         cCollisionEvent *collisionEvent = m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
+
+    //         // get object from contact event
+    //         m_selectedObject = collisionEvent->m_object;
+    //     }
+    //     else
+    //     {
+    //         m_selectedObject = m_voxelObj;
+    //     }
+
+    //     // get transformation from object
+    //     cTransform world_T_object = m_selectedObject->getLocalTransform();
+
+    //     // compute inverse transformation from contact point to object
+    //     cTransform tool_T_world = world_T_tool;
+    //     tool_T_world.invert();
+
+    //     // store current transformation tool
+    //     m_tool_T_object = tool_T_world * world_T_object;
+
+    //     // update state
+    //     m_controlMode = HAPTIC_SELECTION;
+    // }
+
+    // //
+    // // STATE 2:
+    // // Selection mode - operator maintains user switch enabled and moves object
+    // //
+    // else if ((m_controlMode == HAPTIC_SELECTION) && (button == true))
+    // {
+    //     // compute new transformation of object in global coordinates
+    //     cTransform world_T_object = world_T_tool * m_tool_T_object;
+
+    //     // compute new transformation of object in local coordinates
+    //     cTransform parent_T_world = m_selectedObject->getParent()->getLocalTransform();
+    //     parent_T_world.invert();
+    //     cTransform parent_T_object = parent_T_world * world_T_object;
+
+    //     // assign new local transformation to object
+    //     if (m_selectedObject == m_voxelObj)
+    //     {
+    //         m_volumeObject->setLocalTransform(parent_T_object);
+    //     }
+
+    //     // set zero forces when manipulating objects
+    //     m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
+
+    //     m_toolCursorList[0]->initialize();
+    // }
+
+    // //
+    // // STATE 3:
+    // // Finalize Selection mode - operator releases user switch.
+    // //
+    // else
+    // {
+    //     m_controlMode = HAPTIC_IDLE;
+    // }
+
+    // /////////////////////////////////////////////////////////////////////////
+    // // FINALIZE
+    // /////////////////////////////////////////////////////////////////////////
+
+    // // send forces to haptic device
+    // if (getOverrideDrillControl() == false)
+    // {
+    //     m_toolCursorList[0]->applyToDevice();
+    // }
+
+    ////////////////////////////////////////////////////////////////////////
+    // EDT calculation
+    ////////////////////////////////////////////////////////////////////////
+
+    // Tool tip location in world frame
+    //  cout << "Tool frame position(in world frame)" << endl;
+    //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
+
+    // Tool tip location in world frame
+    //  cout << "Tool frame position(in world frame)" << endl;
+    //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
+
+    // Object frame location in world frame
+    //  cout << "Object frame position(in world frame)" << endl;
+    //  cout<< m_voxelObj->getLocalPos().x() << ", "<< m_voxelObj->getLocalPos().y() << ", "<< m_voxelObj->getLocalPos().z() << endl;
+
+    cTransform world_T_voxel = m_voxelObj->getLocalTransform();
+    world_T_voxel.invert();
+
+    cTransform voxel_T_tool = world_T_voxel * T_d;
+
+    // cout << "Tool frame position(in voxel frame)" << endl;
+    // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
+
+    // check wether the tool is inside the voxel
+    if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5)
+    {
+
+        // cout << "EDT working ..." << endl;
+        unsigned int res[3];
+        edt_list.list[0].get_resolution(res);
+        index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * res[0]);
+        index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * res[1]);
+        index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * res[2]);
+        //cout << index_x << "," << index_y << "," << index_z << endl;
+
+
+        std::string min_name = "XXX";
+        double min_distance = 1000;
+        int min_index;
+        unsigned int min_color[3];
+        for (int i = 0; i < 5; i++)
+        {
+            edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);;
+
+            if (min_distance > edt_list.list[i].m_dist_object)
+            {
+
+                min_distance = edt_list.list[i].m_dist_object;
+                min_name = edt_list.list[i].name;
+                min_index = i;
+                min_color[0] = edt_list.list[i].rgb[0];
+                min_color[1] = edt_list.list[i].rgb[1];
+                min_color[2] = edt_list.list[i].rgb[2];
+            }
+        }
+
+        // cout << "burr_size:" << m_currDrillSize << endl;
+        m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
+        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
+
+        // Check whether it is not on the boundary
+        if (1 < index_x && index_x < res[0] - 1 &&
+            1 < index_y && index_y < res[1] - 1 &&
+            1 < index_z && index_z < res[2] - 1)
+        {
+
+            cVector3d force_dir;
+            force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x + 1, index_y, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x - 1, index_y, index_z)),
+                          ((*(edt_list.list[min_index].edt_grid))(index_x, index_y + 1, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y - 1, index_z)),
+                          ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z + 1)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z - 1)));
+
+            force_dir.normalize();
+            // Frame transformation(Object -> World )
+
+            double max_force = 0.8; // in N
+            double offset = 5.0;    // offset in mm
+
+            // double a =max_force;// constant
+            // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
+
+            double a = 0.0;
+            if (min_distance - m_currDrillSize < offset)
+            {
+                // a = max_force; // constant
+                // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
+                a = max_force * (1 - (min_distance - m_currDrillSize) / offset) ;//Linear
+            }
+
+            //cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
+
+            double force_thres = 1.0;
+            // if (a > force_thres)
+            // {
+            //     a = force_thres;
+            // };
+            // if (a < -force_thres)
+            // {
+            //     a = -force_thres;
+            // };
+
+            // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
+
+
+            // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
+            force_edt.set(-a * force_dir.y(), - a * force_dir.z(), -a * force_dir.x());
+
+
+            cVector3d z;
+            z.set(1,0,0);
+            cMatrix3d rot;
+            cVector3d axis;
+            z.crossr(force_edt, axis);
+
+            double dp;
+            dp = force_edt.dot(z);
+
+            rot.setAxisAngleRotationRad(axis, acos(dp));
+
+            arrow_force->setLocalRot(rot);
+
+        }
+    }
+    // When it is out of boundary;
+    else
+    {
+        m_distanceText->m_fontColor.setRed();
+        m_distanceText->setText("Distance: Out of boundary!!");
+        force_edt.set(0, 0, 0);
+        //arrow_force->clear();
+
+    }
     // check if device remains stuck inside voxel object
     // Also orient the force to match the camera rotation
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
-    // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
-    force = force + force_new;
-    m_toolCursorList[0]->setDeviceLocalForce(force);
+    
+    if(force.x() > 0.0 && force_new.x() > 0.0){
 
-    // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
-    // cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
+        // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
+        // cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
+
+    }
+    force = force + force_new;
+    m_toolCursorList[0]->setDeviceLocalForce(force_new);
 
     if (m_flagStart)
     {
@@ -482,117 +754,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_toolCursorList[0]->applyToDevice();
     }
 
-    ////////////////////////////////////////////////////////////////////////
-    // EDT calculation
-    ////////////////////////////////////////////////////////////////////////
-
-    // Tool tip location in world frame
-    //  cout << "Tool frame position(in world frame)" << endl;
-    //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
-
-    // Tool tip location in world frame
-    //  cout << "Tool frame position(in world frame)" << endl;
-    //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
-
-    // Object frame location in world frame
-    //  cout << "Object frame position(in world frame)" << endl;
-    //  cout<< m_voxelObj->getLocalPos().x() << ", "<< m_voxelObj->getLocalPos().y() << ", "<< m_voxelObj->getLocalPos().z() << endl;
-
-    cTransform world_T_voxel = m_voxelObj->getLocalTransform();
-    world_T_voxel.invert();
-
-    cTransform voxel_T_tool = world_T_voxel * T_d;
-
-    // cout << "Tool frame position(in voxel frame)" << endl;
-    // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
-
-    // check wether the tool is inside the voxel
-    if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5)
-    {
-
-        // cout << "EDT working ..." << endl;
-        unsigned int res[3];
-        edt_list.list[0].get_resolution(res);
-        index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * res[0]);
-        index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * res[1]);
-        index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * res[2]);
-        // cout << index_x << "," << index_y << "," << index_z << endl;
-
-
-        std::string min_name = "XXX";
-        double min_distance = 1000;
-        int min_index;
-        unsigned int min_color[3];
-        for (int i = 0; i < 5; i++)
-        {
-            edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);;
-
-            if (min_distance > edt_list.list[i].m_dist_object)
-            {
-
-                min_distance = edt_list.list[i].m_dist_object;
-                min_name = edt_list.list[i].name;
-                min_index = i;
-                min_color[0] = edt_list.list[i].rgb[0];
-                min_color[1] = edt_list.list[i].rgb[1];
-                min_color[2] = edt_list.list[i].rgb[2];
-            }
-        }
-
-        // cout << "burr_size:" << m_currDrillSize << endl;
-        m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
-        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
-
-        // Check whether it is not on the boundary
-        if (1 < index_x && index_x < res[0] - 1 &&
-            1 < index_y && index_y < res[1] - 1 &&
-            1 < index_z && index_z < res[2] - 1)
-        {
-
-            cVector3d force_dir;
-            force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x + 1, index_y, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x - 1, index_y, index_z)),
-                          ((*(edt_list.list[min_index].edt_grid))(index_x, index_y + 1, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y - 1, index_z)),
-                          ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z + 1)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z - 1)));
-
-            force_dir.normalize();
-            // Frame transformation(Object -> World )
-
-            double max_force = 0.5; // in N
-            double offset = 5.0;    // offset in mm
-
-            // double a =max_force;// constant
-            // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-
-            double a;
-            if (min_distance < offset)
-            {
-                a = max_force; // constant
-                // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-                // a = max_force * (1 - (min_distance - m_currDrillSize) / offset) ;//Linear
-            }
-
-            // cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
-
-            double force_thres = 1.0;
-            if (a > force_thres)
-            {
-                a = force_thres;
-            };
-            if (a < -force_thres)
-            {
-                a + -force_thres;
-            };
-
-            force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
-        }
-    }
-    // When it is out of boundary;
-    else
-    {
-        m_distanceText->m_fontColor.setRed();
-        m_distanceText->setText("Distance: Out of boundary!!");
-        force_edt.set(0, 0, 0);
-    }
 }
 
 ///
