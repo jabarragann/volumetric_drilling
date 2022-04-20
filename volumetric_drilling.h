@@ -158,6 +158,10 @@ private:
 
     cMesh* arrow_force;
 
+    cAudioSource* m_drillAudioSource = nullptr; //Added for audio
+    cAudioBuffer* m_drillAudioBuffer = nullptr; //Added for audio
+    cAudioDevice* m_drillAudioDevice = nullptr; //Added for audio
+
     // current and maximum distance between proxy and goal spheres
     double m_currError = 0;
     double m_maxError = 0;

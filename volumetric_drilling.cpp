@@ -260,6 +260,32 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     m_worldPtr->addSceneObjectToWorld(arrow_force);
 
+    //*******************
+    // Audio Loading
+    //*******************
+
+    m_drillAudioDevice = new cAudioDevice();
+    m_mainCamera->getInternalCamera()->attachAudioDevice(m_drillAudioDevice);
+
+    m_drillAudioBuffer = new cAudioBuffer();
+    string drillAudioFilepath = "resources/sounds/beep-18.wav";
+    if (m_drillAudioBuffer->loadFromFile(drillAudioFilepath)){
+        m_drillAudioSource = new cAudioSource();
+//        m_drillAudioBuffer->convertToMono();
+        m_drillAudioSource->setAudioBuffer(m_drillAudioBuffer);
+        m_drillAudioSource->setLoop(true);
+        m_drillAudioSource->setGain(2.0);
+        // m_drillAudioSource->play();
+    }
+    else{
+        delete m_drillAudioSource;
+        delete m_drillAudioBuffer;
+        m_drillAudioSource = nullptr;
+        m_drillAudioBuffer = nullptr;
+        cerr << "FAILED TO LOAD DRILL AUDIO FROM " << drillAudioFilepath << endl;
+    }
+
+
 
     return 1;
 }
@@ -372,131 +398,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_toolCursorList[i]->computeInteractionForces();
     }
 
-    // // check if device remains stuck inside voxel object
-    // // Also orient the force to match the camera rotation
-    // cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
-    // cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
-    
-    // if(force.x() > 0.0 && force_new.x() > 0.0){
-
-    //     cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
-    //     cout << "EDT Force direction: " << force_new.x() << "," << force_new.y() << "," << force_new.z() << endl;
-
-    // }
-    // force = force + force_new;
-    // m_toolCursorList[0]->setDeviceLocalForce(force_new);
-
-    // if (m_flagStart)
-    // {
-    //     if (force.length() != 0.0)
-    //     {
-
-    //         m_toolCursorList[0]->initialize();
-    //         m_counter = 0;
-    //     }
-    //     else
-    //     {
-    //         m_counter++;
-    //         if (m_counter > 10)
-    //             m_flagStart = false;
-    //     }
-    // }
-    // else
-    // {
-    //     if (force.length() > 10.0)
-    //     {
-    //         m_flagStart = true;
-    //     }
-    // }
-
-    // /////////////////////////////////////////////////////////////////////////
-    // // MANIPULATION
-    // /////////////////////////////////////////////////////////////////////////
-
-    // // compute transformation from world to tool (haptic device)
-    // cTransform world_T_tool = m_toolCursorList[0]->getDeviceLocalTransform();
-
-    // // get status of user switch
-    // bool button = m_toolCursorList[0]->getUserSwitch(1);
-    // //
-    // // STATE 1:
-    // // Idle mode - user presses the user switch
-    // //
-    // if ((m_controlMode == HAPTIC_IDLE) && (button == true))
-    // {
-    //     // check if at least one contact has occurred
-    //     if (m_toolCursorList[0]->m_hapticPoint->getNumCollisionEvents() > 0)
-    //     {
-    //         // get contact event
-    //         cCollisionEvent *collisionEvent = m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
-
-    //         // get object from contact event
-    //         m_selectedObject = collisionEvent->m_object;
-    //     }
-    //     else
-    //     {
-    //         m_selectedObject = m_voxelObj;
-    //     }
-
-    //     // get transformation from object
-    //     cTransform world_T_object = m_selectedObject->getLocalTransform();
-
-    //     // compute inverse transformation from contact point to object
-    //     cTransform tool_T_world = world_T_tool;
-    //     tool_T_world.invert();
-
-    //     // store current transformation tool
-    //     m_tool_T_object = tool_T_world * world_T_object;
-
-    //     // update state
-    //     m_controlMode = HAPTIC_SELECTION;
-    // }
-
-    // //
-    // // STATE 2:
-    // // Selection mode - operator maintains user switch enabled and moves object
-    // //
-    // else if ((m_controlMode == HAPTIC_SELECTION) && (button == true))
-    // {
-    //     // compute new transformation of object in global coordinates
-    //     cTransform world_T_object = world_T_tool * m_tool_T_object;
-
-    //     // compute new transformation of object in local coordinates
-    //     cTransform parent_T_world = m_selectedObject->getParent()->getLocalTransform();
-    //     parent_T_world.invert();
-    //     cTransform parent_T_object = parent_T_world * world_T_object;
-
-    //     // assign new local transformation to object
-    //     if (m_selectedObject == m_voxelObj)
-    //     {
-    //         m_volumeObject->setLocalTransform(parent_T_object);
-    //     }
-
-    //     // set zero forces when manipulating objects
-    //     m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
-
-    //     m_toolCursorList[0]->initialize();
-    // }
-
-    // //
-    // // STATE 3:
-    // // Finalize Selection mode - operator releases user switch.
-    // //
-    // else
-    // {
-    //     m_controlMode = HAPTIC_IDLE;
-    // }
-
-    // /////////////////////////////////////////////////////////////////////////
-    // // FINALIZE
-    // /////////////////////////////////////////////////////////////////////////
-
-    // // send forces to haptic device
-    // if (getOverrideDrillControl() == false)
-    // {
-    //     m_toolCursorList[0]->applyToDevice();
-    // }
-
     ////////////////////////////////////////////////////////////////////////
     // EDT calculation
     ////////////////////////////////////////////////////////////////////////
@@ -604,19 +505,41 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
             force_edt.set(-a * force_dir.y(), - a * force_dir.z(), -a * force_dir.x());
 
+            //*********************
+            // Force Vector
+            //*********************
 
-            cVector3d z;
-            z.set(1,0,0);
+            //Set x axis
+            cVector3d x;
+            x.set(1,0,0);
             cMatrix3d rot;
             cVector3d axis;
-            z.crossr(force_edt, axis);
 
+            //Get rotation axis
+            x.crossr(force_edt, axis);
+
+            //Get dot product for the rotation angle
             double dp;
-            dp = force_edt.dot(z);
+            dp = force_edt.dot(x);
 
             rot.setAxisAngleRotationRad(axis, acos(dp));
 
             arrow_force->setLocalRot(rot);
+
+
+            //*************************
+            // Audio 
+            //*************************
+            if (m_drillAudioSource){
+
+                if (min_distance - m_currDrillSize < 3.0){
+                    //m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
+                    m_drillAudioSource->play();
+                }
+                else{
+                    m_drillAudioSource->stop();
+                }
+            }
 
         }
     }
@@ -1344,7 +1267,18 @@ bool afVolmetricDrillingPlugin::close()
     {
         tool->stop();
     }
-
+    //Audio related deconstructor
+    if (m_drillAudioSource){
+        delete m_drillAudioSource;
+    }
+    if (m_drillAudioBuffer){
+        delete m_drillAudioBuffer;
+    }
+    if (m_drillAudioDevice){
+        m_mainCamera->getInternalCamera()->detachAudioDevice();
+        delete m_drillAudioDevice;
+    }
+    
     delete m_deviceHandler;
 
     return true;
