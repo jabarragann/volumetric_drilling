@@ -270,7 +270,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_mainCamera->getInternalCamera()->attachAudioDevice(m_drillAudioDevice);
 
     m_drillAudioBuffer = new cAudioBuffer();
-    string drillAudioFilepath = "resources/sounds/beep-07a.wav";
+    string drillAudioFilepath = "resources/sounds/beep-18.wav";
     // string drillAudioFilepath = "resources/sounds/fail-buzzer-04.wav";
     if (m_drillAudioBuffer->loadFromFile(drillAudioFilepath)){
         m_drillAudioSource = new cAudioSource();
@@ -400,6 +400,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     {
         m_toolCursorList[i]->computeInteractionForces();
     }
+    
 
     ////////////////////////////////////////////////////////////////////////
     // EDT calculation
@@ -426,9 +427,9 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
 
     // check wether the tool is inside the voxel
+
     if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5)
     {
-
         // cout << "EDT working ..." << endl;
         unsigned int res[3];
         edt_list.list[0].get_resolution(res);
@@ -442,10 +443,14 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         double min_distance = 1000;
         int min_index;
         unsigned int min_color[3];
-        for (int i = 0; i < 5; i++)
-        {
-            edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);;
 
+        
+        for (int i = 0; i < 15; i++)
+        {   
+            cout << i << endl;
+            edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);;
+            
+            cout << edt_list.list[i].m_dist_object << endl;
             if (min_distance > edt_list.list[i].m_dist_object)
             {
 
@@ -457,7 +462,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
                 min_color[2] = edt_list.list[i].rgb[2];
             }
         }
-
         // cout << "burr_size:" << m_currDrillSize << endl;
         m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
         m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - 2 * m_currDrillSize) + " mm\n");
@@ -467,7 +471,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             1 < index_y && index_y < res[1] - 1 &&
             1 < index_z && index_z < res[2] - 1)
         {
-
+            cout << "Force" << endl;
             cVector3d force_dir;
             force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x + 1, index_y, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x - 1, index_y, index_z)),
                           ((*(edt_list.list[min_index].edt_grid))(index_x, index_y + 1, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y - 1, index_z)),
@@ -475,7 +479,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
             force_dir.normalize();
             // Frame transformation(Object -> World )
-
+            cout << "Force dircetion finished" << endl;
             double max_force = 1.5; // in N
             double offset = 5.0;    // offset in mm
 

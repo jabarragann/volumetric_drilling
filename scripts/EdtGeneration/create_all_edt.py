@@ -22,8 +22,12 @@ anatomy_dict = {
 
 if __name__ == "__main__":
 
+
+
     edtexec_p = Path("./../EDT/cmake-build/bin/EDTFromGrid")
-    imglist_p = Path("./resources/volumes/ear3_171/ear3_171.txt")
+    # imglist_p = Path("./resources/volumes/ear3_171/ear3_171.txt")
+    # imglist_p = Path("./resources/volumes/ear3_256/ear3_256.txt")
+    imglist_p = Path("./resources/volumes/ear3_512/ear3_512.txt")
 
     os.system("echo Hello from the other side!")
     os.system("ls")

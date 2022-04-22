@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iterator>
 
-#define number_of_edt 5
+#define number_of_edt 15
 
 using std::string;
 using std::vector;
@@ -63,13 +63,37 @@ std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
                                         "./edt_grids/Sinus_+_Dura.edt",
                                         "./edt_grids/TMJ.edt",
                                         "./edt_grids/EAC.edt",
-                                        "./edt_grids/ICA.edt"};
+                                        "./edt_grids/ICA.edt",
+                                        "./edt_grids/Malleus.edt",
+                                        "./edt_grids/Incus.edt",
+                                        "./edt_grids/Stapes.edt",
+                                        "./edt_grids/Bony_Labyrinth.edt",
+                                        "./edt_grids/Superior_Vestibular_Nerve.edt",
+                                        "./edt_grids/Inferior_Vestibular_Nerve.edt",
+                                        "./edt_grids/Cochlear_Nerve.edt",
+                                        "./edt_grids/Facial_Nerve.edt",
+                                        "./edt_grids/Chorda_Tympani.edt",
+                                        "./edt_grids/Vestibular_Aqueduct.edt"};
+                                        // "./edt_grids/Bone.edt"};
 
 std::string edt_names[number_of_edt] = {"IAC",
-                                        "Sinus_+_Dura",
+                                        "Dura",
                                         "TMJ",
                                         "EAC",
-                                        "ICA"};
+                                        "ICA",
+                                        "Malleus",
+                                        "Incus",
+                                        "Stapes",
+                                        "Bony_Labyrinth",
+                                        "Superior_Vestibular_Nerve",
+                                        "Inferior_Vestibular_Nerve",
+                                        "Cochlear_Nerve",
+                                        "Facial_Nerve",
+                                        "Chorda_Tympani",
+                                        "Vestibular_Aqueduct"};
+                                        // "Bone"};
+
+
 // Save colors
 class EdtList
 {
@@ -80,10 +104,22 @@ public:
     EdtList()
     {
         color_map["IAC"] = vector<int>{244, 142, 52};
-        color_map["Sinus_+_Dura"] = vector<int>{110, 184, 209};
+        color_map["Dura"] = vector<int>{110, 184, 209};
         color_map["TMJ"] = vector<int>{100, 0, 0};
         color_map["EAC"] = vector<int>{255, 225, 214};
         color_map["ICA"] = vector<int>{216, 100, 79};
+        color_map["Malleus"] = vector<int>{233, 0, 255};
+        color_map["Incus"] = vector<int>{0, 255, 149};
+        color_map["Stapes"] = vector<int>{63, 0, 255};
+        color_map["Bony_Labyrinth"] = vector<int>{91, 123, 91};
+        color_map["Superior_Vestibular_Nerve"] = vector<int>{255, 191, 135};
+        color_map["Inferior_Vestibular_Nerve"] = vector<int>{121, 70, 24};
+        color_map["Cochlear_Nerve"] = vector<int>{219, 244, 52};
+        color_map["Facial_Nerve"] = vector<int>{244, 214, 49};
+        color_map["Chorda_Tympani"] = vector<int>{151, 131, 29};
+        color_map["Vestibular_Aqueduct"] = vector<int>{91, 98, 123};
+        // color_map["Bone"] = vector<int>{255, 249, 219};//16
+        
 
         printf("constructor\n");
         for (int i = 0; i < number_of_edt; i++)
