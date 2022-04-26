@@ -95,7 +95,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_worldPtr = a_afWorld;
 
     // Get first camera
-    m_mainCamera = m_worldPtr->getCameras()[0];
+    m_mainCamera = m_worldPtr->getCameras()[1];
 
     // Initializing tool's rotation matrix as an identity matrix
     m_toolRotMat.identity();
@@ -212,7 +212,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
 
     m_distanceText = new cLabel(font);
-    m_distanceText->setLocalPos(20, 400);
+    m_distanceText->setLocalPos(800, 700);
+    // m_distanceText->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
     m_distanceText->m_fontColor.set(1.0, 1.0, 1.0);
     m_distanceText->setFontScale(.75);
     m_distanceText->setText("/Bone distance: " + cStr(0.0) + " mm\n" + "/Bone distance: " + cStr(0.0) + "/Bone distance: " + cStr(0.0));
@@ -251,7 +252,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     printf("resolution: %d %d %d\n", res[0], res[1], res[2]);
 
     //*********************
-    // Force arrow 
+    // Force arrow
     //********************
 
     arrow_force = new cMesh();
@@ -400,7 +401,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     {
         m_toolCursorList[i]->computeInteractionForces();
     }
-    
+
 
     ////////////////////////////////////////////////////////////////////////
     // EDT calculation
@@ -444,13 +445,10 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         int min_index;
         unsigned int min_color[3];
 
-        
+
         for (int i = 0; i < 15; i++)
-        {   
-            cout << i << endl;
-            edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);;
-            
-            cout << edt_list.list[i].m_dist_object << endl;
+        {
+            edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);
             if (min_distance > edt_list.list[i].m_dist_object)
             {
 
@@ -471,7 +469,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             1 < index_y && index_y < res[1] - 1 &&
             1 < index_z && index_z < res[2] - 1)
         {
-            cout << "Force" << endl;
             cVector3d force_dir;
             force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x + 1, index_y, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x - 1, index_y, index_z)),
                           ((*(edt_list.list[min_index].edt_grid))(index_x, index_y + 1, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y - 1, index_z)),
@@ -479,7 +476,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
             force_dir.normalize();
             // Frame transformation(Object -> World )
-            cout << "Force dircetion finished" << endl;
             double max_force = 1.5; // in N
             double offset = 5.0;    // offset in mm
 
@@ -562,7 +558,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // check if device remains stuck inside voxel object
     // Also orient the force to match the camera rotation
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
-    
+
     if (m_flag_sdf == false){
         m_distanceText->setText("SDF assistance disabled");
         force_edt.set(0, 0, 0);
@@ -570,9 +566,9 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     }
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
-    
+
     force = force + force_new;
-    
+
     m_toolCursorList[0]->setDeviceLocalForce(force_new);
 
     if (m_flagStart)
@@ -1297,7 +1293,7 @@ bool afVolmetricDrillingPlugin::close()
         m_mainCamera->getInternalCamera()->detachAudioDevice();
         delete m_drillAudioDevice;
     }
-    
+
     delete m_deviceHandler;
 
     return true;

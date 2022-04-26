@@ -14,7 +14,7 @@ stereoLR:
   look at: {x: -1.0, y: 0.0, z: 0.0}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 6.040592783505154, far: 1006.7654639175257}
-  field view angle: 0.0959263737541534
+  field view angle: 0.759263737541534
   monitor: 2
   stereo: {mode: Passive, eye separation: 0.13, focal length: 0.8}
   # multipass: true
