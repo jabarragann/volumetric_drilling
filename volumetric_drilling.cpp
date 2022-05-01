@@ -546,74 +546,75 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     // get status of user switch
     bool button = m_toolCursorList[0]->getUserSwitch(1);
-    //
-    // STATE 1:
-    // Idle mode - user presses the user switch
-    //
-    if ((m_controlMode == HAPTIC_IDLE) && (button == true))
-    {
-        // check if at least one contact has occurred
-        if (m_toolCursorList[0]->m_hapticPoint->getNumCollisionEvents() > 0)
-        {
-            // get contact event
-            cCollisionEvent *collisionEvent = m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
+    // //
+    // Commented during merge
+    // // STATE 1:
+    // // Idle mode - user presses the user switch
+    // //
+    // if ((m_controlMode == HAPTIC_IDLE) && (button == true))
+    // {
+    //     // check if at least one contact has occurred
+    //     if (m_toolCursorList[0]->m_hapticPoint->getNumCollisionEvents() > 0)
+    //     {
+    //         // get contact event
+    //         cCollisionEvent *collisionEvent = m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
 
-            // get object from contact event
-            m_selectedObject = collisionEvent->m_object;
-        }
-        else
-        {
-            m_selectedObject = m_voxelObj;
-        }
+    //         // get object from contact event
+    //         m_selectedObject = collisionEvent->m_object;
+    //     }
+    //     else
+    //     {
+    //         m_selectedObject = m_voxelObj;
+    //     }
 
-        // get transformation from object
-        cTransform world_T_object = m_selectedObject->getLocalTransform();
+    //     // get transformation from object
+    //     cTransform world_T_object = m_selectedObject->getLocalTransform();
 
-        // compute inverse transformation from contact point to object
-        cTransform tool_T_world = world_T_tool;
-        tool_T_world.invert();
+    //     // compute inverse transformation from contact point to object
+    //     cTransform tool_T_world = world_T_tool;
+    //     tool_T_world.invert();
 
-        // store current transformation tool
-        m_tool_T_object = tool_T_world * world_T_object;
+    //     // store current transformation tool
+    //     m_tool_T_object = tool_T_world * world_T_object;
 
-        // update state
-        m_controlMode = HAPTIC_SELECTION;
-    }
+    //     // update state
+    //     m_controlMode = HAPTIC_SELECTION;
+    // }
 
-    //
-    // STATE 2:
-    // Selection mode - operator maintains user switch enabled and moves object
-    //
-    else if ((m_controlMode == HAPTIC_SELECTION) && (button == true))
-    {
-        // compute new transformation of object in global coordinates
-        cTransform world_T_object = world_T_tool * m_tool_T_object;
+    // //
+    // // STATE 2:
+    // // Selection mode - operator maintains user switch enabled and moves object
+    // //
+    // else if ((m_controlMode == HAPTIC_SELECTION) && (button == true))
+    // {
+    //     // compute new transformation of object in global coordinates
+    //     cTransform world_T_object = world_T_tool * m_tool_T_object;
 
-        // compute new transformation of object in local coordinates
-        cTransform parent_T_world = m_selectedObject->getParent()->getLocalTransform();
-        parent_T_world.invert();
-        cTransform parent_T_object = parent_T_world * world_T_object;
+    //     // compute new transformation of object in local coordinates
+    //     cTransform parent_T_world = m_selectedObject->getParent()->getLocalTransform();
+    //     parent_T_world.invert();
+    //     cTransform parent_T_object = parent_T_world * world_T_object;
 
-        // assign new local transformation to object
-        if (m_selectedObject == m_voxelObj)
-        {
-            m_volumeObject->setLocalTransform(parent_T_object);
-        }
+    //     // assign new local transformation to object
+    //     if (m_selectedObject == m_voxelObj)
+    //     {
+    //         m_volumeObject->setLocalTransform(parent_T_object);
+    //     }
 
-        // set zero forces when manipulating objects
-        m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
+    //     // set zero forces when manipulating objects
+    //     m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
 
-        m_toolCursorList[0]->initialize();
-    }
+    //     m_toolCursorList[0]->initialize();
+    // }
 
-    //
-    // STATE 3:
-    // Finalize Selection mode - operator releases user switch.
-    //
-    else
-    {
-        m_controlMode = HAPTIC_IDLE;
-    }
+    // //
+    // // STATE 3:
+    // // Finalize Selection mode - operator releases user switch.
+    // //
+    // else
+    // {
+    //     m_controlMode = HAPTIC_IDLE;
+    // }
 
     /////////////////////////////////////////////////////////////////////////
     // FINALIZE
@@ -644,7 +645,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     cTransform world_T_voxel = m_voxelObj->getLocalTransform();
     world_T_voxel.invert();
 
-    cTransform voxel_T_tool = world_T_voxel * T_d;
+    cTransform voxel_T_tool = world_T_voxel * m_T_d; // HISASHI check
 
     // cout << "Tool frame position(in voxel frame)" << endl;
     // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
@@ -702,7 +703,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
         // cout << "burr_size:" << m_currDrillSize << endl;
         m_distanceText->m_fontColor.set(r, g, b);
-        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
+        // m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
 
         // Check whether it is not on the boundary
         if (1 < index_x && index_x < edtres - 1 &&
