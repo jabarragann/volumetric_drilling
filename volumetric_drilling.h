@@ -166,9 +166,9 @@ private:
 
     cMesh* arrow_force;
 
-    cAudioSource* m_drillAudioSource = nullptr; //Added for audio
-    cAudioBuffer* m_drillAudioBuffer = nullptr; //Added for audio
-    cAudioDevice* m_drillAudioDevice = nullptr; //Added for audio
+    cAudioSource* m_beepAudioSource = nullptr; //Added for audio
+    cAudioBuffer* m_beepAudioBuffer = nullptr; //Added for audio
+    cAudioDevice* m_beepAudioDevice = nullptr; //Added for audio
 
     bool m_flag_sdf = true;
 

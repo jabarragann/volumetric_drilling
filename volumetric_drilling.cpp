@@ -371,29 +371,29 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_worldPtr->addSceneObjectToWorld(arrow_force);
 
     //*******************
-    // Audio Loading
+    // BeeP Audio Loading
     //*******************
 
     m_drillAudioDevice = new cAudioDevice();
     m_mainCamera->getInternalCamera()->attachAudioDevice(m_drillAudioDevice);
 
-    m_drillAudioBuffer = new cAudioBuffer();
-    string drillAudioFilepath = "resources/sounds/beep-18.wav";
+    m_beepAudioBuffer = new cAudioBuffer();
+    string beepAudioFilepath = "resources/sounds/beep-18.wav";
     // string drillAudioFilepath = "resources/sounds/fail-buzzer-04.wav";
-    if (m_drillAudioBuffer->loadFromFile(drillAudioFilepath)){
-        m_drillAudioSource = new cAudioSource();
+    if (m_beepAudioBuffer->loadFromFile(beepAudioFilepath)){
+        m_beepAudioSource = new cAudioSource();
 //        m_drillAudioBuffer->convertToMono();
-        m_drillAudioSource->setAudioBuffer(m_drillAudioBuffer);
-        m_drillAudioSource->setLoop(true);
+        m_beepAudioSource->setAudioBuffer(m_drillAudioBuffer);
+        m_beepAudioSource->setLoop(true);
         // m_drillAudioSource->setGain(2.0);
         // m_drillAudioSource->play();
     }
     else{
-        delete m_drillAudioSource;
-        delete m_drillAudioBuffer;
-        m_drillAudioSource = nullptr;
-        m_drillAudioBuffer = nullptr;
-        cerr << "FAILED TO LOAD DRILL AUDIO FROM " << drillAudioFilepath << endl;
+        delete m_beepAudioSource;
+        delete m_beepAudioBuffer;
+        m_beepAudioSource = nullptr;
+        m_beepAudioBuffer = nullptr;
+        cerr << "FAILED TO LOAD BEEP AUDIO FROM " << beepAudioFilepath << endl;
     }
 
 
@@ -415,7 +415,7 @@ void afVolmetricDrillingPlugin::graphicsUpdate()
         ((cTexture3d *)m_voxelObj->m_texture.get())->markForPartialUpdate(min, max);
         m_flagMarkVolumeForUpdate = false;
     }
-    arrow_force->setLocalPos(T_d.getLocalPos());
+    arrow_force->setLocalPos(m_T_d.getLocalPos());
     m_volumeObject->getShaderProgram()->setUniformi("aoMap", C_TU_AO);
 }
 
@@ -558,7 +558,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     cTransform world_T_voxel = m_voxelObj->getLocalTransform();
     world_T_voxel.invert();
 
-    cTransform voxel_T_tool = world_T_voxel * T_d;
+    cTransform voxel_T_tool = world_T_voxel * m_T_d;
 
     // cout << "Tool frame position(in voxel frame)" << endl;
     // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
@@ -598,7 +598,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         }
         // cout << "burr_size:" << m_currDrillSize << endl;
         m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
-        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - 2 * m_currDrillSize) + " mm\n");
+        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance -  m_drillBurrSizes[m_activeBurrIdx].first) + " mm\n");
 
         // Check whether it is not on the boundary
         if (1 < index_x && index_x < res[0] - 1 &&
@@ -619,11 +619,11 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
 
             double a = 0.0;
-            if (min_distance - 2 * m_currDrillSize < offset)
+            if (min_distance - m_drillBurrSizes[m_activeBurrIdx].first < offset)
             {
                 // a = max_force; // constant
                 // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-                a = max_force * (1 - (min_distance - 2 * m_currDrillSize) / offset) ;//Linear
+                a = max_force * (1 - (min_distance - m_drillBurrSizes[m_activeBurrIdx].first) / offset) ;//Linear
             }
 
             //cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
@@ -671,7 +671,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             //*************************
             if (m_drillAudioSource){
 
-                if (min_distance - 2 * m_currDrillSize < 3.0 && m_flag_sdf){
+                if (min_distance - m_drillBurrSizes[m_activeBurrIdx].first < 3.0 && m_flag_sdf){
                     //m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
                     m_drillAudioSource->play();
                 }
@@ -703,13 +703,13 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     }
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
 
-    force = force + force_new;
+    // force = force + force_new;
     // Commented during merge
     // cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
     // cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
     // // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
     // force = force + force_new;
-    cVector3d force = cTranspose(T_c_w.getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
+    // cVector3d force = cTranspose(T_c_w.getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
 
     m_toolCursorList[0]->setDeviceLocalForce(force);
     double force_mag = cClamp(force.length(), 0.0, m_hapticDevice->getSpecifications().m_maxLinearForce);
@@ -1628,7 +1628,8 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         }
 
         else if (a_key == GLFW_KEY_KP_ADD)
-        {
+        {   
+            cout << "Changing the eye disparity +" << endl;
             if (m_stereoCameraL)
             {
                 m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() - cVector3d(0., 0.001, 0.));
@@ -1639,7 +1640,9 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             }
         }
         else if (a_key == GLFW_KEY_KP_SUBTRACT)
-        {
+        {   
+            cout << "Changing the eye disparity -" << endl;
+
             if (m_stereoCameraL)
             {
                 m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() + cVector3d(0., 0.001, 0.));
