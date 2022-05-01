@@ -54,12 +54,22 @@ using namespace std;
 
 //------------------------------------------------------------------------------
 
+afVolmetricDrillingPlugin::afVolmetricDrillingPlugin()
+{
+    m_drillBurrSizes[0] = make_pair<double, string>(0.02014, "2 mm");
+    m_drillBurrSizes[1] = make_pair<double, string>(0.04030, "4 mm");
+    m_drillBurrSizes[2] = make_pair<double, string>(0.06041, "6 mm");
+
+    // Set the 2nd drill burr type as the active one.
+    m_activeBurrIdx = 1;
+}
+
 int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_afWorld)
 {
 
     namespace p_opt = boost::program_options;
     p_opt::options_description cmd_opts("drilling_simulator Command Line Options");
-    cmd_opts.add_options()("info", "Show Info")("nt", p_opt::value<int>()->default_value(8), "Number Tool Cursors to Load. Default 8")("ds", p_opt::value<float>()->default_value(0.026), "Offset between shaft tool cursors. Default 0.026");
+    cmd_opts.add_options()("info", "Show Info")("nt", p_opt::value<int>()->default_value(8), "Number Tool Cursors to Load. Default 8")("ds", p_opt::value<float>()->default_value(0.026), "Offset between shaft tool cursors. Default 0.026")("vm", p_opt::value<string>()->default_value("00ShinyWhite.jpg"), "Volume's Matcap Filename (Should be placed in the ./resources/matcap/ folder)")("dm", p_opt::value<string>()->default_value("dark_metal_brushed.jpg"), "Drill's Matcap Filename (Should be placed in ./resources/matcap/ folder)")("mute", p_opt::value<bool>()->default_value(false), "Mute");
 
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).allow_unregistered().run(), var_map);
@@ -73,6 +83,9 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     int nt = var_map["nt"].as<int>();
     float ds = var_map["ds"].as<float>();
+    string volume_matcap = var_map["vm"].as<string>();
+    string drill_matcap = var_map["dm"].as<string>();
+    bool mute = var_map["mute"].as<bool>();
 
     if (nt > 0 && nt <= 8)
     {
@@ -95,7 +108,19 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_worldPtr = a_afWorld;
 
     // Get first camera
-    m_mainCamera = m_worldPtr->getCameras()[1];
+    m_mainCamera = m_worldPtr->getCamera("main_camera");
+    if (m_mainCamera)
+    {
+        cerr << "INFO! GOT CAMERA: " << m_mainCamera->getName() << endl;
+    }
+    else
+    {
+        cerr << "WARNING! COULD NOT FIND main_camera" << endl;
+        m_mainCamera = m_worldPtr->getCameras()[0];
+    }
+
+    m_stereoCameraL = m_worldPtr->getCamera("cameraL");
+    m_stereoCameraR = m_worldPtr->getCamera("cameraR");
 
     // Initializing tool's rotation matrix as an identity matrix
     m_toolRotMat.identity();
@@ -109,12 +134,18 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
              << "mastoidectomy_drill" << endl;
         return -1;
     }
+    // Commented during merge
+    // else
+    // {
+    //     // m_burrMesh = new cShapeSphere(0.043); // 2mm by default with 1 AMBF unit = 0.049664 m
+    //     // m_burrMesh->setRadius(0.043);
+    //     m_burrMesh = new cShapeSphere(0.02014); // 2mm by default with 1 AMBF unit = 0.049664 m
+    //     m_burrMesh->setRadius(0.02014);
+    // }
     else
     {
-        // m_burrMesh = new cShapeSphere(0.043); // 2mm by default with 1 AMBF unit = 0.049664 m
-        // m_burrMesh->setRadius(0.043);
-        m_burrMesh = new cShapeSphere(0.02014); // 2mm by default with 1 AMBF unit = 0.049664 m
-        m_burrMesh->setRadius(0.02014);
+        m_burrMesh = new cShapeSphere(m_drillBurrSizes[m_activeBurrIdx].first);
+        m_burrMesh->setRadius(m_drillBurrSizes[m_activeBurrIdx].first);
         m_burrMesh->m_material->setBlack();
         m_burrMesh->m_material->setShininess(0);
         m_burrMesh->m_material->m_specular.set(0, 0, 0);
@@ -183,7 +214,9 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_drillSizePanel = new cPanel();
     m_drillSizePanel->setSize(170, 50);
     m_drillSizePanel->setCornerRadius(10, 10, 10, 10);
-    m_drillSizePanel->setLocalPos(20, 60);
+    // Commented during merge
+    // m_drillSizePanel->setLocalPos(20, 60);
+    m_drillSizePanel->setLocalPos(15, 60);
     m_drillSizePanel->setColor(cColorf(1, 1, 1));
     m_drillSizePanel->setTransparencyLevel(0.8);
     m_mainCamera->getFrontLayer()->addChild(m_drillSizePanel);
@@ -192,14 +225,14 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_drillSizeText->setLocalPos(20, 70);
     m_drillSizeText->m_fontColor.setBlack();
     m_drillSizeText->setFontScale(.75);
-    m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
+    m_drillSizeText->setText("Drill Size: " + m_drillBurrSizes[m_activeBurrIdx].second);
     m_mainCamera->getFrontLayer()->addChild(m_drillSizeText);
 
     m_drillControlModeText = new cLabel(font);
-    m_drillControlModeText->setLocalPos(20, 30);
+    m_drillControlModeText->setLocalPos(20, 35);
     m_drillControlModeText->m_fontColor.setGreen();
     m_drillControlModeText->setFontScale(.5);
-    m_drillControlModeText->setText("Drill Control Mode = Haptic Device / Keyboard");
+    m_drillControlModeText->setText("[CTRL+O] Drill Control Mode = Haptic Device / Keyboard");
     m_mainCamera->getFrontLayer()->addChild(m_drillControlModeText);
 
     // A panel to display current distance to from the object
@@ -219,8 +252,16 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_distanceText->setText("/Bone distance: " + cStr(0.0) + " mm\n" + "/Bone distance: " + cStr(0.0) + "/Bone distance: " + cStr(0.0));
     m_mainCamera->getFrontLayer()->addChild(m_distanceText);
 
+    m_volumeSmoothingText = new cLabel(font);
+    m_volumeSmoothingText->setLocalPos(20, 10);
+    m_volumeSmoothingText->m_fontColor.setRed();
+    m_volumeSmoothingText->setFontScale(.5);
+    m_volumeSmoothingText->setText("[ALT+S] Volume Smoothing: DISABLED");
+    m_mainCamera->getFrontLayer()->addChild(m_volumeSmoothingText);
+
     // Get drills initial pose
-    T_d = m_drillRigidBody->getLocalTransform();
+    m_T_d_init = m_drillRigidBody->getLocalTransform();
+    m_T_d = m_T_d_init;
 
     // Set up voxels_removed publisher
     m_drillingPub = new DrillingPublisher("ambf", "volumetric_drilling");
@@ -237,6 +278,72 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     voxelCount[2] = m_volumeObject->getVoxelCount().get(2);
 
     m_drillingPub->volumeProp(dim, voxelCount);
+
+    string file_path = __FILE__;
+    string cur_path = file_path.substr(0, file_path.rfind("/"));
+    string volumeMatcapFilepath = cur_path + "/resources/matcap/" + volume_matcap;
+    cTexture2dPtr volMatCap = cTexture2d::create();
+    if (volMatCap->loadFromFile(volumeMatcapFilepath))
+    {
+        m_volumeObject->getInternalVolume()->m_aoTexture = volMatCap;
+        m_volumeObject->getInternalVolume()->m_aoTexture->setTextureUnit(GL_TEXTURE5);
+        cerr << "SUCCESFULLY LOADED MATCAP TEXTURE" << endl;
+    }
+    else
+    {
+        cerr << "FAILED TO LOAD MATCAP TEXTURE" << endl;
+    }
+
+    cTexture2dPtr drillMatCap = cTexture2d::create();
+    if (m_drillRigidBody->getShaderProgram())
+    {
+        string drillMatcapFilepath = cur_path + "/resources/matcap/" + drill_matcap;
+        if (drillMatCap->loadFromFile(drillMatcapFilepath))
+        {
+            for (int mi = 0; mi < m_drillRigidBody->getVisualObject()->getNumMeshes(); mi++)
+            {
+                m_drillRigidBody->getVisualObject()->getMesh(mi)->m_metallicTexture = drillMatCap;
+                m_drillRigidBody->getVisualObject()->getMesh(mi)->m_metallicTexture->setTextureUnit(GL_TEXTURE3);
+            }
+            m_drillRigidBody->getShaderProgram()->setUniformi("matcapMap", C_TU_METALLIC);
+            cerr << "SUCCESFULLY LOADED MATCAP2 TEXTURE" << endl;
+        }
+        else
+        {
+            cerr << "FAILED TO LOAD MATCAP2 TEXTURE" << endl;
+        }
+    }
+
+    cBackground *background = new cBackground();
+    background->setCornerColors(cColorf(1.0f, 1.0f, 1.0f),
+                                cColorf(1.0f, 1.0f, 1.0f),
+                                cColorf(0.6f, 0.6f, 0.6f),
+                                cColorf(0.6f, 0.6f, 0.6f));
+    m_mainCamera->getBackLayer()->addChild(background);
+
+    m_drillAudioDevice = new cAudioDevice();
+    m_mainCamera->getInternalCamera()->attachAudioDevice(m_drillAudioDevice);
+
+    m_drillAudioBuffer = new cAudioBuffer();
+    string drillAudioFilepath = cur_path + "/resources/sounds/drill.wav";
+    if (m_drillAudioBuffer->loadFromFile(drillAudioFilepath))
+    {
+        m_drillAudioSource = new cAudioSource();
+        //        m_drillAudioBuffer->convertToMono();
+        m_drillAudioSource->setAudioBuffer(m_drillAudioBuffer);
+        m_drillAudioSource->setLoop(true);
+        m_drillAudioSource->setGain(5.0);
+        if (!mute)
+            m_drillAudioSource->play();
+    }
+    else
+    {
+        delete m_drillAudioSource;
+        delete m_drillAudioBuffer;
+        m_drillAudioSource = nullptr;
+        m_drillAudioBuffer = nullptr;
+        cerr << "FAILED TO LOAD DRILL AUDIO FROM " << drillAudioFilepath << endl;
+    }
 
     //*******************
     // EDT Loading
@@ -309,6 +416,7 @@ void afVolmetricDrillingPlugin::graphicsUpdate()
         m_flagMarkVolumeForUpdate = false;
     }
     arrow_force->setLocalPos(T_d.getLocalPos());
+    m_volumeObject->getShaderProgram()->setUniformi("aoMap", C_TU_AO);
 }
 
 void afVolmetricDrillingPlugin::physicsUpdate(double dt)
@@ -316,24 +424,52 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     m_worldPtr->getChaiWorld()->computeGlobalPositions(true);
 
-    bool clutch;
+    cTransform T_c_w = m_mainCamera->getLocalTransform();
+    // Commented during merge
+    //  If a valid haptic device is found, then it should be available
 
-    // If a valid haptic device is found, then it should be available
+    // if (getOverrideDrillControl())
+    // {
+    //     T_d = m_drillRigidBody->getLocalTransform();
+    // }
+    // else if (m_hapticDevice->isDeviceAvailable())
+    // {
+    //     m_hapticDevice->getTransform(T_i);
+    //     m_hapticDevice->getLinearVelocity(V_i);
+    //     m_hapticDevice->getUserSwitch(0, clutch);
+    //     V_i = m_mainCamera->getLocalRot() * (V_i * !clutch / m_toolCursorList[0]->getWorkspaceScaleFactor());
+    //     T_d.setLocalPos(T_d.getLocalPos() + V_i);
+    //     T_d.setLocalRot(m_mainCamera->getLocalRot() * T_i.getLocalRot());
+    // }
+
     if (getOverrideDrillControl())
     {
-        T_d = m_drillRigidBody->getLocalTransform();
+        m_T_d = m_drillRigidBody->getLocalTransform();
     }
     else if (m_hapticDevice->isDeviceAvailable())
     {
-        m_hapticDevice->getTransform(T_i);
-        m_hapticDevice->getLinearVelocity(V_i);
-        m_hapticDevice->getUserSwitch(0, clutch);
-        V_i = m_mainCamera->getLocalRot() * (V_i * !clutch / m_toolCursorList[0]->getWorkspaceScaleFactor());
-        T_d.setLocalPos(T_d.getLocalPos() + V_i);
-        T_d.setLocalRot(m_mainCamera->getLocalRot() * T_i.getLocalRot());
+        bool device_clutch, cam_clutch;
+        m_hapticDevice->getUserSwitch(0, device_clutch);
+        m_hapticDevice->getUserSwitch(1, cam_clutch);
+
+        m_hapticDevice->getTransform(m_T_i);
+        m_hapticDevice->getLinearVelocity(m_V_i);
+        m_V_i = T_c_w.getLocalRot() * (m_V_i / m_toolCursorList[0]->getWorkspaceScaleFactor());
+        m_T_d.setLocalPos(m_T_d.getLocalPos() + (m_V_i * 0.4 * !device_clutch * !cam_clutch));
+        m_T_d.setLocalRot(T_c_w.getLocalRot() * m_T_i.getLocalRot());
+
+        // set zero forces when manipulating objects
+        if (device_clutch || cam_clutch)
+        {
+            if (cam_clutch)
+            {
+                m_mainCamera->setView(T_c_w.getLocalPos() + m_V_i * !device_clutch, m_mainCamera->getTargetPosLocal(), m_mainCamera->getUpVector());
+            }
+            m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
+        }
     }
 
-    toolCursorsPosUpdate(T_d);
+    toolCursorsPosUpdate(m_T_d);
 
     // check for shaft collision
     checkShaftCollision();
@@ -568,6 +704,19 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
 
     force = force + force_new;
+    // Commented during merge
+    // cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
+    // cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
+    // // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
+    // force = force + force_new;
+    cVector3d force = cTranspose(T_c_w.getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
+
+    m_toolCursorList[0]->setDeviceLocalForce(force);
+    double force_mag = cClamp(force.length(), 0.0, m_hapticDevice->getSpecifications().m_maxLinearForce);
+    if (m_drillAudioSource)
+    {
+        m_drillAudioSource->setPitch(3.0 - force_mag / m_hapticDevice->getSpecifications().m_maxLinearForce);
+    }
 
     m_toolCursorList[0]->setDeviceLocalForce(force_new);
 
@@ -575,8 +724,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     {
         if (force.length() != 0.0)
         {
-
-            m_toolCursorList[0]->initialize();
+            //    resetDrill();
             m_counter = 0;
         }
         else
@@ -603,74 +751,75 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     // get status of user switch
     bool button = m_toolCursorList[0]->getUserSwitch(1);
-    //
-    // STATE 1:
-    // Idle mode - user presses the user switch
-    //
-    if ((m_controlMode == HAPTIC_IDLE) && (button == true))
-    {
-        // check if at least one contact has occurred
-        if (m_toolCursorList[0]->m_hapticPoint->getNumCollisionEvents() > 0)
-        {
-            // get contact event
-            cCollisionEvent *collisionEvent = m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
+    // //
+    // Commented during merge
+    // // STATE 1:
+    // // Idle mode - user presses the user switch
+    // //
+    // if ((m_controlMode == HAPTIC_IDLE) && (button == true))
+    // {
+    //     // check if at least one contact has occurred
+    //     if (m_toolCursorList[0]->m_hapticPoint->getNumCollisionEvents() > 0)
+    //     {
+    //         // get contact event
+    //         cCollisionEvent *collisionEvent = m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
 
-            // get object from contact event
-            m_selectedObject = collisionEvent->m_object;
-        }
-        else
-        {
-            m_selectedObject = m_voxelObj;
-        }
+    //         // get object from contact event
+    //         m_selectedObject = collisionEvent->m_object;
+    //     }
+    //     else
+    //     {
+    //         m_selectedObject = m_voxelObj;
+    //     }
 
-        // get transformation from object
-        cTransform world_T_object = m_selectedObject->getLocalTransform();
+    //     // get transformation from object
+    //     cTransform world_T_object = m_selectedObject->getLocalTransform();
 
-        // compute inverse transformation from contact point to object
-        cTransform tool_T_world = world_T_tool;
-        tool_T_world.invert();
+    //     // compute inverse transformation from contact point to object
+    //     cTransform tool_T_world = world_T_tool;
+    //     tool_T_world.invert();
 
-        // store current transformation tool
-        m_tool_T_object = tool_T_world * world_T_object;
+    //     // store current transformation tool
+    //     m_tool_T_object = tool_T_world * world_T_object;
 
-        // update state
-        m_controlMode = HAPTIC_SELECTION;
-    }
+    //     // update state
+    //     m_controlMode = HAPTIC_SELECTION;
+    // }
 
-    //
-    // STATE 2:
-    // Selection mode - operator maintains user switch enabled and moves object
-    //
-    else if ((m_controlMode == HAPTIC_SELECTION) && (button == true))
-    {
-        // compute new transformation of object in global coordinates
-        cTransform world_T_object = world_T_tool * m_tool_T_object;
+    // //
+    // // STATE 2:
+    // // Selection mode - operator maintains user switch enabled and moves object
+    // //
+    // else if ((m_controlMode == HAPTIC_SELECTION) && (button == true))
+    // {
+    //     // compute new transformation of object in global coordinates
+    //     cTransform world_T_object = world_T_tool * m_tool_T_object;
 
-        // compute new transformation of object in local coordinates
-        cTransform parent_T_world = m_selectedObject->getParent()->getLocalTransform();
-        parent_T_world.invert();
-        cTransform parent_T_object = parent_T_world * world_T_object;
+    //     // compute new transformation of object in local coordinates
+    //     cTransform parent_T_world = m_selectedObject->getParent()->getLocalTransform();
+    //     parent_T_world.invert();
+    //     cTransform parent_T_object = parent_T_world * world_T_object;
 
-        // assign new local transformation to object
-        if (m_selectedObject == m_voxelObj)
-        {
-            m_volumeObject->setLocalTransform(parent_T_object);
-        }
+    //     // assign new local transformation to object
+    //     if (m_selectedObject == m_voxelObj)
+    //     {
+    //         m_volumeObject->setLocalTransform(parent_T_object);
+    //     }
 
-        // set zero forces when manipulating objects
-        m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
+    //     // set zero forces when manipulating objects
+    //     m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
 
-        m_toolCursorList[0]->initialize();
-    }
+    //     m_toolCursorList[0]->initialize();
+    // }
 
-    //
-    // STATE 3:
-    // Finalize Selection mode - operator releases user switch.
-    //
-    else
-    {
-        m_controlMode = HAPTIC_IDLE;
-    }
+    // //
+    // // STATE 3:
+    // // Finalize Selection mode - operator releases user switch.
+    // //
+    // else
+    // {
+    //     m_controlMode = HAPTIC_IDLE;
+    // }
 
     /////////////////////////////////////////////////////////////////////////
     // FINALIZE
@@ -682,6 +831,135 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_toolCursorList[0]->applyToDevice();
     }
 
+    // ////////////////////////////////////////////////////////////////////////
+    // // EDT calculation
+    // ////////////////////////////////////////////////////////////////////////
+
+    // // Tool tip location in world frame
+    // //  cout << "Tool frame position(in world frame)" << endl;
+    // //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
+
+    // // Tool tip location in world frame
+    // //  cout << "Tool frame position(in world frame)" << endl;
+    // //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
+
+    // // Object frame location in world frame
+    // //  cout << "Object frame position(in world frame)" << endl;
+    // //  cout<< m_voxelObj->getLocalPos().x() << ", "<< m_voxelObj->getLocalPos().y() << ", "<< m_voxelObj->getLocalPos().z() << endl;
+
+    // cTransform world_T_voxel = m_voxelObj->getLocalTransform();
+    // world_T_voxel.invert();
+
+    // cTransform voxel_T_tool = world_T_voxel * m_T_d; // HISASHI check
+
+    // // cout << "Tool frame position(in voxel frame)" << endl;
+    // // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
+
+    // // check wether the tool is inside the voxel
+    // if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5)
+    // {
+
+    //     // cout << "EDT working ..." << endl;
+    //     edtres = 171;
+    //     index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * edtres);
+    //     index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * edtres);
+    //     index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * edtres);
+    //     // cout << index_x << "," << index_y << "," << index_z << endl;
+
+    //     edt_list.list[0].m_dist_object = (*(edt_list.list[0].edt_grid))(index_x, index_y, index_z);
+    //     edt_list.list[1].m_dist_object = (*(edt_list.list[1].edt_grid))(index_x, index_y, index_z);
+    //     edt_list.list[2].m_dist_object = (*(edt_list.list[2].edt_grid))(index_x, index_y, index_z);
+
+    //     std::string min_name = "XXX";
+    //     double min_distance = 1000;
+    //     int min_index;
+    //     double r, g, b;
+    //     for (int i = 0; i < 3; i++)
+    //     {
+    //         double curr_distance = edt_list.list[i].m_dist_object;
+
+    //         if (min_distance > curr_distance)
+    //         {
+
+    //             min_distance = curr_distance;
+    //             min_name = edt_list.list[i].name;
+    //             min_index = i;
+
+    //             if (min_name == "Sinus_+_Dura")
+    //             {
+    //                 r = 110.0 / 255.0;
+    //                 g = 184.0 / 255.0;
+    //                 b = 209.0 / 255.0;
+    //             };
+    //             if (min_name == "IAC")
+    //             {
+    //                 r = 244 / 255.0;
+    //                 g = 142.0 / 255.0;
+    //                 b = 52.0 / 255.0;
+    //             };
+    //             if (min_name == "TMJ")
+    //             {
+    //                 r = 100 / 255.0;
+    //                 g = 0.0;
+    //                 b = 0.0;
+    //             };
+    //         }
+    //     }
+
+    //     // cout << "burr_size:" << m_currDrillSize << endl;
+    //     m_distanceText->m_fontColor.set(r, g, b);
+    //     // m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
+
+    //     // Check whether it is not on the boundary
+    //     if (1 < index_x && index_x < edtres - 1 &&
+    //         1 < index_y && index_y < edtres - 1 &&
+    //         1 < index_z && index_z < 169 - 1)
+    //     {
+
+    //         cVector3d force_dir;
+    //         force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x + 1, index_y, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x - 1, index_y, index_z)),
+    //                       ((*(edt_list.list[min_index].edt_grid))(index_x, index_y + 1, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y - 1, index_z)),
+    //                       ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z + 1)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z - 1)));
+
+    //         force_dir.normalize();
+    //         // Frame transformation(Object -> World )
+
+    //         double max_force = 0.5; // in N
+    //         double offset = 5.0;    // offset in mm
+
+    //         // double a =max_force;// constant
+    //         // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
+
+    //         double a;
+    //         if (min_distance < offset)
+    //         {
+    //             a = max_force; // constant
+    //             // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
+    //             // a = max_force * (1 - (min_distance - m_currDrillSize) / offset) ;//Linear
+    //         }
+
+    //         // cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
+
+    //         double force_thres = 1.0;
+    //         if (a > force_thres)
+    //         {
+    //             a = force_thres;
+    //         };
+    //         if (a < -force_thres)
+    //         {
+    //             a + -force_thres;
+    //         };
+
+    //         force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
+    //     }
+    // }
+    // // When it is out of boundary;
+    // else
+    // {
+    //     m_distanceText->m_fontColor.setRed();
+    //     m_distanceText->setText("Distance: Out of boundary!!");
+    //     force_edt.set(0, 0, 0);
+    // }
 }
 
 ///
@@ -716,8 +994,11 @@ void afVolmetricDrillingPlugin::toolCursorInit(const afWorldPtr a_afWorld)
 
             // if the haptic device has a gripper, enable it as a user switch
             m_hapticDevice->setEnableGripperUserSwitch(true);
+
+            // Commented during merge
             // m_toolCursorList[i]->setRadius(0.043); // Set the correct radius for the tip which is not from the list of cursor radii
-            m_toolCursorList[i]->setRadius(0.02014); // Set the correct radius for the tip which is not from the list of cursor radii
+            // m_toolCursorList[i]->setRadius(0.02014); // Set the correct radius for the tip which is not from the list of cursor radii
+            m_toolCursorList[i]->setRadius(m_drillBurrSizes[m_activeBurrIdx].first); // Set the correct radius for the tip which is not from the list of cursor radii
         }
         else
         {
@@ -729,20 +1010,26 @@ void afVolmetricDrillingPlugin::toolCursorInit(const afWorldPtr a_afWorld)
     }
 
     // Initialize the start pose of the tool cursors
-    toolCursorsPosUpdate(T_d);
-    for (int i = 0; i < m_toolCursorList.size(); i++)
-    {
-        m_toolCursorList[i]->initialize();
-    }
+    // Commented during merge
+    // toolCursorsPosUpdate(T_d);
+    // for (int i = 0; i < m_toolCursorList.size(); i++)
+    // {
+    //     m_toolCursorList[i]->initialize();
+    // }
+    toolCursorsPosUpdate(m_T_d);
+    toolCursorsInitialize();
 }
 
 ///
 /// \brief incrementDevicePos
 /// \param a_vel
 ///
+
 void afVolmetricDrillingPlugin::incrementDevicePos(cVector3d a_vel)
 {
-    T_d.setLocalPos(T_d.getLocalPos() + a_vel);
+    // Commented during merge
+    // T_d.setLocalPos(T_d.getLocalPos() + a_vel);
+    m_T_d.setLocalPos(m_T_d.getLocalPos() + a_vel);
 }
 
 ///
@@ -753,8 +1040,19 @@ void afVolmetricDrillingPlugin::incrementDeviceRot(cVector3d a_rot)
 {
     cMatrix3d R_cmd;
     R_cmd.setExtrinsicEulerRotationDeg(a_rot(0), a_rot(1), a_rot(2), C_EULER_ORDER_XYZ);
-    R_cmd = T_d.getLocalRot() * R_cmd;
-    T_d.setLocalRot(R_cmd);
+    R_cmd = m_T_d.getLocalRot() * R_cmd;
+    m_T_d.setLocalRot(R_cmd);
+}
+
+///
+/// \brief afVolmetricDrillingPlugin::toolCursorsInitialize
+///
+void afVolmetricDrillingPlugin::toolCursorsInitialize()
+{
+    for (int i = 0; i < m_toolCursorList.size(); i++)
+    {
+        m_toolCursorList[i]->initialize();
+    }
 }
 
 ///
@@ -770,6 +1068,15 @@ void afVolmetricDrillingPlugin::toolCursorsPosUpdate(cTransform a_targetPose)
         m_toolCursorList[i]->setDeviceLocalPos(P);
         m_toolCursorList[i]->setDeviceLocalRot(a_targetPose.getLocalRot());
     }
+}
+
+void afVolmetricDrillingPlugin::resetDrill()
+{
+    m_hapticDevice->setForce(cVector3d(0., 0., 0.));
+    m_T_d = m_T_d_init;
+    toolCursorsPosUpdate(m_T_d);
+    toolCursorsInitialize();
+    drillPoseUpdateFromCursors();
 }
 
 ///
@@ -853,6 +1160,7 @@ void afVolmetricDrillingPlugin::drillPoseUpdateFromCursors()
 
         //        g_drillRigidBody->setLocalPos(g_drillRigidBody->getLocalPos() + newDrillPos);
         m_drillRigidBody->setLocalTransform(trans);
+        m_drillAudioSource->setSourcePos(newDrillPos);
     }
 }
 
@@ -860,49 +1168,69 @@ void afVolmetricDrillingPlugin::drillPoseUpdateFromCursors()
 /// \brief This method changes the size of the tip tool cursor.
 /// Currently, the size of the tip tool cursor can be set to 2mm, 4mm, and 6mm.
 ///
-void afVolmetricDrillingPlugin::changeDrillSize()
+
+// Commented during merge
+//  void afVolmetricDrillingPlugin::changeDrillSize()
+//  {
+
+//     m_drillSizeIdx++;
+
+//     if (m_drillSizeIdx > 2)
+//     {
+//         m_drillSizeIdx = 0;
+//     }
+
+//     switch (m_drillSizeIdx)
+//     {
+//         // Drill bit size is in diameters i.e. for 2mm drill bit, 1mm * (1 ambf unit/49.664mm) = 0.02014
+//     case 0:
+//         m_toolCursorList[0]->setRadius(0.02014);
+//         m_burrMesh->setRadius(0.02014);
+//         cout << "Drill Size changed to 2 mm" << endl;
+//         m_currDrillSize = 2;
+//         m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
+//         break;
+
+//     case 1:
+//         m_toolCursorList[0]->setRadius(0.04030);
+//         m_burrMesh->setRadius(0.04030);
+//         cout << "Drill Size changed to 4 mm" << endl;
+//         m_currDrillSize = 4;
+//         m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
+//         break;
+
+//     case 2:
+//         m_toolCursorList[0]->setRadius(0.06041);
+//         m_burrMesh->setRadius(0.06041);
+//         cout << "Drill Size changed to 6 mm" << endl;
+//         m_currDrillSize = 6;
+//         m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
+//         break;
+
+//     default:
+//         break;
+//     }
+
+//     double sim_time = m_drillRigidBody->getCurrentTimeStamp();
+//     m_drillingPub->burrChange(m_currDrillSize, sim_time);
+// }
+
+void afVolmetricDrillingPlugin::changeBurrSize(int burrType)
 {
-
-    m_drillSizeIdx++;
-
-    if (m_drillSizeIdx > 2)
+    if (m_drillBurrSizes.find(burrType) != m_drillBurrSizes.end())
     {
-        m_drillSizeIdx = 0;
-    }
+        m_toolCursorList[0]->setRadius(m_drillBurrSizes[burrType].first);
+        m_burrMesh->setRadius(m_drillBurrSizes[burrType].first);
+        cout << "Drill Size changed to " << m_drillBurrSizes[burrType].second << endl;
+        m_drillSizeText->setText("Drill Size: " + m_drillBurrSizes[burrType].second);
 
-    switch (m_drillSizeIdx)
+        double sim_time = m_drillRigidBody->getCurrentTimeStamp();
+        m_drillingPub->burrChange(m_drillBurrSizes[burrType].first, sim_time);
+    }
+    else
     {
-        // Drill bit size is in diameters i.e. for 2mm drill bit, 1mm * (1 ambf unit/49.664mm) = 0.02014
-    case 0:
-        m_toolCursorList[0]->setRadius(0.02014);
-        m_burrMesh->setRadius(0.02014);
-        cout << "Drill Size changed to 2 mm" << endl;
-        m_currDrillSize = 2;
-        m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
-        break;
-
-    case 1:
-        m_toolCursorList[0]->setRadius(0.04030);
-        m_burrMesh->setRadius(0.04030);
-        cout << "Drill Size changed to 4 mm" << endl;
-        m_currDrillSize = 4;
-        m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
-        break;
-
-    case 2:
-        m_toolCursorList[0]->setRadius(0.06041);
-        m_burrMesh->setRadius(0.06041);
-        cout << "Drill Size changed to 6 mm" << endl;
-        m_currDrillSize = 6;
-        m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
-        break;
-
-    default:
-        break;
+        cerr << "ERROR! DRILL BURR AT INDEX " << burrType << " DOES NOT EXIST" << endl;
     }
-
-    double sim_time = m_drillRigidBody->getCurrentTimeStamp();
-    m_drillingPub->burrChange(m_currDrillSize, sim_time);
 }
 
 void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, int a_scancode, int a_action, int a_mods)
@@ -960,12 +1288,12 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             if (getOverrideDrillControl())
             {
                 m_drillControlModeText->m_fontColor.setRed();
-                m_drillControlModeText->setText("Drill Control Mode = External afComm");
+                m_drillControlModeText->setText("[CTRL+O] Drill Control Mode = External afComm");
             }
             else
             {
                 m_drillControlModeText->m_fontColor.setGreen();
-                m_drillControlModeText->setText("Drill Control Mode = Haptic Device / Keyboard");
+                m_drillControlModeText->setText("[CTRL+O] Drill Control Mode = Haptic Device / Keyboard");
             }
         }
 
@@ -1008,6 +1336,44 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             cout << m_flag_sdf << endl;
 
         }
+        // Reset the drill pose
+        if (a_key == GLFW_KEY_R)
+        {
+            cerr << "INFO! RESETTING THE DRILL" << endl;
+            resetDrill();
+        }
+    }
+    else if (a_mods == GLFW_MOD_ALT)
+    {
+        // Toggle Volume Smoothing
+        if (a_key == GLFW_KEY_S)
+        {
+            m_enableVolumeSmoothing = !m_enableVolumeSmoothing;
+            cerr << "INFO! ENABLE VOLUME SMOOTHING: " << m_enableVolumeSmoothing << endl;
+            m_volumeObject->getShaderProgram()->setUniformi("uSmoothVolume", m_enableVolumeSmoothing);
+            m_volumeObject->getShaderProgram()->setUniformi("uSmoothingLevel", m_volumeSmoothingLevel);
+        }
+        else if (a_key == GLFW_KEY_UP)
+        {
+            m_volumeSmoothingLevel = cClamp(m_volumeSmoothingLevel + 1, 1, 10);
+            cerr << "INFO! SETTING SMOOTHING LEVEL " << m_volumeSmoothingLevel << endl;
+            m_volumeObject->getShaderProgram()->setUniformi("uSmoothingLevel", m_volumeSmoothingLevel);
+        }
+        else if (a_key == GLFW_KEY_DOWN)
+        {
+            m_volumeSmoothingLevel = cClamp(m_volumeSmoothingLevel - 1, 1, 10);
+            cerr << "INFO! SETTING SMOOTHING LEVEL " << m_volumeSmoothingLevel << endl;
+            m_volumeObject->getShaderProgram()->setUniformi("uSmoothingLevel", m_volumeSmoothingLevel);
+        }
+
+        std::string text = "[ALT+S] Volume Smoothing: " + std::string(m_enableVolumeSmoothing ? "ENABLED" : "DISABLED");
+        m_volumeSmoothingText->m_fontColor.setRed();
+        if (m_enableVolumeSmoothing)
+        {
+            text += " ( LEVEL: " + to_string(m_volumeSmoothingLevel) + ")";
+            m_volumeSmoothingText->m_fontColor.setGreen();
+        }
+        m_volumeSmoothingText->setText(text);
     }
     else
     {
@@ -1257,7 +1623,31 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         // toggles size of drill burr/tip tool cursor
         else if (a_key == GLFW_KEY_C)
         {
-            changeDrillSize();
+            m_activeBurrIdx = (m_activeBurrIdx + 1) % 3;
+            changeBurrSize(m_activeBurrIdx);
+        }
+
+        else if (a_key == GLFW_KEY_KP_ADD)
+        {
+            if (m_stereoCameraL)
+            {
+                m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() - cVector3d(0., 0.001, 0.));
+            }
+            if (m_stereoCameraR)
+            {
+                m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() + cVector3d(0., 0.001, 0.));
+            }
+        }
+        else if (a_key == GLFW_KEY_KP_SUBTRACT)
+        {
+            if (m_stereoCameraL)
+            {
+                m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() + cVector3d(0., 0.001, 0.));
+            }
+            if (m_stereoCameraR)
+            {
+                m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() - cVector3d(0., 0.001, 0.));
+            }
         }
     }
 }
@@ -1273,7 +1663,7 @@ void afVolmetricDrillingPlugin::mouseScrollUpdate(GLFWwindow *a_window, double x
 void afVolmetricDrillingPlugin::reset()
 {
     cerr << "INFO! PLUGIN RESET CALLED" << endl;
-    T_d = m_drillRigidBody->getLocalTransform();
+    resetDrill();
 }
 
 bool afVolmetricDrillingPlugin::close()
@@ -1294,6 +1684,19 @@ bool afVolmetricDrillingPlugin::close()
         delete m_drillAudioDevice;
     }
 
+    if (m_drillAudioSource)
+    {
+        delete m_drillAudioSource;
+    }
+    if (m_drillAudioBuffer)
+    {
+        delete m_drillAudioBuffer;
+    }
+    if (m_drillAudioDevice)
+    {
+        m_mainCamera->getInternalCamera()->detachAudioDevice();
+        delete m_drillAudioDevice;
+    }
     delete m_deviceHandler;
 
     return true;
