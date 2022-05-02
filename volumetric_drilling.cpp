@@ -239,14 +239,14 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_distancePanel = new cPanel();
     m_distancePanel->setSize(300, 80);
     m_distancePanel->setCornerRadius(10, 10, 10, 10);
-    m_distancePanel->setLocalPos(350, 1100);
+    m_distancePanel->setLocalPos(400, 1000);
     m_distancePanel->setColor(cColorf(1, 1, 1));
     m_distancePanel->setTransparencyLevel(0.8);
     // m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
     m_stereoCameraL->getFrontLayer()->addChild(m_distancePanel);
 
     m_distanceText = new cLabel(font);
-    m_distanceText->setLocalPos(355, 1110);
+    m_distanceText->setLocalPos(405, 1010);
     //m_distanceText->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
     m_distanceText->m_fontColor.set(1.0, 1.0, 1.0);
     m_distanceText->setFontScale(.75);
@@ -334,7 +334,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         //        m_drillAudioBuffer->convertToMono();
         m_drillAudioSource->setAudioBuffer(m_drillAudioBuffer);
         m_drillAudioSource->setLoop(true);
-        m_drillAudioSource->setGain(5.0);
+        m_drillAudioSource->setGain(1.0);
         if (!mute)
             m_drillAudioSource->play();
     }
@@ -383,12 +383,13 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     string beepAudioFilepath = "resources/sounds/beep-18.wav";
     // string drillAudioFilepath = "resources/sounds/fail-buzzer-04.wav";
     if (m_beepAudioBuffer->loadFromFile(beepAudioFilepath)){
+        cout << " Beep sound Loaded" <<endl;
         m_beepAudioSource = new cAudioSource();
 //        m_drillAudioBuffer->convertToMono();
-        m_beepAudioSource->setAudioBuffer(m_drillAudioBuffer);
+        m_beepAudioSource->setAudioBuffer(m_beepAudioBuffer);
         m_beepAudioSource->setLoop(true);
-        // m_drillAudioSource->setGain(2.0);
-        // m_drillAudioSource->play();
+        m_beepAudioSource->setGain(2.0);
+        // m_beepAudioSource->play();
     }
     else{
         delete m_beepAudioSource;
@@ -616,8 +617,9 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
             force_dir.normalize();
             // Frame transformation(Object -> World )
-            double max_force = 1.5; // in N
-            double offset = 5.0;    // offset in mm
+            double max_force = 1.0; // in N
+            // double max_force = 1.5; // in N
+            double offset = 1.0;    // offset in mm
 
             // double a =max_force;// constant
             // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
@@ -627,7 +629,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             {
                 // a = max_force; // constant
                 // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-                a = 100 * (1 - (min_distance) / offset) ;//Linear
+                a = max_force * (1 - (min_distance) / offset) ;//Linear
             }
 
             //cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
@@ -636,12 +638,16 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             {
                 a = max_force;
             };
-            if (a < -max_force)
+            if (a < -0)
             {
-                a = -max_force;
+                a = 0;
             };
 
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
+            
+            // with noize
+
+            // noize = 0.001*sin(i)
 
 
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
@@ -668,19 +674,20 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
             arrow_force->setLocalRot(rot);
             arrow_force->clear();
-
+            
 
             //*************************
             // Audio Playing
             //*************************
-            if (m_drillAudioSource){
+            if (m_beepAudioSource){
 
-                if (min_distance < 3.0 && m_flag_sdf){
+                if (min_distance < 1.0 && m_flag_sdf){
                     //m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
-                    m_drillAudioSource->play();
+                    m_drillAudioSource->stop();
+                    m_beepAudioSource->play();
                 }
                 else{
-                    m_drillAudioSource->stop();
+                    m_beepAudioSource->stop();
                 }
             }
 
@@ -705,7 +712,8 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         arrow_force->clear();
 
     }
-    cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
+    // cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
+    cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * (m_targetToolCursor->getDeviceLocalForce() + force_edt);
 
     // force = force + force_new;
     // Commented during merge
@@ -715,12 +723,12 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // force = force + force_new;
     // cVector3d force = cTranspose(T_c_w.getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
 
-    m_toolCursorList[0]->setDeviceLocalForce(force);
-    double force_mag = cClamp(force.length(), 0.0, m_hapticDevice->getSpecifications().m_maxLinearForce);
-    if (m_drillAudioSource)
-    {
-        m_drillAudioSource->setPitch(3.0 - force_mag / m_hapticDevice->getSpecifications().m_maxLinearForce);
-    }
+    // m_toolCursorList[0]->setDeviceLocalForce(force);
+    // double force_mag = cClamp(force.length(), 0.0, m_hapticDevice->getSpecifications().m_maxLinearForce);
+    // if (m_drillAudioSource)
+    // {
+    //     m_drillAudioSource->setPitch(3.0 - force_mag / m_hapticDevice->getSpecifications().m_maxLinearForce);
+    // }
 
     m_toolCursorList[0]->setDeviceLocalForce(force_new);
 
