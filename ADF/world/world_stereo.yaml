@@ -42,7 +42,7 @@ light3:
 cameraR:
   namespace: cameras/
   name: cameraR
-  location: {x: 10.0, y: 0.05, z: 0.0}
+  location: {x: 15.0, y: 0.044, z: 0.0}
   look at: {x: -15.000805412371134, y: 0.00, z: 0.0}
   # up: {x: 0.0, y: 0.4, z: 1.0}
   up: {x: 0.0, y: 0.0, z: 1.0}
@@ -70,7 +70,7 @@ cameraR:
 cameraL:
   namespace: cameras/
   name: cameraL
-  location: {x: 10.0, y: -0.05, z: 0.0}
+  location: {x: 15.0, y: -0.044, z: 0.0}
   look at: {x: -15.000805412371134, y: 0.00, z: 0.0}
   # up: {x: 0.0, y: 0.4, z: 1.0}
   up: {x: 0.0, y: 0.0, z: 1.0}

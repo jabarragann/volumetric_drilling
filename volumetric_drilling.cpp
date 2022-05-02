@@ -237,20 +237,22 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     // A panel to display current distance to from the object
     m_distancePanel = new cPanel();
-    m_distancePanel->setSize(240, 120);
+    m_distancePanel->setSize(300, 80);
     m_distancePanel->setCornerRadius(10, 10, 10, 10);
-    m_distancePanel->setLocalPos(18, 400);
+    m_distancePanel->setLocalPos(350, 1100);
     m_distancePanel->setColor(cColorf(1, 1, 1));
     m_distancePanel->setTransparencyLevel(0.8);
-    m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
+    // m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
+    m_stereoCameraL->getFrontLayer()->addChild(m_distancePanel);
 
     m_distanceText = new cLabel(font);
-    m_distanceText->setLocalPos(800, 700);
-    // m_distanceText->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
+    m_distanceText->setLocalPos(355, 1110);
+    //m_distanceText->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
     m_distanceText->m_fontColor.set(1.0, 1.0, 1.0);
     m_distanceText->setFontScale(.75);
     m_distanceText->setText("/Bone distance: " + cStr(0.0) + " mm\n" + "/Bone distance: " + cStr(0.0) + "/Bone distance: " + cStr(0.0));
-    m_mainCamera->getFrontLayer()->addChild(m_distanceText);
+    // m_mainCamera->getFrontLayer()->addChild(m_distanceText);
+    m_stereoCameraL->getFrontLayer()->addChild(m_distanceText);
 
     m_volumeSmoothingText = new cLabel(font);
     m_volumeSmoothingText->setLocalPos(20, 10);
@@ -417,6 +419,7 @@ void afVolmetricDrillingPlugin::graphicsUpdate()
     }
     arrow_force->setLocalPos(m_T_d.getLocalPos());
     m_volumeObject->getShaderProgram()->setUniformi("aoMap", C_TU_AO);
+    arrow_force->clear();
 }
 
 void afVolmetricDrillingPlugin::physicsUpdate(double dt)
@@ -582,7 +585,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         unsigned int min_color[3];
 
 
-        for (int i = 0; i < 15; i++)
+        for (int i = 0; i < 14; i++)
         {
             edt_list.list[i].m_dist_object = (*(edt_list.list[i].edt_grid))(index_x, index_y, index_z);
             if (min_distance > edt_list.list[i].m_dist_object)
@@ -596,9 +599,10 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
                 min_color[2] = edt_list.list[i].rgb[2];
             }
         }
+        min_distance = min_distance/10 - m_drillBurrSizes[m_activeBurrIdx].first/0.02014 ;
         // cout << "burr_size:" << m_currDrillSize << endl;
         m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
-        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance -  m_drillBurrSizes[m_activeBurrIdx].first) + " mm\n");
+        m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance) + " mm");
 
         // Check whether it is not on the boundary
         if (1 < index_x && index_x < res[0] - 1 &&
@@ -619,24 +623,23 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
 
             double a = 0.0;
-            if (min_distance - m_drillBurrSizes[m_activeBurrIdx].first < offset)
+            if (min_distance < offset)
             {
                 // a = max_force; // constant
                 // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-                a = max_force * (1 - (min_distance - m_drillBurrSizes[m_activeBurrIdx].first) / offset) ;//Linear
+                a = 100 * (1 - (min_distance) / offset) ;//Linear
             }
 
             //cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
 
-            double force_thres = 1.0;
-            // if (a > force_thres)
-            // {
-            //     a = force_thres;
-            // };
-            // if (a < -force_thres)
-            // {
-            //     a = -force_thres;
-            // };
+            if (a > max_force)
+            {
+                a = max_force;
+            };
+            if (a < -max_force)
+            {
+                a = -max_force;
+            };
 
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
 
@@ -664,6 +667,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             rot.setAxisAngleRotationRad(axis, acos(dp));
 
             arrow_force->setLocalRot(rot);
+            arrow_force->clear();
 
 
             //*************************
@@ -671,7 +675,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             //*************************
             if (m_drillAudioSource){
 
-                if (min_distance - m_drillBurrSizes[m_activeBurrIdx].first < 3.0 && m_flag_sdf){
+                if (min_distance < 3.0 && m_flag_sdf){
                     //m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
                     m_drillAudioSource->play();
                 }
@@ -686,9 +690,9 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     else
     {
         m_distanceText->m_fontColor.setRed();
-        m_distanceText->setText("Distance: Out of boundary!!");
+        m_distanceText->setText("Distance: Out of boundary\n");
         force_edt.set(0, 0, 0);
-        //arrow_force->clear();
+        arrow_force->clear();
 
     }
     // check if device remains stuck inside voxel object
@@ -830,136 +834,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     {
         m_toolCursorList[0]->applyToDevice();
     }
-
-    // ////////////////////////////////////////////////////////////////////////
-    // // EDT calculation
-    // ////////////////////////////////////////////////////////////////////////
-
-    // // Tool tip location in world frame
-    // //  cout << "Tool frame position(in world frame)" << endl;
-    // //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
-
-    // // Tool tip location in world frame
-    // //  cout << "Tool frame position(in world frame)" << endl;
-    // //  cout<< T_d.getLocalPos().x() << ", "<< T_d.getLocalPos().y() << ", "<< T_d.getLocalPos().z() << endl;
-
-    // // Object frame location in world frame
-    // //  cout << "Object frame position(in world frame)" << endl;
-    // //  cout<< m_voxelObj->getLocalPos().x() << ", "<< m_voxelObj->getLocalPos().y() << ", "<< m_voxelObj->getLocalPos().z() << endl;
-
-    // cTransform world_T_voxel = m_voxelObj->getLocalTransform();
-    // world_T_voxel.invert();
-
-    // cTransform voxel_T_tool = world_T_voxel * m_T_d; // HISASHI check
-
-    // // cout << "Tool frame position(in voxel frame)" << endl;
-    // // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
-
-    // // check wether the tool is inside the voxel
-    // if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5)
-    // {
-
-    //     // cout << "EDT working ..." << endl;
-    //     edtres = 171;
-    //     index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * edtres);
-    //     index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * edtres);
-    //     index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * edtres);
-    //     // cout << index_x << "," << index_y << "," << index_z << endl;
-
-    //     edt_list.list[0].m_dist_object = (*(edt_list.list[0].edt_grid))(index_x, index_y, index_z);
-    //     edt_list.list[1].m_dist_object = (*(edt_list.list[1].edt_grid))(index_x, index_y, index_z);
-    //     edt_list.list[2].m_dist_object = (*(edt_list.list[2].edt_grid))(index_x, index_y, index_z);
-
-    //     std::string min_name = "XXX";
-    //     double min_distance = 1000;
-    //     int min_index;
-    //     double r, g, b;
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         double curr_distance = edt_list.list[i].m_dist_object;
-
-    //         if (min_distance > curr_distance)
-    //         {
-
-    //             min_distance = curr_distance;
-    //             min_name = edt_list.list[i].name;
-    //             min_index = i;
-
-    //             if (min_name == "Sinus_+_Dura")
-    //             {
-    //                 r = 110.0 / 255.0;
-    //                 g = 184.0 / 255.0;
-    //                 b = 209.0 / 255.0;
-    //             };
-    //             if (min_name == "IAC")
-    //             {
-    //                 r = 244 / 255.0;
-    //                 g = 142.0 / 255.0;
-    //                 b = 52.0 / 255.0;
-    //             };
-    //             if (min_name == "TMJ")
-    //             {
-    //                 r = 100 / 255.0;
-    //                 g = 0.0;
-    //                 b = 0.0;
-    //             };
-    //         }
-    //     }
-
-    //     // cout << "burr_size:" << m_currDrillSize << endl;
-    //     m_distanceText->m_fontColor.set(r, g, b);
-    //     // m_distanceText->setText("Closest structure: \n" + min_name + ": " + cStr(min_distance - m_currDrillSize) + " mm\n");
-
-    //     // Check whether it is not on the boundary
-    //     if (1 < index_x && index_x < edtres - 1 &&
-    //         1 < index_y && index_y < edtres - 1 &&
-    //         1 < index_z && index_z < 169 - 1)
-    //     {
-
-    //         cVector3d force_dir;
-    //         force_dir.set(((*(edt_list.list[min_index].edt_grid))(index_x + 1, index_y, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x - 1, index_y, index_z)),
-    //                       ((*(edt_list.list[min_index].edt_grid))(index_x, index_y + 1, index_z)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y - 1, index_z)),
-    //                       ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z + 1)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z - 1)));
-
-    //         force_dir.normalize();
-    //         // Frame transformation(Object -> World )
-
-    //         double max_force = 0.5; // in N
-    //         double offset = 5.0;    // offset in mm
-
-    //         // double a =max_force;// constant
-    //         // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-
-    //         double a;
-    //         if (min_distance < offset)
-    //         {
-    //             a = max_force; // constant
-    //             // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-    //             // a = max_force * (1 - (min_distance - m_currDrillSize) / offset) ;//Linear
-    //         }
-
-    //         // cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
-
-    //         double force_thres = 1.0;
-    //         if (a > force_thres)
-    //         {
-    //             a = force_thres;
-    //         };
-    //         if (a < -force_thres)
-    //         {
-    //             a + -force_thres;
-    //         };
-
-    //         force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
-    //     }
-    // }
-    // // When it is out of boundary;
-    // else
-    // {
-    //     m_distanceText->m_fontColor.setRed();
-    //     m_distanceText->setText("Distance: Out of boundary!!");
-    //     force_edt.set(0, 0, 0);
-    // }
 }
 
 ///
@@ -1163,57 +1037,6 @@ void afVolmetricDrillingPlugin::drillPoseUpdateFromCursors()
         m_drillAudioSource->setSourcePos(newDrillPos);
     }
 }
-
-///
-/// \brief This method changes the size of the tip tool cursor.
-/// Currently, the size of the tip tool cursor can be set to 2mm, 4mm, and 6mm.
-///
-
-// Commented during merge
-//  void afVolmetricDrillingPlugin::changeDrillSize()
-//  {
-
-//     m_drillSizeIdx++;
-
-//     if (m_drillSizeIdx > 2)
-//     {
-//         m_drillSizeIdx = 0;
-//     }
-
-//     switch (m_drillSizeIdx)
-//     {
-//         // Drill bit size is in diameters i.e. for 2mm drill bit, 1mm * (1 ambf unit/49.664mm) = 0.02014
-//     case 0:
-//         m_toolCursorList[0]->setRadius(0.02014);
-//         m_burrMesh->setRadius(0.02014);
-//         cout << "Drill Size changed to 2 mm" << endl;
-//         m_currDrillSize = 2;
-//         m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
-//         break;
-
-//     case 1:
-//         m_toolCursorList[0]->setRadius(0.04030);
-//         m_burrMesh->setRadius(0.04030);
-//         cout << "Drill Size changed to 4 mm" << endl;
-//         m_currDrillSize = 4;
-//         m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
-//         break;
-
-//     case 2:
-//         m_toolCursorList[0]->setRadius(0.06041);
-//         m_burrMesh->setRadius(0.06041);
-//         cout << "Drill Size changed to 6 mm" << endl;
-//         m_currDrillSize = 6;
-//         m_drillSizeText->setText("Drill Size: " + cStr(m_currDrillSize) + " mm");
-//         break;
-
-//     default:
-//         break;
-//     }
-
-//     double sim_time = m_drillRigidBody->getCurrentTimeStamp();
-//     m_drillingPub->burrChange(m_currDrillSize, sim_time);
-// }
 
 void afVolmetricDrillingPlugin::changeBurrSize(int burrType)
 {
@@ -1541,61 +1364,61 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
                 break;
             }
         }
-        else if (a_key == GLFW_KEY_PAGE_UP)
-        {
-            m_opticalDensity += 0.1;
-            m_voxelObj->setOpticalDensity(m_opticalDensity);
-            cout << "> Optical Density set to " << cStr(m_opticalDensity, 1) << "                            \n";
-        }
-        else if (a_key == GLFW_KEY_PAGE_DOWN)
-        {
-            m_opticalDensity -= 0.1;
-            m_voxelObj->setOpticalDensity(m_opticalDensity);
-            cout << "> Optical Density set to " << cStr(m_opticalDensity, 1) << "                            \n";
-        }
-        else if (a_key == GLFW_KEY_HOME)
-        {
-            float val = m_voxelObj->getOpacityThreshold();
-            m_voxelObj->setOpacityThreshold(val + 0.1);
-            cout << "> Optical Threshold set to " << cStr(m_voxelObj->getOpacityThreshold(), 1)
-                 << "                            \n";
-        }
-        else if (a_key == GLFW_KEY_END)
-        {
-            float val = m_voxelObj->getOpacityThreshold();
-            m_voxelObj->setOpacityThreshold(val - 0.1);
-            cout << "> Optical Threshold set to " << cStr(m_voxelObj->getOpacityThreshold(), 1)
-                 << "                            \n";
-        }
+        // else if (a_key == GLFW_KEY_PAGE_UP)
+        // {
+        //     m_opticalDensity += 0.1;
+        //     m_voxelObj->setOpticalDensity(m_opticalDensity);
+        //     cout << "> Optical Density set to " << cStr(m_opticalDensity, 1) << "                            \n";
+        // }
+        // else if (a_key == GLFW_KEY_PAGE_DOWN)
+        // {
+        //     m_opticalDensity -= 0.1;
+        //     m_voxelObj->setOpticalDensity(m_opticalDensity);
+        //     cout << "> Optical Density set to " << cStr(m_opticalDensity, 1) << "                            \n";
+        // }
+        // else if (a_key == GLFW_KEY_HOME)
+        // {
+        //     float val = m_voxelObj->getOpacityThreshold();
+        //     m_voxelObj->setOpacityThreshold(val + 0.1);
+        //     cout << "> Optical Threshold set to " << cStr(m_voxelObj->getOpacityThreshold(), 1)
+        //          << "                            \n";
+        // }
+        // else if (a_key == GLFW_KEY_END)
+        // {
+        //     float val = m_voxelObj->getOpacityThreshold();
+        //     m_voxelObj->setOpacityThreshold(val - 0.1);
+        //     cout << "> Optical Threshold set to " << cStr(m_voxelObj->getOpacityThreshold(), 1)
+        //          << "                            \n";
+        // }
 
         // controls rotational motion of tool
-        else if (a_key == GLFW_KEY_KP_5)
-        {
+        // else if (a_key == GLFW_KEY_KP_5)
+        // {
 
-            cVector3d rotDir(0, 1, 0);
-            incrementDeviceRot(rotDir);
-        }
+        //     cVector3d rotDir(0, 1, 0);
+        //     incrementDeviceRot(rotDir);
+        // }
 
-        else if (a_key == GLFW_KEY_KP_8)
-        {
+        // else if (a_key == GLFW_KEY_KP_8)
+        // {
 
-            cVector3d rotDir(0, -1, 0);
-            incrementDeviceRot(rotDir);
-        }
+        //     cVector3d rotDir(0, -1, 0);
+        //     incrementDeviceRot(rotDir);
+        // }
 
-        else if (a_key == GLFW_KEY_KP_4)
-        {
+        // else if (a_key == GLFW_KEY_KP_4)
+        // {
 
-            cVector3d rotDir(0, 0, -1);
-            incrementDeviceRot(rotDir);
-        }
+        //     cVector3d rotDir(0, 0, -1);
+        //     incrementDeviceRot(rotDir);
+        // }
 
-        else if (a_key == GLFW_KEY_KP_6)
-        {
+        // else if (a_key == GLFW_KEY_KP_6)
+        // {
 
-            cVector3d rotDir(0, 0, 1);
-            incrementDeviceRot(rotDir);
-        }
+        //     cVector3d rotDir(0, 0, 1);
+        //     incrementDeviceRot(rotDir);
+        // }
 
         // toggles the functionality of sudden jumping of drill mesh towards the followSphere
         else if (a_key == GLFW_KEY_X)
@@ -1627,29 +1450,33 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             changeBurrSize(m_activeBurrIdx);
         }
 
-        else if (a_key == GLFW_KEY_KP_ADD)
+        else if (a_key == GLFW_KEY_J)
         {   
             cout << "Changing the eye disparity +" << endl;
             if (m_stereoCameraL)
             {
                 m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() - cVector3d(0., 0.001, 0.));
+                cout << "Left camera local position:"<< m_stereoCameraL->getLocalPos() << endl;
             }
             if (m_stereoCameraR)
             {
                 m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() + cVector3d(0., 0.001, 0.));
+                cout << "Right camera local position:"<< m_stereoCameraR->getLocalPos() << endl;
             }
         }
-        else if (a_key == GLFW_KEY_KP_SUBTRACT)
+        else if (a_key == GLFW_KEY_K)
         {   
             cout << "Changing the eye disparity -" << endl;
 
             if (m_stereoCameraL)
             {
                 m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() + cVector3d(0., 0.001, 0.));
+                cout << "Left camera local position:"<< m_stereoCameraL->getLocalPos() << endl;
             }
             if (m_stereoCameraR)
             {
                 m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() - cVector3d(0., 0.001, 0.));
+                cout << "Right camera local position:"<< m_stereoCameraR->getLocalPos() << endl;
             }
         }
     }

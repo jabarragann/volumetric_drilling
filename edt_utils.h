@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iterator>
 
-#define number_of_edt 15
+#define number_of_edt 14 //15
 
 using std::string;
 using std::vector;
@@ -62,7 +62,6 @@ public:
 std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
                                         "./edt_grids/Sinus_+_Dura.edt",
                                         "./edt_grids/TMJ.edt",
-                                        "./edt_grids/EAC.edt",
                                         "./edt_grids/ICA.edt",
                                         "./edt_grids/Malleus.edt",
                                         "./edt_grids/Incus.edt",
@@ -74,12 +73,12 @@ std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
                                         "./edt_grids/Facial_Nerve.edt",
                                         "./edt_grids/Chorda_Tympani.edt",
                                         "./edt_grids/Vestibular_Aqueduct.edt"};
+                                        // "./edt_grids/EAC.edt"};
                                         // "./edt_grids/Bone.edt"};
 
 std::string edt_names[number_of_edt] = {"IAC",
                                         "Dura",
                                         "TMJ",
-                                        "EAC",
                                         "ICA",
                                         "Malleus",
                                         "Incus",
@@ -91,6 +90,7 @@ std::string edt_names[number_of_edt] = {"IAC",
                                         "Facial_Nerve",
                                         "Chorda_Tympani",
                                         "Vestibular_Aqueduct"};
+                                        // "EAC",};
                                         // "Bone"};
 
 
