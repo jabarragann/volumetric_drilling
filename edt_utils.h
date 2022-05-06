@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iterator>
 
-#define number_of_edt 14 //15
+#define number_of_edt 15
 
 using std::string;
 using std::vector;
@@ -21,14 +21,18 @@ public:
     string name;
     Array3d<float> *edt_grid;
     vector<int> rgb;
+    float force_thres;
+    float audio_thres;
 
     EdtContainer() {}
-    EdtContainer(string p, string name, const vector<int> &rgb)
+    EdtContainer(string p, string name, const vector<int> &rgb, const float force_thres=1.0, const float audio_thres=1.0)
     {
         this->name = name;
         this->path = p;
         this->m_dist_object = 0.0;
         this->rgb = std::vector<int>(rgb.begin(), rgb.end());
+        this->force_thres = force_thres;
+        this->audio_thres = audio_thres;
     }
 
     void load_grid()
@@ -57,6 +61,11 @@ public:
 
         printf("name: %s || path: %s || color: %s \n", this->name.c_str(), this->path.c_str(), vts.str().c_str());
     }
+    void setThreshold(float force_thres, float audio_thres)
+    {
+        this->force_thres = force_thres;
+        this->audio_thres = audio_thres;
+    }
 };
 
 std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
@@ -72,8 +81,8 @@ std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
                                         "./edt_grids/Cochlear_Nerve.edt",
                                         "./edt_grids/Facial_Nerve.edt",
                                         "./edt_grids/Chorda_Tympani.edt",
-                                        "./edt_grids/Vestibular_Aqueduct.edt"};
-                                        // "./edt_grids/EAC.edt"};
+                                        "./edt_grids/Vestibular_Aqueduct.edt",
+                                        "./edt_grids/EAC.edt"};
                                         // "./edt_grids/Bone.edt"};
 
 std::string edt_names[number_of_edt] = {"IAC",
@@ -89,8 +98,8 @@ std::string edt_names[number_of_edt] = {"IAC",
                                         "Cochlear_Nerve",
                                         "Facial_Nerve",
                                         "Chorda_Tympani",
-                                        "Vestibular_Aqueduct"};
-                                        // "EAC",};
+                                        "Vestibular_Aqueduct",
+                                        "EAC"};
                                         // "Bone"};
 
 
@@ -100,6 +109,8 @@ class EdtList
 public:
     EdtContainer list[number_of_edt];
     std::unordered_map<string, vector<int>> color_map;
+    std::unordered_map<string, vector<float>> thres_mao;
+    int size = number_of_edt;
 
     EdtList()
     {
@@ -119,6 +130,24 @@ public:
         color_map["Chorda_Tympani"] = vector<int>{151, 131, 29};
         color_map["Vestibular_Aqueduct"] = vector<int>{91, 98, 123};
         // color_map["Bone"] = vector<int>{255, 249, 219};//16
+
+        color_map["IAC"] = vector<int>{244, 142, 52};
+        color_map["Dura"] = vector<int>{110, 184, 209};
+        color_map["TMJ"] = vector<int>{100, 0, 0};
+        color_map["EAC"] = vector<int>{255, 225, 214};
+        color_map["ICA"] = vector<int>{216, 100, 79};
+        color_map["Malleus"] = vector<int>{233, 0, 255};
+        color_map["Incus"] = vector<int>{0, 255, 149};
+        color_map["Stapes"] = vector<int>{63, 0, 255};
+        color_map["Bony_Labyrinth"] = vector<int>{91, 123, 91};
+        color_map["Superior_Vestibular_Nerve"] = vector<int>{255, 191, 135};
+        color_map["Inferior_Vestibular_Nerve"] = vector<int>{121, 70, 24};
+        color_map["Cochlear_Nerve"] = vector<int>{219, 244, 52};
+        color_map["Facial_Nerve"] = vector<int>{244, 214, 49};
+        color_map["Chorda_Tympani"] = vector<int>{151, 131, 29};
+        color_map["Vestibular_Aqueduct"] = vector<int>{91, 98, 123};
+
+
         
 
         printf("constructor\n");

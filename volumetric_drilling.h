@@ -133,8 +133,9 @@ private:
     cLabel *m_drillSizeText;
     cLabel *m_drillControlModeText;
 
-    cPanel *m_distancePanel;
-    cLabel *m_distanceText;
+    cPanel *m_distancePanel;//Added
+    cLabel *m_distanceText;//Added
+    cPanel *m_colorPanel;//Added
 
     cTransform world_T_voxel;
     cTransform voxel_T_tool;
@@ -164,7 +165,7 @@ private:
     vector<double> force_direction{0, 0, 0};
     cVector3d force_edt;
   
-
+    bool m_flag_force_arrow = false;
     cMesh* arrow_force;
 
     cAudioSource* m_beepAudioSource = nullptr; //Added for audio
