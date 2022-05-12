@@ -27,7 +27,9 @@ if __name__ == "__main__":
     edtexec_p = Path("./../EDT/cmake-build/bin/EDTFromGrid")
     # imglist_p = Path("./resources/volumes/ear3_171/ear3_171.txt")
     # imglist_p = Path("./resources/volumes/ear3_256/ear3_256.txt")
-    imglist_p = Path("./resources/volumes/ear3_512/ear3_512.txt")
+    # imglist_p = Path("./resources/volumes/ear3_512/ear3_512.txt")
+    # imglist_p = Path("./resources/volumes/ear3_512_2/ear3_512_2.txt")
+    imglist_p = Path("./resources/volumes/ear3_512_4/ear3_512_4.txt")
 
     os.system("echo Hello from the other side!")
     os.system("ls")
@@ -35,7 +37,9 @@ if __name__ == "__main__":
     for name, value in anatomy_dict.items():
         print(f"generate edt for {name}. ({value})")
 
-        dst_p = Path(f"./edt_grids/{name}.edt")
+        # dst_p = Path(f"./edt_grids/{name}.edt")
+        # dst_p = Path(f"./edt_grids_LT151/{name}.edt")
+        dst_p = Path(f"./edt_grids_RT143/{name}.edt")
         # Execute command to generate EDT.
         cmd = f"{edtexec_p} --in {imglist_p} --id {value} --out {dst_p}"
         print(f"executing: {cmd}")

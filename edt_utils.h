@@ -111,7 +111,7 @@ class EdtList
 public:
     EdtContainer list[number_of_edt];
     std::unordered_map<string, vector<int>> color_map;
-    std::unordered_map<string, vector<float>> thres_mao;
+    std::unordered_map<string, vector<double>> thres_map;
     int size = number_of_edt;
 
     EdtList()
@@ -133,21 +133,21 @@ public:
         color_map["Vestibular_Aqueduct"] = vector<int>{91, 98, 123};
         // color_map["Bone"] = vector<int>{255, 249, 219};//16
 
-        color_map["IAC"] = vector<int>{244, 142, 52};
-        color_map["Dura"] = vector<int>{110, 184, 209};
-        color_map["TMJ"] = vector<int>{100, 0, 0};
-        color_map["EAC"] = vector<int>{255, 225, 214};
-        color_map["ICA"] = vector<int>{216, 100, 79};
-        color_map["Malleus"] = vector<int>{233, 0, 255};
-        color_map["Incus"] = vector<int>{0, 255, 149};
-        color_map["Stapes"] = vector<int>{63, 0, 255};
-        color_map["Bony_Labyrinth"] = vector<int>{91, 123, 91};
-        color_map["Superior_Vestibular_Nerve"] = vector<int>{255, 191, 135};
-        color_map["Inferior_Vestibular_Nerve"] = vector<int>{121, 70, 24};
-        color_map["Cochlear_Nerve"] = vector<int>{219, 244, 52};
-        color_map["Facial_Nerve"] = vector<int>{244, 214, 49};
-        color_map["Chorda_Tympani"] = vector<int>{151, 131, 29};
-        color_map["Vestibular_Aqueduct"] = vector<int>{91, 98, 123};
+        thres_map["IAC"] = vector<double>{1.0,1.0};
+        thres_map["Dura"] = vector<double>{0.5, 1.0};
+        thres_map["TMJ"] = vector<double>{1.0,1.0};
+        thres_map["EAC"] = vector<double>{0.5,1.0};
+        thres_map["ICA"] = vector<double>{1.0,1.0};
+        thres_map["Malleus"] = vector<double>{1.0,1.0};
+        thres_map["Incus"] = vector<double>{0.5,1.0};
+        thres_map["Stapes"] = vector<double>{0.5,1.0};
+        thres_map["Bony_Labyrinth"] = vector<double>{0.5,1.0};
+        thres_map["Superior_Vestibular_Nerve"] = vector<double>{1.0,1.0};
+        thres_map["Inferior_Vestibular_Nerve"] = vector<double>{1.0,1.0};
+        thres_map["Cochlear_Nerve"] = vector<double>{1.0,1.0};
+        thres_map["Facial_Nerve"] = vector<double>{0.25,0.5};
+        thres_map["Chorda_Tympani"] = vector<double>{0.25,0.5};
+        thres_map["Vestibular_Aqueduct"] = vector<double>{1.0,1.0};
 
 
         
@@ -156,7 +156,7 @@ public:
         for (int i = 0; i < number_of_edt; i++)
         {
             printf("loading %d edt\n", i);
-            EdtContainer cont(edt_paths[i], edt_names[i], color_map[edt_names[i]]);
+            EdtContainer cont(edt_paths[i], edt_names[i], color_map[edt_names[i]], thres_map[edt_names[i]][0], thres_map[edt_names[i]][1]);
 
             list[i] = cont;
         }

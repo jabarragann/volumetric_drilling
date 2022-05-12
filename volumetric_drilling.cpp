@@ -125,11 +125,11 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         m_mainCamera = m_worldPtr->getCameras()[0];
     }
 
-    // m_stereoCameraL = m_worldPtr->getCamera("stereoL");
-    // m_stereoCameraR = m_worldPtr->getCamera("stereoR");
+    m_stereoCameraL = m_worldPtr->getCamera("stereoL");
+    m_stereoCameraR = m_worldPtr->getCamera("stereoR");
 
-    m_stereoCameraL = m_worldPtr->getCamera("cameraL");
-    m_stereoCameraR = m_worldPtr->getCamera("cameraR");
+    // m_stereoCameraL = m_worldPtr->getCamera("cameraL");
+    // m_stereoCameraR = m_worldPtr->getCamera("cameraR");
 
     // Initializing tool's rotation matrix as an identity matrix
     m_toolRotMat.identity();
@@ -251,8 +251,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_distancePanel->setLocalPos(400, 1000);
     m_distancePanel->setColor(cColorf(1, 1, 1));
     m_distancePanel->setTransparencyLevel(0.8);
-    // m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
-    m_stereoCameraL->getFrontLayer()->addChild(m_distancePanel);
+    m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
+    // m_stereoCameraL->getFrontLayer()->addChild(m_distancePanel);
 
     m_distanceText = new cLabel(font);
     m_distanceText->setLocalPos(405, 1010);
@@ -260,8 +260,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_distanceText->m_fontColor.set(1.0, 1.0, 1.0);
     m_distanceText->setFontScale(.75);
     // m_distanceText->setText("/Bone distance: " + cStr(0.0) + " mm\n" + "/Bone distance: " + cStr(0.0) + "/Bone distance: " + cStr(0.0));
-    // m_mainCamera->getFrontLayer()->addChild(m_distanceText);
-    m_stereoCameraL->getFrontLayer()->addChild(m_distanceText);
+    m_mainCamera->getFrontLayer()->addChild(m_distanceText);
+    // m_stereoCameraL->getFrontLayer()->addChild(m_distanceText);
 
     m_colorPanel = new cPanel();
     m_colorPanel->setSize(10, 10);
@@ -269,8 +269,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_colorPanel->setLocalPos(405, 1013);
     m_colorPanel->setColor(cColorf(1, 1, 1));
     m_colorPanel->setTransparencyLevel(0.8);
-    // m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
-    m_stereoCameraL->getFrontLayer()->addChild(m_colorPanel);
+    m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
+    // m_stereoCameraL->getFrontLayer()->addChild(m_colorPanel);
 
     m_volumeSmoothingText = new cLabel(font);
     m_volumeSmoothingText->setLocalPos(20, 10);
@@ -676,6 +676,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
             force_edt.set(-a * force_dir.y(), -a * force_dir.z(), -a * force_dir.x());
+            // force_edt = m_voxcelObj->getLocalRot() * fore_dir;
 
             //*********************
             // Force Vector
@@ -1486,11 +1487,11 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         else if (a_key == GLFW_KEY_J)
         {
             cout << "Changing the eye disparity +" << endl;
-            if (m_stereoCameraL)
-            {
-                m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() - cVector3d(0., 0.001, 0.));
-                cout << "Left camera local position:" << m_stereoCameraL->getLocalPos() << endl;
-            }
+            // if (m_stereoCameraL)
+            // {
+            //     m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() - cVector3d(0., 0.001, 0.));
+            //     cout << "Left camera local position:" << m_stereoCameraL->getLocalPos() << endl;
+            // }
             if (m_stereoCameraR)
             {
                 m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() + cVector3d(0., 0.001, 0.));
@@ -1501,11 +1502,11 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         {
             cout << "Changing the eye disparity -" << endl;
 
-            if (m_stereoCameraL)
-            {
-                m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() + cVector3d(0., 0.001, 0.));
-                cout << "Left camera local position:" << m_stereoCameraL->getLocalPos() << endl;
-            }
+            // if (m_stereoCameraL)
+            // {
+            //     m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() + cVector3d(0., 0.001, 0.));
+            //     cout << "Left camera local position:" << m_stereoCameraL->getLocalPos() << endl;
+            // }
             if (m_stereoCameraR)
             {
                 m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() - cVector3d(0., 0.001, 0.));
