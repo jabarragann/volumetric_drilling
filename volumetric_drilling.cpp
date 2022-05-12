@@ -69,8 +69,14 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     namespace p_opt = boost::program_options;
     p_opt::options_description cmd_opts("drilling_simulator Command Line Options");
-    cmd_opts.add_options()("info", "Show Info")("nt", p_opt::value<int>()->default_value(8), "Number Tool Cursors to Load. Default 8")("ds", p_opt::value<float>()->default_value(0.026), "Offset between shaft tool cursors. Default 0.026")("vm", p_opt::value<string>()->default_value("00ShinyWhite.jpg"), "Volume's Matcap Filename (Should be placed in the ./resources/matcap/ folder)")("dm", p_opt::value<string>()->default_value("dark_metal_brushed.jpg"), "Drill's Matcap Filename (Should be placed in ./resources/matcap/ folder)")("mute", p_opt::value<bool>()->default_value(false), "Mute");
-
+    cmd_opts.add_options()
+                ("info", "Show Info")
+                ("nt", p_opt::value<int>()->default_value(8), "Number Tool Cursors to Load. Default 8")
+                ("ds", p_opt::value<float>()->default_value(0.026), "Offset between shaft tool cursors. Default 0.026")
+                ("vm", p_opt::value<string>()->default_value("00ShinyWhite.jpg"), "Volume's Matcap Filename (Should be placed in the ./resources/matcap/ folder)")
+                ("dm", p_opt::value<string>()->default_value("dark_metal_brushed.jpg"), "Drill's Matcap Filename (Should be placed in ./resources/matcap/ folder)")
+                ("mute", p_opt::value<bool>()->default_value(false), "Mute")
+                ("edt", p_opt::value<string>()->default_value("./edt_grids/"), "EDT root directory");
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).allow_unregistered().run(), var_map);
     p_opt::notify(var_map);
@@ -250,14 +256,14 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     m_distanceText = new cLabel(font);
     m_distanceText->setLocalPos(405, 1010);
-    //m_distanceText->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
+    // m_distanceText->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
     m_distanceText->m_fontColor.set(1.0, 1.0, 1.0);
     m_distanceText->setFontScale(.75);
     // m_distanceText->setText("/Bone distance: " + cStr(0.0) + " mm\n" + "/Bone distance: " + cStr(0.0) + "/Bone distance: " + cStr(0.0));
     // m_mainCamera->getFrontLayer()->addChild(m_distanceText);
     m_stereoCameraL->getFrontLayer()->addChild(m_distanceText);
 
-    m_colorPanel= new cPanel();
+    m_colorPanel = new cPanel();
     m_colorPanel->setSize(10, 10);
     m_colorPanel->setCornerRadius(10, 10, 10, 10);
     m_colorPanel->setLocalPos(405, 1013);
@@ -362,8 +368,10 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     //*******************
     // EDT Loading
     //*******************
+    string edt_root = var_map["edt"].as<string>();
+    cout << edt_root<< endl;
     this->edt_list.print_info();
-    this->edt_list.load_all_grids();
+    this->edt_list.load_all_grids(edt_root);
 
     // Sample access
     unsigned int res[3];
@@ -377,17 +385,18 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     //********************
 
     m_flag_force_arrow = false;
-    if(m_flag_force_arrow){
-        
+    if (m_flag_force_arrow)
+    {
+
         arrow_force = new cMesh();
-        if(m_flag_sdf){
+        if (m_flag_sdf)
+        {
             cCreateArrow(arrow_force, 0.1, 0.01, 0.05, 0.015,
-                    false, 32, cVector3d(1,0,0), cVector3d(0,0,0));
+                         false, 32, cVector3d(1, 0, 0), cVector3d(0, 0, 0));
         }
 
         m_worldPtr->addSceneObjectToWorld(arrow_force);
     }
-    
 
     //*******************
     // BeeP Audio Loading
@@ -399,24 +408,24 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_beepAudioBuffer = new cAudioBuffer();
     string beepAudioFilepath = "resources/sounds/beep-18.wav";
     // string drillAudioFilepath = "resources/sounds/fail-buzzer-04.wav";
-    if (m_beepAudioBuffer->loadFromFile(beepAudioFilepath)){
-        cout << " Beep sound Loaded" <<endl;
+    if (m_beepAudioBuffer->loadFromFile(beepAudioFilepath))
+    {
+        cout << " Beep sound Loaded" << endl;
         m_beepAudioSource = new cAudioSource();
-//        m_drillAudioBuffer->convertToMono();
+        //        m_drillAudioBuffer->convertToMono();
         m_beepAudioSource->setAudioBuffer(m_beepAudioBuffer);
         m_beepAudioSource->setLoop(true);
         m_beepAudioSource->setGain(2.0);
         // m_beepAudioSource->play();
     }
-    else{
+    else
+    {
         delete m_beepAudioSource;
         delete m_beepAudioBuffer;
         m_beepAudioSource = nullptr;
         m_beepAudioBuffer = nullptr;
         cerr << "FAILED TO LOAD BEEP AUDIO FROM " << beepAudioFilepath << endl;
     }
-
-
 
     return 1;
 }
@@ -559,7 +568,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_toolCursorList[i]->computeInteractionForces();
     }
 
-
     ////////////////////////////////////////////////////////////////////////
     // EDT calculation
     ////////////////////////////////////////////////////////////////////////
@@ -594,14 +602,12 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * res[0]);
         index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * res[1]);
         index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * res[2]);
-        //cout << index_x << "," << index_y << "," << index_z << endl;
-
+        // cout << index_x << "," << index_y << "," << index_z << endl;
 
         std::string min_name = "XXX";
         double min_distance = 1000;
         int min_index;
         unsigned int min_color[3];
-
 
         for (int i = 0; i < edt_list.size; i++)
         {
@@ -617,11 +623,11 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
                 min_color[2] = edt_list.list[i].rgb[2];
             }
         }
-        min_distance = min_distance/10 - m_drillBurrSizes[m_activeBurrIdx].first/0.02014 ;
+        min_distance = min_distance / 10 - m_drillBurrSizes[m_activeBurrIdx].first / 0.02014;
         // cout << "burr_size:" << m_currDrillSize << endl;
         // m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
         m_distanceText->m_fontColor.setBlack();
-        m_colorPanel->setColor(cColorf(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0));
+        m_colorPanel->setColor(cColorf(min_color[0] / 255.0, min_color[1] / 255.0, min_color[2] / 255.0));
         m_distanceText->setText("Closest structure: \n      " + min_name + ": " + cStr(min_distance) + " mm");
 
         // Check whether it is not on the boundary
@@ -638,7 +644,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             // Frame transformation(Object -> World )
             double max_force = 1.0; // in N
             // double max_force = 1.5; // in N
-            double offset = 1.0;    // offset in mm
+            double offset = 1.0; // offset in mm
 
             // double a =max_force;// constant
             // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
@@ -648,10 +654,10 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             {
                 // a = max_force; // constant
                 // a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
-                a = max_force * (1 - (min_distance) / edt_list.list[min_index].force_thres) ;//Linear
+                a = max_force * (1 - (min_distance) / edt_list.list[min_index].force_thres); // Linear
             }
 
-            //cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
+            // cout << "Force direction: " << force_dir.x() << "," << force_dir.y() << "," << force_dir.z() << endl;
 
             if (a > max_force)
             {
@@ -663,30 +669,30 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             };
 
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
-            
+
             // with noize
 
             // noize = 0.001*sin(i)
 
-
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
-            force_edt.set(-a * force_dir.y(), - a * force_dir.z(), -a * force_dir.x());
+            force_edt.set(-a * force_dir.y(), -a * force_dir.z(), -a * force_dir.x());
 
             //*********************
             // Force Vector
             //*********************
 
-            if(m_flag_force_arrow){
-                //Set x axis
+            if (m_flag_force_arrow)
+            {
+                // Set x axis
                 cVector3d x;
-                x.set(1,0,0);
+                x.set(1, 0, 0);
                 cMatrix3d rot;
                 cVector3d axis;
 
-                //Get rotation axis
+                // Get rotation axis
                 x.crossr(force_edt, axis);
 
-                //Get dot product for the rotation angle
+                // Get dot product for the rotation angle
                 double dp;
                 dp = force_edt.dot(x);
 
@@ -694,23 +700,24 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
                 arrow_force->setLocalRot(rot);
             }
-            
 
             //*************************
             // Audio Playing
             //*************************
-            if (m_beepAudioSource){
+            if (m_beepAudioSource)
+            {
 
-                if (min_distance < edt_list.list[min_index].audio_thres && m_flag_sdf){
-                    //m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
+                if (min_distance < edt_list.list[min_index].audio_thres && m_flag_sdf)
+                {
+                    // m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
                     m_drillAudioSource->stop();
                     m_beepAudioSource->play();
                 }
-                else{
+                else
+                {
                     m_beepAudioSource->stop();
                 }
             }
-
         }
     }
     // When it is out of boundary;
@@ -718,17 +725,17 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     {
         m_distanceText->m_fontColor.setRed();
         m_distanceText->setText("Distance: Out of boundary\n");
-        m_colorPanel->setColor(cColorf(1,1,1))
+        m_colorPanel->setColor(cColorf(1, 1, 1));
         force_edt.set(0, 0, 0);
-        if(m_flag_force_arrow)
+        if (m_flag_force_arrow)
             arrow_force->clear();
-
     }
     // check if device remains stuck inside voxel object
     // Also orient the force to match the camera rotation
     cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
 
-    if (m_flag_sdf == false){
+    if (m_flag_sdf == false)
+    {
         m_distanceText->setText("SDF assistance disabled");
         force_edt.set(0, 0, 0);
     }
@@ -1178,14 +1185,12 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             m_volumeObject->reset();
         }
 
-
         else if (a_key == GLFW_KEY_F)
         {
 
             cout << "Changed the SDF mode" << endl;
-            m_flag_sdf = m_flag_sdf -1;
+            m_flag_sdf = m_flag_sdf - 1;
             cout << m_flag_sdf << endl;
-
         }
         // Reset the drill pose
         if (a_key == GLFW_KEY_R)
@@ -1479,32 +1484,32 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         }
 
         else if (a_key == GLFW_KEY_J)
-        {   
+        {
             cout << "Changing the eye disparity +" << endl;
             if (m_stereoCameraL)
             {
                 m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() - cVector3d(0., 0.001, 0.));
-                cout << "Left camera local position:"<< m_stereoCameraL->getLocalPos() << endl;
+                cout << "Left camera local position:" << m_stereoCameraL->getLocalPos() << endl;
             }
             if (m_stereoCameraR)
             {
                 m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() + cVector3d(0., 0.001, 0.));
-                cout << "Right camera local position:"<< m_stereoCameraR->getLocalPos() << endl;
+                cout << "Right camera local position:" << m_stereoCameraR->getLocalPos() << endl;
             }
         }
         else if (a_key == GLFW_KEY_K)
-        {   
+        {
             cout << "Changing the eye disparity -" << endl;
 
             if (m_stereoCameraL)
             {
                 m_stereoCameraL->setLocalPos(m_stereoCameraL->getLocalPos() + cVector3d(0., 0.001, 0.));
-                cout << "Left camera local position:"<< m_stereoCameraL->getLocalPos() << endl;
+                cout << "Left camera local position:" << m_stereoCameraL->getLocalPos() << endl;
             }
             if (m_stereoCameraR)
             {
                 m_stereoCameraR->setLocalPos(m_stereoCameraR->getLocalPos() - cVector3d(0., 0.001, 0.));
-                cout << "Right camera local position:"<< m_stereoCameraR->getLocalPos() << endl;
+                cout << "Right camera local position:" << m_stereoCameraR->getLocalPos() << endl;
             }
         }
     }
@@ -1530,14 +1535,17 @@ bool afVolmetricDrillingPlugin::close()
     {
         tool->stop();
     }
-    //Audio related deconstructor
-    if (m_drillAudioSource){
+    // Audio related deconstructor
+    if (m_drillAudioSource)
+    {
         delete m_drillAudioSource;
     }
-    if (m_drillAudioBuffer){
+    if (m_drillAudioBuffer)
+    {
         delete m_drillAudioBuffer;
     }
-    if (m_drillAudioDevice){
+    if (m_drillAudioDevice)
+    {
         m_mainCamera->getInternalCamera()->detachAudioDevice();
         delete m_drillAudioDevice;
     }

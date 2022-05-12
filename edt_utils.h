@@ -35,11 +35,13 @@ public:
         this->audio_thres = audio_thres;
     }
 
-    void load_grid()
+    void load_grid(string edt_root)
     {
+        string complete_path = edt_root+this->path;
+
         float *values_buffer;
         unsigned int res[3];
-        edt_reader(this->path, &values_buffer, res);
+        edt_reader(complete_path, &values_buffer, res);
         this->edt_grid = new Array3d<float>(values_buffer, res);
 
         // I will keep this error here to remember the importance of learning how to allocate memory in c++.
@@ -68,21 +70,21 @@ public:
     }
 };
 
-std::string edt_paths[number_of_edt] = {"./edt_grids/IAC.edt",
-                                        "./edt_grids/Sinus_+_Dura.edt",
-                                        "./edt_grids/TMJ.edt",
-                                        "./edt_grids/ICA.edt",
-                                        "./edt_grids/Malleus.edt",
-                                        "./edt_grids/Incus.edt",
-                                        "./edt_grids/Stapes.edt",
-                                        "./edt_grids/Bony_Labyrinth.edt",
-                                        "./edt_grids/Superior_Vestibular_Nerve.edt",
-                                        "./edt_grids/Inferior_Vestibular_Nerve.edt",
-                                        "./edt_grids/Cochlear_Nerve.edt",
-                                        "./edt_grids/Facial_Nerve.edt",
-                                        "./edt_grids/Chorda_Tympani.edt",
-                                        "./edt_grids/Vestibular_Aqueduct.edt",
-                                        "./edt_grids/EAC.edt"};
+std::string edt_paths[number_of_edt] = {"IAC.edt",
+                                        "Sinus_+_Dura.edt",
+                                        "TMJ.edt",
+                                        "ICA.edt",
+                                        "Malleus.edt",
+                                        "Incus.edt",
+                                        "Stapes.edt",
+                                        "Bony_Labyrinth.edt",
+                                        "Superior_Vestibular_Nerve.edt",
+                                        "Inferior_Vestibular_Nerve.edt",
+                                        "Cochlear_Nerve.edt",
+                                        "Facial_Nerve.edt",
+                                        "Chorda_Tympani.edt",
+                                        "Vestibular_Aqueduct.edt",
+                                        "EAC.edt"};
                                         // "./edt_grids/Bone.edt"};
 
 std::string edt_names[number_of_edt] = {"IAC",
@@ -160,11 +162,11 @@ public:
         }
     }
 
-    void load_all_grids()
+    void load_all_grids(string edt_root)
     {
         for (int i = 0; i < number_of_edt; i++)
         {
-            this->list[i].load_grid();
+            this->list[i].load_grid(edt_root);
         }
     }
     void print_info()
