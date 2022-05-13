@@ -216,7 +216,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_warningText->m_fontColor.setWhite();
     m_warningText->setFontScale(1.0);
     m_warningText->setText("WARNING! Critical Region Detected");
-    m_mainCamera->getFrontLayer()->addChild(m_warningText);
+    // m_mainCamera->getFrontLayer()->addChild(m_warningText);
     m_warningText->setShowEnabled(false);
 
     // A panel to display current drill size
@@ -269,7 +269,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_colorPanel->setLocalPos(405, 1013);
     m_colorPanel->setColor(cColorf(1, 1, 1));
     m_colorPanel->setTransparencyLevel(0.8);
-    m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
+    m_mainCamera->getFrontLayer()->addChild(m_colorPanel);
     // m_stereoCameraL->getFrontLayer()->addChild(m_colorPanel);
 
     m_volumeSmoothingText = new cLabel(font);
@@ -384,7 +384,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     // Force arrow
     //********************
 
-    m_flag_force_arrow = false;
+    m_flag_force_arrow = true;
     if (m_flag_force_arrow)
     {
 
@@ -602,7 +602,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * res[0]);
         index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * res[1]);
         index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * res[2]);
-        // cout << index_x << "," << index_y << "," << index_z << endl;
+        cout << index_x << "," << index_y << "," << index_z << endl;
 
         std::string min_name = "XXX";
         double min_distance = 1000;
@@ -641,13 +641,10 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
                           ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z + 1)) - ((*(edt_list.list[min_index].edt_grid))(index_x, index_y, index_z - 1)));
 
             force_dir.normalize();
-            // Frame transformation(Object -> World )
+
             double max_force = 1.0; // in N
-            // double max_force = 1.5; // in N
             double offset = 1.0; // offset in mm
 
-            // double a =max_force;// constant
-            // double a =max_force * exp(-0.001 * (min_distance - m_currDrillSize));//exponential
 
             double a = 0.0;
             if (min_distance < edt_list.list[min_index].force_thres)
@@ -675,9 +672,22 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             // noize = 0.001*sin(i)
 
             // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
-            force_edt.set(-a * force_dir.y(), -a * force_dir.z(), -a * force_dir.x());
-            // force_edt = m_voxcelObj->getLocalRot() * fore_dir;
+            
+            //For Original anatomy
+            // force_edt.set(-a * force_dir.y(), -a * force_dir.z(), -a * force_dir.x());
 
+            
+            //Frame EDT -> Frame Voxel; y-> -y
+            force_dir.set(force_dir.x(), - force_dir.y(), force_dir.z());
+
+            //Frame Voxel -> Frame World
+            force_edt = (m_voxelObj->getLocalRot()) * force_dir;
+
+            
+            //Multiple with distance based constant
+            force_edt = a * force_edt; 
+
+        
             //*********************
             // Force Vector
             //*********************
@@ -728,8 +738,8 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         m_distanceText->setText("Distance: Out of boundary\n");
         m_colorPanel->setColor(cColorf(1, 1, 1));
         force_edt.set(0, 0, 0);
-        if (m_flag_force_arrow)
-            arrow_force->clear();
+        // if (m_flag_force_arrow)
+            // arrow_force->clear();
     }
     // check if device remains stuck inside voxel object
     // Also orient the force to match the camera rotation
