@@ -18,6 +18,11 @@ multibody configs:
   - "ADF/segmentation_camera.yaml" #4
   - "ADF/stereo_cameras.yaml" #5
   - "ADF/single_stereo_camera.yaml" #6
-  - "ADF/volume_cube_512_256.yaml" #7
-  - "ADF/volume_256_LT151.yaml" #8
-  - "ADF/volume_256_RT143.yaml" #9
+  - "ADF/vr_cameras.yaml" #7
+
+  # For sanity check
+  - "ADF/volume_cube_512_256.yaml" #8
+
+# Different anatomy
+  - "ADF/volume_256_LT151.yaml" #9
+  - "ADF/volume_256_RT143.yaml" #10

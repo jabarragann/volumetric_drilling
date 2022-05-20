@@ -125,8 +125,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         m_mainCamera = m_worldPtr->getCameras()[0];
     }
 
-    m_stereoCameraL = m_worldPtr->getCamera("stereoL");
-    m_stereoCameraR = m_worldPtr->getCamera("stereoR");
+    m_stereoCameraL = m_worldPtr->getCamera("VRcameraL");
+    m_stereoCameraR = m_worldPtr->getCamera("VRcameraR");
 
     // m_stereoCameraL = m_worldPtr->getCamera("cameraL");
     // m_stereoCameraR = m_worldPtr->getCamera("cameraR");
@@ -143,14 +143,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
              << "mastoidectomy_drill" << endl;
         return -1;
     }
-    // Commented during merge
-    // else
-    // {
-    //     // m_burrMesh = new cShapeSphere(0.043); // 2mm by default with 1 AMBF unit = 0.049664 m
-    //     // m_burrMesh->setRadius(0.043);
-    //     m_burrMesh = new cShapeSphere(0.02014); // 2mm by default with 1 AMBF unit = 0.049664 m
-    //     m_burrMesh->setRadius(0.02014);
-    // }
+
     else
     {
         m_burrMesh = new cShapeSphere(m_drillBurrSizes[m_activeBurrIdx].first);
@@ -207,12 +200,14 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_warningPopup = new cPanel();
     m_warningPopup->set(m_mainCamera->m_width / 1.9, m_mainCamera->m_height / 5);
     m_warningPopup->setColor(cColorf(0.6, 0, 0));
-    m_warningPopup->setLocalPos(m_mainCamera->m_width * 0.3, m_mainCamera->m_height * 0.6, 0);
-    m_mainCamera->getFrontLayer()->addChild(m_warningPopup);
+    // m_warningPopup->setLocalPos(m_mainCamera->m_width * 0.3, m_mainCamera->m_height * 0.6, 0);
+    m_warningPopup->setLocalPos(m_mainCamera->m_width * 0.8, m_mainCamera->m_height * 1.0, 0);
+    // m_mainCamera->getFrontLayer()->addChild(m_warningPopup);
     m_warningPopup->setShowPanel(false);
 
     m_warningText = new cLabel(font);
-    m_warningText->setLocalPos(0.31 * m_mainCamera->m_width, 0.67 * m_mainCamera->m_height, 0.5);
+    // m_warningText->setLocalPos(0.31 * m_mainCamera->m_width, 0.67 * m_mainCamera->m_height, 0.5);
+    m_warningText->setLocalPos(0.84 * m_mainCamera->m_width, 1.07 * m_mainCamera->m_height, 0.5);
     m_warningText->m_fontColor.setWhite();
     m_warningText->setFontScale(1.0);
     m_warningText->setText("WARNING! Critical Region Detected");
@@ -248,14 +243,15 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_distancePanel = new cPanel();
     m_distancePanel->setSize(300, 80);
     m_distancePanel->setCornerRadius(10, 10, 10, 10);
-    m_distancePanel->setLocalPos(400, 1000);
+    // m_distancePanel->setLocalPos(400, 1000);
+    // m_distancePanel->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
     m_distancePanel->setColor(cColorf(1, 1, 1));
     m_distancePanel->setTransparencyLevel(0.8);
     m_mainCamera->getFrontLayer()->addChild(m_distancePanel);
     // m_stereoCameraL->getFrontLayer()->addChild(m_distancePanel);
 
     m_distanceText = new cLabel(font);
-    m_distanceText->setLocalPos(405, 1010);
+    // m_distanceText->setLocalPos(405, 1010);
     // m_distanceText->setLocalPos(0.7 * m_mainCamera->m_width, 0.7 * m_mainCamera->m_height);
     m_distanceText->m_fontColor.set(1.0, 1.0, 1.0);
     m_distanceText->setFontScale(.75);
@@ -263,10 +259,11 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_mainCamera->getFrontLayer()->addChild(m_distanceText);
     // m_stereoCameraL->getFrontLayer()->addChild(m_distanceText);
 
+
     m_colorPanel = new cPanel();
     m_colorPanel->setSize(10, 10);
     m_colorPanel->setCornerRadius(10, 10, 10, 10);
-    m_colorPanel->setLocalPos(405, 1013);
+    // m_colorPanel->setLocalPos(405, 1013);
     m_colorPanel->setColor(cColorf(1, 1, 1));
     m_colorPanel->setTransparencyLevel(0.8);
     m_mainCamera->getFrontLayer()->addChild(m_colorPanel);
@@ -384,7 +381,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     // Force arrow
     //********************
 
-    m_flag_force_arrow = true;
+    m_flag_force_arrow = false;
     if (m_flag_force_arrow)
     {
 
@@ -447,6 +444,12 @@ void afVolmetricDrillingPlugin::graphicsUpdate()
     if (m_flag_force_arrow)
         arrow_force->setLocalPos(m_T_d.getLocalPos());
     m_volumeObject->getShaderProgram()->setUniformi("aoMap", C_TU_AO);
+
+    m_distancePanel->setLocalPos(0.3215 * m_mainCamera->m_width, 0.7267 * m_mainCamera->m_height);
+    m_distanceText->setLocalPos(0.3255 * m_mainCamera->m_width, 0.7340 * m_mainCamera->m_height);
+    m_colorPanel->setLocalPos(0.3255 * m_mainCamera->m_width, 0.7362 * m_mainCamera->m_height);
+
+
 }
 
 void afVolmetricDrillingPlugin::physicsUpdate(double dt)
@@ -455,22 +458,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     m_worldPtr->getChaiWorld()->computeGlobalPositions(true);
 
     cTransform T_c_w = m_mainCamera->getLocalTransform();
-    // Commented during merge
-    //  If a valid haptic device is found, then it should be available
-
-    // if (getOverrideDrillControl())
-    // {
-    //     T_d = m_drillRigidBody->getLocalTransform();
-    // }
-    // else if (m_hapticDevice->isDeviceAvailable())
-    // {
-    //     m_hapticDevice->getTransform(T_i);
-    //     m_hapticDevice->getLinearVelocity(V_i);
-    //     m_hapticDevice->getUserSwitch(0, clutch);
-    //     V_i = m_mainCamera->getLocalRot() * (V_i * !clutch / m_toolCursorList[0]->getWorkspaceScaleFactor());
-    //     T_d.setLocalPos(T_d.getLocalPos() + V_i);
-    //     T_d.setLocalRot(m_mainCamera->getLocalRot() * T_i.getLocalRot());
-    // }
 
     if (getOverrideDrillControl())
     {
@@ -593,7 +580,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // cout<< voxel_T_tool.getLocalPos().x() << ", "<< voxel_T_tool.getLocalPos().y() << ", "<< voxel_T_tool.getLocalPos().z() << endl;
 
     // check wether the tool is inside the voxel
-
     if (abs(voxel_T_tool.getLocalPos().x()) < 0.5 && abs(voxel_T_tool.getLocalPos().y()) < 0.5 && abs(voxel_T_tool.getLocalPos().z()) < 0.5)
     {
         // cout << "EDT working ..." << endl;
@@ -602,7 +588,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
         index_x = round((voxel_T_tool.getLocalPos().x() + 0.5) * res[0]);
         index_y = -round((voxel_T_tool.getLocalPos().y() - 0.5) * res[1]);
         index_z = round((voxel_T_tool.getLocalPos().z() + 0.5) * res[2]);
-        cout << index_x << "," << index_y << "," << index_z << endl;
+        // cout << index_x << "," << index_y << "," << index_z << endl;
 
         std::string min_name = "XXX";
         double min_distance = 1000;
@@ -624,8 +610,8 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             }
         }
         min_distance = min_distance / 10 - m_drillBurrSizes[m_activeBurrIdx].first / 0.02014;
-        // cout << "burr_size:" << m_currDrillSize << endl;
-        // m_distanceText->m_fontColor.set(min_color[0]/255.0, min_color[1]/255.0, min_color[2]/255.0);
+
+        // Generating the text for the distance panel
         m_distanceText->m_fontColor.setBlack();
         m_colorPanel->setColor(cColorf(min_color[0] / 255.0, min_color[1] / 255.0, min_color[2] / 255.0));
         m_distanceText->setText("Closest structure: \n      " + min_name + ": " + cStr(min_distance) + " mm");
@@ -665,29 +651,21 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
                 a = 0;
             };
 
-            // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
 
             // with noize
-
             // noize = 0.001*sin(i)
 
-            // force_edt.set(-a * force_dir.y(), a * force_dir.z(), a * force_dir.x());
-            
-            //For Original anatomy
-            // force_edt.set(-a * force_dir.y(), -a * force_dir.z(), -a * force_dir.x());
-
-            
             //Frame EDT -> Frame Voxel; y-> -y
             force_dir.set(force_dir.x(), - force_dir.y(), force_dir.z());
 
             //Frame Voxel -> Frame World
             force_edt = (m_voxelObj->getLocalRot()) * force_dir;
 
-            
-            //Multiple with distance based constant
-            force_edt = a * force_edt; 
 
-        
+            //Multiple with distance based constant
+            force_edt = a * force_edt;
+
+
             //*********************
             // Force Vector
             //*********************
@@ -720,7 +698,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
                 if (min_distance < edt_list.list[min_index].audio_thres && m_flag_sdf)
                 {
-                    // m_drillAudioSource->setPitch(4.0 - (min_distance - m_currDrillSize));
                     m_drillAudioSource->stop();
                     m_beepAudioSource->play();
                 }
@@ -753,21 +730,16 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     // cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
     cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * (m_targetToolCursor->getDeviceLocalForce() + force_edt);
 
-    // force = force + force_new;
-    // Commented during merge
-    // cVector3d force = cTranspose(m_mainCamera->getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
-    // cVector3d force_new = cTranspose(m_mainCamera->getLocalRot()) * force_edt;
-    // // cout << "RAW Force direction: " << force.x() << "," << force.y() << "," << force.z() << endl;
-    // force = force + force_new;
-    // cVector3d force = cTranspose(T_c_w.getLocalRot()) * m_targetToolCursor->getDeviceLocalForce();
-
-    // m_toolCursorList[0]->setDeviceLocalForce(force);
     // double force_mag = cClamp(force.length(), 0.0, m_hapticDevice->getSpecifications().m_maxLinearForce);
     // if (m_drillAudioSource)
     // {
     //     m_drillAudioSource->setPitch(3.0 - force_mag / m_hapticDevice->getSpecifications().m_maxLinearForce);
     // }
 
+    //Only with drilling force
+    //m_toolCursorList[0]->setDeviceLocalForce(force);
+
+    //Drilling force + EDT related force
     m_toolCursorList[0]->setDeviceLocalForce(force_new);
 
     if (m_flagStart)
@@ -801,75 +773,6 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     // get status of user switch
     bool button = m_toolCursorList[0]->getUserSwitch(1);
-    // //
-    // Commented during merge
-    // // STATE 1:
-    // // Idle mode - user presses the user switch
-    // //
-    // if ((m_controlMode == HAPTIC_IDLE) && (button == true))
-    // {
-    //     // check if at least one contact has occurred
-    //     if (m_toolCursorList[0]->m_hapticPoint->getNumCollisionEvents() > 0)
-    //     {
-    //         // get contact event
-    //         cCollisionEvent *collisionEvent = m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
-
-    //         // get object from contact event
-    //         m_selectedObject = collisionEvent->m_object;
-    //     }
-    //     else
-    //     {
-    //         m_selectedObject = m_voxelObj;
-    //     }
-
-    //     // get transformation from object
-    //     cTransform world_T_object = m_selectedObject->getLocalTransform();
-
-    //     // compute inverse transformation from contact point to object
-    //     cTransform tool_T_world = world_T_tool;
-    //     tool_T_world.invert();
-
-    //     // store current transformation tool
-    //     m_tool_T_object = tool_T_world * world_T_object;
-
-    //     // update state
-    //     m_controlMode = HAPTIC_SELECTION;
-    // }
-
-    // //
-    // // STATE 2:
-    // // Selection mode - operator maintains user switch enabled and moves object
-    // //
-    // else if ((m_controlMode == HAPTIC_SELECTION) && (button == true))
-    // {
-    //     // compute new transformation of object in global coordinates
-    //     cTransform world_T_object = world_T_tool * m_tool_T_object;
-
-    //     // compute new transformation of object in local coordinates
-    //     cTransform parent_T_world = m_selectedObject->getParent()->getLocalTransform();
-    //     parent_T_world.invert();
-    //     cTransform parent_T_object = parent_T_world * world_T_object;
-
-    //     // assign new local transformation to object
-    //     if (m_selectedObject == m_voxelObj)
-    //     {
-    //         m_volumeObject->setLocalTransform(parent_T_object);
-    //     }
-
-    //     // set zero forces when manipulating objects
-    //     m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
-
-    //     m_toolCursorList[0]->initialize();
-    // }
-
-    // //
-    // // STATE 3:
-    // // Finalize Selection mode - operator releases user switch.
-    // //
-    // else
-    // {
-    //     m_controlMode = HAPTIC_IDLE;
-    // }
 
     /////////////////////////////////////////////////////////////////////////
     // FINALIZE
@@ -930,12 +833,6 @@ void afVolmetricDrillingPlugin::toolCursorInit(const afWorldPtr a_afWorld)
     }
 
     // Initialize the start pose of the tool cursors
-    // Commented during merge
-    // toolCursorsPosUpdate(T_d);
-    // for (int i = 0; i < m_toolCursorList.size(); i++)
-    // {
-    //     m_toolCursorList[i]->initialize();
-    // }
     toolCursorsPosUpdate(m_T_d);
     toolCursorsInitialize();
 }
