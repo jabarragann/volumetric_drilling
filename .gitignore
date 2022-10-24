@@ -14,3 +14,5 @@ build/
 
 *resources/volumes/
 hdf5_files
+*.hdf5
+*.avi

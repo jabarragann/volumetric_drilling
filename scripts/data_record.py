@@ -224,9 +224,34 @@ def write_to_hdf5():
     for group, data in containers:
         for key, value in data.items():
             if len(value) > 0:
-                group.create_dataset(
-                    key, data=np.stack(value, axis=0), compression="gzip"
-                )  # write to disk
+                if key == "voxel_removed" or key == "voxel_color":
+                    n_fields = 3 if key == "voxel_removed" else 4
+                    # Zero-pad voxel information to store in a single big array
+
+                    # Find max dimension
+                    max_size = 0
+                    for t in value:
+                        if len(t) > max_size:
+                            max_size = len(t)
+                    resized_arr = np.zeros((len(value) + 10, max_size, n_fields))
+
+                    # add all voxel information to resized_arr
+                    for idx, t in enumerate(value):
+                        temp_arr = np.zeros((max_size, n_fields))
+                        for idx2, k in enumerate(t):
+                            if key == "voxel_removed":
+                                temp_arr[idx2, :] = [k.x, k.y, k.z]
+                            else:
+                                temp_arr[idx2, :] = [k.r, k.g, k.b, k.a]
+
+                        resized_arr[idx, :, :] = temp_arr
+
+                    group.create_dataset(key, data=resized_arr, compression="gzip")  # write to disk
+                else:
+                    print(f"key {key}")
+                    group.create_dataset(
+                        key, data=np.stack(value, axis=0), compression="gzip"
+                    )  # write to disk
                 log.log(logging.INFO, (key, group[key].shape))
             data[key] = []  # reset list to empty memory
 
