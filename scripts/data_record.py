@@ -1,6 +1,7 @@
 import logging
 import math
 import os
+import pathlib
 import pickle
 import sys
 import time
@@ -25,12 +26,10 @@ from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image, PointCloud2
 
 try:
-    from vdrilling_msgs.msg import points, UInt8Stamped, VolumeProp
+    from volumetric_drilling_msgs.msg import Voxels, DrillSize, VolumeInfo
 except ImportError:
-    print(
-        "\nvdrilling_msgs.msg: cannot open shared message file. "
-        + "Please source <volumetric_plugin_path>/vdrilling_msgs/build/devel/setup.bash \n"
-    )
+    print("\nvolumetric_drilling_msgs.msg: cannot open shared message file. " +
+          "Please source <volumetric_plugin_path>/build/devel/setup.bash \n")
 
 
 def rpy_to_quat(roll, pitch, yaw):
@@ -56,9 +55,9 @@ def depth_gen(depth_msg):
     :return: HxW, z-values
     """
     xyz_array = ros_numpy.point_cloud2.pointcloud2_to_array(depth_msg)
-    xcol = xyz_array["x"][:, None] * scale
-    ycol = xyz_array["y"][:, None] * scale
-    zcol = xyz_array["z"][:, None] * scale
+    xcol = xyz_array['x'][:, None] * scale
+    ycol = xyz_array['y'][:, None] * scale
+    zcol = xyz_array['z'][:, None] * scale
 
     scaled_depth = np.concatenate([xcol, ycol, zcol], axis=-1)
     # halve precision to save storage
@@ -66,7 +65,8 @@ def depth_gen(depth_msg):
     # reverse height direction due to AMBF reshaping
     scaled_depth = np.ascontiguousarray(scaled_depth.reshape([h, w, 3])[::-1])
     # convert to cv convention
-    scaled_depth = np.einsum("ab,hwb->hwa", extrinsic[:3, :3], scaled_depth)[..., -1]
+    scaled_depth = np.einsum(
+        'ab,hwb->hwa', extrinsic[:3, :3], scaled_depth)[..., -1]
 
     return scaled_depth
 
@@ -82,17 +82,15 @@ def image_gen(image_msg):
 
 def pose_gen(pose_msg):
     pose = pose_msg.pose
-    pose_np = np.array(
-        [
-            pose.position.x * scale,
-            pose.position.y * scale,
-            pose.position.z * scale,
-            pose.orientation.x,
-            pose.orientation.y,
-            pose.orientation.z,
-            pose.orientation.w,
-        ]
-    )
+    pose_np = np.array([
+        pose.position.x * scale,
+        pose.position.y * scale,
+        pose.position.z * scale,
+        pose.orientation.x,
+        pose.orientation.y,
+        pose.orientation.z,
+        pose.orientation.w
+    ])
 
     return pose_np
 
@@ -118,8 +116,8 @@ def init_hdf5(args, stereo):
     if sys.version_info[0] >= 3:
         nrrd_header = open(args.nrrd_header, "rb")
         header = pickle.load(nrrd_header)
-        directions = header["space directions"]
-        sizes = header["sizes"]
+        directions = header['space directions']
+        sizes = header['sizes']
         largest_dim = np.argmax(sizes)
         s = np.linalg.norm(directions[largest_dim]) * sizes[largest_dim] / 1000.0
     else:
@@ -131,47 +129,33 @@ def init_hdf5(args, stereo):
     volume_adf.close()
     volume_name = volume_params["volumes"][0]
     volume_loc = volume_params[volume_name]["location"]
-    volume_position = [
-        volume_loc["position"]["x"] * s,
-        volume_loc["position"]["y"] * s,
-        volume_loc["position"]["z"] * s,
-    ]
-    volume_orientation = rpy_to_quat(
-        volume_loc["orientation"]["r"],
-        volume_loc["orientation"]["p"],
-        volume_loc["orientation"]["y"],
-    )  # ZYX needs to be capitalized
+    volume_position = [volume_loc["position"]["x"] * s, volume_loc["position"]["y"] * s,
+                       volume_loc["position"]["z"] * s]
+    volume_orientation = rpy_to_quat(volume_loc["orientation"]["r"], volume_loc["orientation"]["p"],
+                                     volume_loc["orientation"]["y"])  # ZYX needs to be capitalized
     volume_pose = np.concatenate([volume_position, volume_orientation])
 
     # Create hdf5 file with date
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     time_str = time.strftime("%Y%m%d_%H%M%S")
-    file = h5py.File(args.output_dir + "/" + time_str + ".hdf5", "w")
+    file = h5py.File(args.output_dir + '/' + time_str + ".hdf5", "w")
 
     metadata = file.create_group("metadata")
     metadata.create_dataset("camera_intrinsic", data=intrinsic)
     metadata.create_dataset("camera_extrinsic", data=extrinsic)
-    metadata.create_dataset(
-        "README",
-        data="All position information is in meters unless specified otherwise. \n"
-        "Quaternion is a list in the order of [qx, qy, qz, qw]. \n"
-        "Poses are defined to be T_world_obj. \n"
-        "Depth in CV convention (corrected by extrinsic, T_cv_ambf). \n",
-    )
+    metadata.create_dataset("README", data="All position information is in meters unless specified otherwise. \n"
+                                           "Quaternion is a list in the order of [qx, qy, qz, qw]. \n"
+                                           "Poses are defined to be T_world_obj. \n"
+                                           "Depth in CV convention (corrected by extrinsic, T_cv_ambf). \n")
 
     # baseline info from stereo adf
     if stereo:
         adf = args.stereo_adf
         stereo_adf = open(adf, "r")
         stereo_params = yaml.safe_load(stereo_adf)
-        baseline = (
-            math.fabs(
-                stereo_params["stereoL"]["location"]["y"]
-                - stereo_params["stereoR"]["location"]["y"]
-            )
-            * s
-        )
+        baseline = math.fabs(
+            stereo_params['stereoL']['location']['y'] - stereo_params['stereoR']['location']['y']) * s
         metadata.create_dataset("baseline", data=baseline)
 
     file.create_group("data")
@@ -195,15 +179,15 @@ def callback(*inputs):
     data = dict(time=inputs[0].header.stamp.to_sec())
 
     if num_data % 5 == 0:
-        print("Recording data: " + "#" * (num_data // 10))
+        print("Recording data: " + '#' * (num_data // 10))
 
     for idx, key in enumerate(keys[1:]):  # skip time
-        if "l_img" == key or "r_img" == key or "segm" == key:
+        if 'l_img' == key or 'r_img' == key or 'segm' == key:
             data[key] = image_gen(inputs[idx])
-        if "depth" == key:
+        if 'depth' == key:
             # print("depth")
             data[key] = depth_gen(inputs[idx])
-        if "pose_" in key:
+        if 'pose_' in key:
             # print("pose")
             data[key] = pose_gen(inputs[idx])
 
@@ -214,13 +198,9 @@ def callback(*inputs):
 
 
 def write_to_hdf5():
-    hdf5_vox_vol = f["metadata"].create_dataset("voxel_volume", data=voxel_volume)
-    hdf5_vox_vol.attrs["units"] = "mm^3, millimeters cubed"
-    containers = [
-        (f["data"], container),
-        (f["voxels_removed"], collisions),
-        (f["burr_change"], burr_change),
-    ]
+    hdf5_vox_vol = f['metadata'].create_dataset("voxel_volume", data=voxel_volume)
+    hdf5_vox_vol.attrs['units'] = "mm^3, millimeters cubed"
+    containers = [(f["data"], container), (f["voxels_removed"], collisions), (f["burr_change"], burr_change)]
     for group, data in containers:
         for key, value in data.items():
             if len(value) > 0:
@@ -249,18 +229,16 @@ def write_to_hdf5():
                     group.create_dataset(key, data=resized_arr, compression="gzip")  # write to disk
                 else:
                     print(f"key {key}")
-                    group.create_dataset(
-                        key, data=np.stack(value, axis=0), compression="gzip"
-                    )  # write to disk
+                group.create_dataset(
+                    key, data=np.stack(value, axis=0), compression='gzip')  # write to disk
                 log.log(logging.INFO, (key, group[key].shape))
             data[key] = []  # reset list to empty memory
 
     # write volume pose
     key = "pose_mastoidectomy_volume"
     num_samples = len(f["data"][list(f["data"].keys())[0]])
-    f["data"].create_dataset(
-        key, data=np.stack([volume_pose] * num_samples, axis=0), compression="gzip"
-    )  # write to disk
+    f["data"].create_dataset(key, data=np.stack([volume_pose] * num_samples, axis=0),
+                             compression='gzip')  # write to disk
     log.log(logging.INFO, (key, f["data"][key].shape))
 
     f.close()
@@ -289,24 +267,27 @@ def timer_callback(_):
 
 
 def rm_vox_callback(rm_vox_msg):
-    voxel = [rm_vox_msg.voxel_removed.x, rm_vox_msg.voxel_removed.y, rm_vox_msg.voxel_removed.z]
-    collisions["time_stamp"].append(rm_vox_msg.header.stamp.to_sec())
-    collisions["voxel_removed"].append(voxel)
-    int_vox_color = [round(elem * 255) for elem in rm_vox_msg.voxel_color]
-    collisions["voxel_color"].append(int_vox_color)
+    collisions['time_stamp'].append(rm_vox_msg.header.stamp.to_sec())
+    collisions['voxel_removed'].append(rm_vox_msg.indices)
+    for c in rm_vox_msg.colors:
+        c.r = 255 * c.r
+        c.g = 255 * c.g
+        c.b = 255 * c.b
+        c.a = 255 * c.a
+    collisions['voxel_color'].append(rm_vox_msg.colors)
 
 
 def burr_change_callback(burr_change_msg):
     global burr_change
-    burr_change["time_stamp"].append(burr_change_msg.header.stamp.to_sec())
-    burr_change["burr_size"].append(burr_change_msg.number.data)
+    burr_change['time_stamp'].append(burr_change_msg.header.stamp.to_sec())
+    burr_change['burr_size'].append(burr_change_msg.size.data)
 
 
 def volume_prop_callback(volume_prop_msg):
     global voxel_volume
     dimensions = volume_prop_msg.dimensions
-    voxelCount = volume_prop_msg.voxelCount
-    resolution = np.divide(dimensions, voxelCount) * 1000
+    voxel_count = volume_prop_msg.voxel_count
+    resolution = np.divide(dimensions, voxel_count) * 1000
     voxel_volume = np.prod(resolution) * scale ** 3
 
 
@@ -315,102 +296,102 @@ def setup_subscriber(args):
     subscribers = []
     topics = []
 
-    if active_topics == ["/rosout_agg", "/rosout"]:
-        log.log(logging.CRITICAL, "CRITICAL! Launch simulation before recording!")
+    if active_topics == ['/rosout_agg', '/rosout']:
+        log.log(logging.CRITICAL, 'CRITICAL! Launch simulation before recording!')
         exit()
 
-    if args.stereoL_topic != "None":
+    if args.stereoL_topic != 'None':
         if args.stereoL_topic in active_topics:
             stereoL_sub = message_filters.Subscriber(args.stereoL_topic, Image)
             subscribers += [stereoL_sub]
-            container["l_img"] = []
+            container['l_img'] = []
             topics += [args.stereoL_topic]
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.stereoL_topic)
             exit()
 
-    if args.depth_topic != "None":
+    if args.depth_topic != 'None':
         if args.depth_topic in active_topics:
             depth_sub = message_filters.Subscriber(args.depth_topic, PointCloud2)
             subscribers += [depth_sub]
-            container["depth"] = []
+            container['depth'] = []
             topics += [args.depth_topic]
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.depth_topic)
             exit()
 
-    if args.stereoR_topic != "None":
+    if args.stereoR_topic != 'None':
         if args.stereoR_topic in active_topics:
             stereoR_sub = message_filters.Subscriber(args.stereoR_topic, Image)
             subscribers += [stereoR_sub]
-            container["r_img"] = []
+            container['r_img'] = []
             topics += [args.stereoR_topic]
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.stereoR_topic)
             exit()
 
-    if args.segm_topic != "None":
+    if args.segm_topic != 'None':
         if args.segm_topic in active_topics:
             segm_sub = message_filters.Subscriber(args.segm_topic, Image)
             subscribers += [segm_sub]
-            container["segm"] = []
+            container['segm'] = []
             topics += [args.segm_topic]
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.segm_topic)
             exit()
 
-    if args.rm_vox_topic != "None":
+    if args.rm_vox_topic != 'None':
         if args.rm_vox_topic in active_topics:
-            rospy.Subscriber(args.rm_vox_topic, points, rm_vox_callback)
-            collisions["time_stamp"] = []
-            collisions["voxel_removed"] = []
-            collisions["voxel_color"] = []
+            rospy.Subscriber(args.rm_vox_topic, Voxels, rm_vox_callback)
+            collisions['time_stamp'] = []
+            collisions['voxel_removed'] = []
+            collisions['voxel_color'] = []
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.rm_vox_topic)
             exit()
 
-    if args.burr_change_topic != "None":
+    if args.burr_change_topic != 'None':
         if args.burr_change_topic in active_topics:
-            rospy.Subscriber(args.burr_change_topic, UInt8Stamped, burr_change_callback)
-            burr_change["time_stamp"] = []
-            burr_change["burr_size"] = []
+            rospy.Subscriber(args.burr_change_topic, DrillSize, burr_change_callback)
+            burr_change['time_stamp'] = []
+            burr_change['burr_size'] = []
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.burr_change_topic)
             exit()
 
-    if args.volume_prop_topic != "None":
+    if args.volume_prop_topic != 'None':
         if args.volume_prop_topic in active_topics:
-            rospy.Subscriber(args.volume_prop_topic, VolumeProp, volume_prop_callback)
+            rospy.Subscriber(args.volume_prop_topic, VolumeInfo, volume_prop_callback)
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.volume_prop_topic)
             exit()
 
     # poses
     for name in args.objects:
-        if "camera" in name:
-            topic = "/ambf/env/" + "cameras/" + name + "/State"
+        if 'camera' in name:
+            topic = '/ambf/env/' + 'cameras/' + name + '/State'
             pose_sub = message_filters.Subscriber(topic, CameraState)
         else:
-            topic = "/ambf/env/" + name + "/State"
+            topic = '/ambf/env/' + name + '/State'
             pose_sub = message_filters.Subscriber(topic, RigidBodyState)
 
         if topic in active_topics:
-            container["pose_" + name] = []
+            container['pose_' + name] = []
             subscribers += [pose_sub]
             topics += [topic]
         else:
             print("Failed to subscribe to", topic)
             exit()
 
-    log.log(logging.INFO, "\n".join(["Subscribed to the following topics:"] + topics))
+    log.log(logging.INFO, '\n'.join(["Subscribed to the following topics:"] + topics))
     return subscribers
 
 
 def main(args):
-    container["time"] = []
+    container['time'] = []
 
     # setup ros node and subscribers
-    rospy.init_node("data_recorder")
+    rospy.init_node('data_recorder')
     subscribers = setup_subscriber(args)
 
     print("Synchronous? : ", args.sync)
@@ -424,12 +405,11 @@ def main(args):
         ats.registerCallback(callback, container.keys())
 
     # separate thread for writing to hdf5 to release memory
-    rospy.Timer(
-        rospy.Duration(0, 500000), timer_callback
-    )  # set to 2Khz such that we don't miss pose data
+    rospy.Timer(rospy.Duration(0, 500000), timer_callback)  # set to 2Khz such that we don't miss pose data
     print("Writing to HDF5 every chunk of %d data" % args.chunk_size)
 
     rospy.spin()
+    print("Terminating ", __file__)
     write_to_hdf5()  # save when user exits
 
 
@@ -439,54 +419,54 @@ def verify_cv_bridge():
     try:
         bridge.imgmsg_to_cv2(msg)
     except ImportError:
-        log.log(
-            logging.WARNING,
-            "libcv_bridge.so: cannot open shared object file. Please source ros env first.",
-        )
+        log.log(logging.WARNING, "libcv_bridge.so: cannot open shared object file. Please source ros env first.")
         return False
 
     return True
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = ArgumentParser()
 
-    parser.add_argument("--output_dir", default="data", type=str)
+    parser.add_argument(
+        '--output_dir', default='data', type=str)
 
-    parser.add_argument("--world_adf", default="../ADF/world/world.yaml", type=str)
-    parser.add_argument("--volume_adf", default="../ADF/volume_171.yaml", type=str)
-    parser.add_argument("--stereo_adf", default="../ADF/stereo_cameras.yaml", type=str)
-    parser.add_argument("--nrrd_header", default="../resources/volumes/nrrd_header.pkl", type=str)
+    resolved_path = str(pathlib.Path(os.path.dirname(__file__)).resolve())
 
-    parser.add_argument("--stereoL_topic", default="/ambf/env/cameras/stereoL/ImageData", type=str)
     parser.add_argument(
-        "--depth_topic", default="/ambf/env/cameras/segmentation_camera/DepthData", type=str
-    )
-    parser.add_argument("--stereoR_topic", default="/ambf/env/cameras/stereoR/ImageData", type=str)
+        '--world_adf', default=resolved_path + '/../ADF/world/world.yaml', type=str)
     parser.add_argument(
-        "--segm_topic", default="/ambf/env/cameras/segmentation_camera/ImageData", type=str
-    )
+        '--volume_adf', default=resolved_path + '/../ADF/volume_171.yaml', type=str)
     parser.add_argument(
-        "--rm_vox_topic", default="/ambf/volumetric_drilling/voxels_removed", type=str
-    )
+        '--stereo_adf', default=resolved_path + '/../ADF/stereo_cameras.yaml', type=str)
     parser.add_argument(
-        "--burr_change_topic", default="/ambf/volumetric_drilling/burr_change", type=str
-    )
-    parser.add_argument(
-        "--volume_prop_topic", default="/ambf/volumetric_drilling/volume_prop", type=str
-    )
-    parser.add_argument(
-        "--objects", default=["mastoidectomy_drill", "main_camera"], type=str, nargs="+"
-    )
+        '--nrrd_header', default=resolved_path + '/../resources/volumes/nrrd_header.pkl', type=str)
 
-    parser.add_argument("--sync", action="store_true")
+    ambf_prefix = '/ambf/env'
     parser.add_argument(
-        "--chunk_size", type=int, default=500, help="Write to disk every chunk size"
-    )
-    parser.add_argument("--debug", action="store_true")
+        '--stereoL_topic', default=ambf_prefix + '/cameras/stereoL/ImageData', type=str)
+    parser.add_argument(
+        '--depth_topic', default=ambf_prefix + '/cameras/segmentation_camera/DepthData', type=str)
+    parser.add_argument(
+        '--stereoR_topic', default=ambf_prefix + '/cameras/stereoR/ImageData', type=str)
+    parser.add_argument(
+        '--segm_topic', default=ambf_prefix + '/cameras/segmentation_camera/ImageData', type=str)
+    parser.add_argument(
+        '--rm_vox_topic', default=ambf_prefix + '/plugin/volumetric_drilling/voxels_removed', type=str)
+    parser.add_argument(
+        '--burr_change_topic', default=ambf_prefix + '/plugin/volumetric_drilling/drill_size', type=str)
+    parser.add_argument(
+        '--volume_prop_topic', default=ambf_prefix + '/plugin/volumetric_drilling/volume_info', type=str)
+    parser.add_argument(
+        '--objects', default=['mastoidectomy_drill', 'main_camera'], type=str, nargs='+')
+
+    parser.add_argument('--sync', action='store_true')
+    parser.add_argument('--chunk_size', type=int, default=500,
+                        help='Write to disk every chunk size')
+    parser.add_argument('--debug', action='store_true')
 
     args = parser.parse_args()
-
+    print("Provided args: \n", args)
     # init cv bridge for data conversion
     bridge = CvBridge()
     valid = verify_cv_bridge()
@@ -494,9 +474,9 @@ if __name__ == "__main__":
         exit()
 
     # init logger
-    log = logging.getLogger("logger")
+    log = logging.getLogger('logger')
     log.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("%(message)s")
+    formatter = logging.Formatter('%(message)s')
     ch = logging.StreamHandler()
     if args.debug:
         ch.setLevel(logging.DEBUG)
@@ -506,7 +486,8 @@ if __name__ == "__main__":
     log.addHandler(ch)
 
     # camera extrinsics, the transformation that pre-multiplies recorded poses to match opencv convention
-    extrinsic = np.array([[0, 1, 0, 0], [0, 0, -1, 0], [-1, 0, 0, 0], [0, 0, 0, 1]])  # T_cv_ambf
+    extrinsic = np.array([[0, 1, 0, 0], [0, 0, -1, 0],
+                          [-1, 0, 0, 0], [0, 0, 0, 1]])  # T_cv_ambf
 
     # check topics and see if we need to read stereo adf for baseline
     if args.stereoL_topic is not None and args.stereoR_topic is not None:

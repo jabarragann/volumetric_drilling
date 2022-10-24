@@ -16,3 +16,4 @@ build/
 hdf5_files
 *.hdf5
 *.avi
+*.bag
