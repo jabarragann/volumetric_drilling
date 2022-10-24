@@ -116,7 +116,7 @@ class NrrdConverter:
                 print ('\tStep: ', 2)
                 B = seg_data * self._segments_colors[ns, 2]
                 print('\tStep: ', 3)
-                A = seg_data * self._segments_colors[ns, 3] * 0.7
+                A = seg_data * self._segments_colors[ns, 3] #* 0.7
                 print('\tStep: ', 4)
                 RGBA = np.stack((R, G, B, A), axis=-1)
                 print('\tStep: ', 5)
