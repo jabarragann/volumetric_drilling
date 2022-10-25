@@ -11,7 +11,7 @@ plugins: [
   }
 ]
 multibody configs:
-  - "ADF/drill.yaml" #0
+  - "ADF/drills.yaml" #0
   - "ADF/volume_171.yaml" #1
   - "ADF/volume_256.yaml" #2
   - "ADF/volume_512.yaml" #3
@@ -26,3 +26,4 @@ multibody configs:
 # Different anatomy
   - "ADF/volume_256_LT151.yaml" #9
   - "ADF/volume_256_RT143.yaml" #10
+  - "ADF/gaze_marker.yaml" #6
