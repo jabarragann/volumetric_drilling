@@ -1,16 +1,14 @@
-from re import I
 import h5py
 import numpy as np
 from pathlib import Path
 import pandas as pd
+from argparse import ArgumentParser
 
 np.set_printoptions(precision=3)
-
 
 def get_all(name):
     if "voxels" in name:
         print(name)
-
 
 def main(f):
     f.visit(get_all)
@@ -35,8 +33,11 @@ def main(f):
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("--input_dir", default="data", type=str)
+    args = parser.parse_args()
 
-    path = Path("scripts/data-sample/new_rec_format.hdf5")
+    path = Path(args.input_dir)
     if not path.exists():
         print("path does not exists")
 
