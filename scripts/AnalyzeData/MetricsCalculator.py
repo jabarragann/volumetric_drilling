@@ -1,5 +1,5 @@
 import argparse
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from pathlib import Path
 import numpy as np
 import h5py
@@ -78,7 +78,9 @@ class PerformanceMetrics:
         self.calculate_removed_voxel_summary()
 
     def metrics_report(self):
-        print(f"Completion time: {self.completion_time}")
+        print(f"experiment path: {self.data_dir} ")
+        print(f"Completion time: {self.completion_time:0.2f}")
+        print(f"Collisions dict: \n{self.collision_dict}")
 
     def calculate_completion_time(self):
         s = len(self.files_dict)
@@ -88,7 +90,8 @@ class PerformanceMetrics:
         self.completion_time = last_ts - first_ts
 
     def calculate_removed_voxel_summary(self):
-        results = []
+
+        result_dict = defaultdict(int)
         for k, v in self.files_dict.items():
             voxel_colors: np.ndarray = v["voxels_removed/voxel_color"][()]
             voxel_colors = voxel_colors.astype(np.int32)
@@ -108,8 +111,12 @@ class PerformanceMetrics:
 
             # Count number of removed voxels of each anatomy
             voxel_summary = voxel_colors_df.groupby(["anatomy_name"]).count()
-            print(voxel_summary)
-            results.append(voxel_summary)
+            # print(voxel_summary)
+
+            for anatomy in voxel_summary.index:
+                result_dict[anatomy] += voxel_summary.loc[anatomy, "ts_idx"]
+
+        self.collision_dict = dict(result_dict)
 
 
 def main(data_dir: Path):

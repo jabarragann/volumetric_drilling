@@ -6,9 +6,11 @@ from argparse import ArgumentParser
 
 np.set_printoptions(precision=3)
 
+
 def get_all(name):
-    if "voxels" in name:
+    if "voxels" in name or True:
         print(name)
+
 
 def main(f):
     f.visit(get_all)
