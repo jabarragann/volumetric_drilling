@@ -12,7 +12,7 @@ from pathlib import Path
 
 def generate_video(hdf5_path: Path, output_path: Path = None):
     # Read HDF5 data
-    file = h5py.File(args.file, "r")
+    file = h5py.File(hdf5_path, "r")
     l_img = file["data"]["l_img"]
     r_img = file["data"]["r_img"]
     depth = file["data"]["depth"]

@@ -1,11 +1,28 @@
 from collections import defaultdict
 import sys
+import pandas as pd
 
 sys.path.append(__file__)
 
 from pydrilling.Metrics.PerformanceMetrics import PerformanceMetrics
 from pathlib import Path
 from natsort import natsorted
+
+# fmt:off
+
+# Experiments Metadata
+# Array indicating which anatomy was used in each trial
+# Keys indicated the attempt number - values indicate the anatomy used. (In guidance dict, the anatomy and the modality are indicated.)
+
+metadata = {"Participant_1": {"Baseline":{0:"D",1:"E",2:"A",3:"B",4:"C"},
+                              "Guidance":{0:["B","Haptic"]}},
+            "Participant_2": {"Baseline":{0:"D",1:"E"},
+                              "Guidance":{0:["E","Haptic"]}},
+            "Participant_3": {"Baseline":{0:"E",1:"A",2:"C"},
+                              "Guidance":{0:["E","Haptic"],1:["A","Visual"]}},
+}
+
+# fmt:on
 
 
 def analyze_experiment():
@@ -29,13 +46,32 @@ def analyze_experiment():
         v["Guidance"] = natsorted(v["Guidance"])
         v["Baseline"] = natsorted(v["Baseline"])
 
+    # Calculate metrics
+    results = []
     for participant_id, data_paths in participant_dict.items():
-        print(participant_id)
         for mode in ["Guidance", "Baseline"]:
-            print(mode)
-            for trial in data_paths[mode]:
-                PerformanceMetrics(trial)
-                # print(f"Error with trial {trial.name}")
+            for trial_idx, trial in enumerate(data_paths[mode]):
+                if mode == "Guidance":
+                    anatomy, guidance_type = metadata[participant_id][mode][trial_idx]
+                else:
+                    anatomy = metadata[participant_id][mode][trial_idx]
+                    guidance_type = mode
+
+                trial_meta = {
+                    "participant_id": participant_id,
+                    "guidance_modality": guidance_type,
+                    "anatomy": anatomy,
+                }
+
+                metrics = PerformanceMetrics(trial, generate_first_vid=True, **trial_meta)
+                results.append(metrics.generate_summary_dataframe())
+
+    results_df = pd.concat(results)
+    results_df = results_df.reset_index(drop=True)
+    results_df = results_df.sort_values(["participant_id", "anatomy", "guidance"])
+    results_df.to_csv(root / "results.csv")
+
+    print(results_df)
 
 
 if __name__ == "__main__":

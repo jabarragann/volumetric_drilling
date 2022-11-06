@@ -6,35 +6,56 @@ import h5py
 import pandas as pd
 from natsort import natsorted
 
+from pydrilling.data_viewer import generate_video
+
+# {short_name: [color, "long_name"]}
 anatomy_dict = {
-    "Bone": "255 249 219",
-    "Malleus": "233 0 255",
-    "Incus": "0 255 149",
-    "Stapes": "63 0 255",
-    "Bony_Labyrinth": "91 123 91",
-    "IAC": "244 142 52",  # orange structure
-    "Superior_Vestibular_Nerve": "255 191 135",
-    "Inferior_Vestibular_Nerve": "121 70 24",
-    "Cochlear_Nerve": "219 244 52",
-    "Facial_Nerve": "244 214 49",
-    "Chorda_Tympani": "151 131 29",
-    "ICA": "216 100 79",
-    "Sinus_+_Dura": "110 184 209",  # blue structure
-    "Vestibular_Aqueduct": "91 98 123",
-    "TMJ": "100 0 0",  # dark red structure
-    "EAC": "255 225 214",  # Other big structure in the front
+    "Bone": ["255 249 219", "Bone"],
+    "Malleus": ["233 0 255", "Malleus"],
+    "Incus": ["0 255 149", "Incus"],
+    "Stapes": ["63 0 255", "Stapes"],
+    "Bony": ["91 123 91", "Bony_Labyrinth"],
+    "IAC": ["244 142 52", "IAC"],
+    "SuperiorNerve": ["255 191 135", "Superior_Vestibular_Nerve"],
+    "InferiorNerve": ["121 70 24", "Inferior_Vestibular_Nerve"],
+    "CochlearNerve": ["219 244 52", "Cochlear_Nerve"],
+    "FacialNerve": ["244 214 49", "Facial_Nerve"],
+    "Chorda": ["151 131 29", "Chorda_Tympani"],
+    "ICA": ["216 100 79", "ICA"],
+    "Sinus": ["110 184 209", "Sinus_+_Dura"],
+    "Vestibular": ["91 98 123", "Vestibular_Aqueduct"],
+    "TMJ": ["100 0 0", "TMJ"],
+    "EAC": ["255 225 214", "EAC"],
 }
 
 
 class PerformanceMetrics:
-    def __init__(self, data_dir: Path):
+    def __init__(
+        self,
+        data_dir: Path,
+        generate_first_vid: bool = False,
+        participant_id: str = None,
+        anatomy: str = None,
+        guidance_modality: str = None,
+    ):
         """Calculate metrics from experiment.
 
         Parameters
         ----------
         data_dir : Path
             directory storing HDF5 files.
+
+        generate_first_vid : bool
+            generated the video of the first valid hdf5 file. Valid files contain at least one collision.
         """
+
+        if participant_id is None or anatomy is None or guidance_modality is None:
+            raise Exception("Incomplete meta data")
+        else:
+            self.participant_id = participant_id
+            self.anatomy = anatomy
+            self.guidance_modality = guidance_modality
+
         self.data_dir = data_dir
         self.data_dict = None
 
@@ -43,8 +64,12 @@ class PerformanceMetrics:
             exit(0)
 
         self.file_list, self.data_dict = self.load_hdf5()
+
+        if generate_first_vid:
+            self.generate_video()
+
         self.calculate_metrics()
-        self.metrics_report()
+        # self.metrics_report()
         self.close_files()
 
     def load_hdf5(self) -> OrderedDict:
@@ -83,27 +108,43 @@ class PerformanceMetrics:
         for k, v in self.data_dict.items():
             v.close()
 
+    def generate_video(self):
+        # Check if the video is already generated
+        path_first_file: Path = self.file_list[0]
+        video_path = path_first_file.with_suffix(".avi")
+        if not video_path.exists():
+            generate_video(path_first_file, output_path=video_path)
+
     def calculate_metrics(self):
         self.calculate_completion_time()
         self.calculate_removed_voxel_summary()
 
     def metrics_report(self):
+        print(
+            f"participant_id: {self.participant_id}, anatomy: {self.anatomy}, guidance: {self.guidance_modality}"
+        )
         print(f"experiment path: {self.data_dir} ")
         print(f"Completion time: {self.completion_time:0.2f}")
         print(f"Collisions dict: \n{self.collision_dict}")
 
+    def generate_summary_dataframe(self):
+        df = dict(
+            participant_id=[self.participant_id],
+            anatomy=[self.anatomy],
+            guidance=[self.guidance_modality],
+            completion_time=self.completion_time,
+        )
+
+        for name, anatomy_info_list in anatomy_dict.items():
+            voxels_removed = 0
+            if name in self.collision_dict:
+                voxels_removed = self.collision_dict[name]
+            df[name + "_voxels"] = voxels_removed
+
+        return pd.DataFrame(df)
+
     def calculate_completion_time(self):
         s = len(self.data_dict)
-        # # look for hdf5 file that contains the first pixel removed
-        # for i in range(len(self.file_list)):
-        #     if "voxels_removed/voxel_time_stamp" in self.data_dict[i]:
-        #         first_idx = i
-        #         break
-        # # Look for hdf5 file that contains the last pixel removed
-        # for i in range(len(self.file_list)):
-        #     if "voxels_removed/voxel_time_stamp" in self.data_dict[i]:
-        #         last_idx = s - 1 - i
-        #         break
 
         first_ts = self.data_dict[0]["voxels_removed/voxel_time_stamp"][0]
         last_ts = self.data_dict[s - 1]["voxels_removed/voxel_time_stamp"][-1]
@@ -121,7 +162,8 @@ class PerformanceMetrics:
             voxel_colors_df["anatomy_name"] = ""
 
             # add a column with the anatomy names
-            for name, color in anatomy_dict.items():
+            for name, anatomy_info_list in anatomy_dict.items():
+                color, full_name = anatomy_info_list
                 color = list(map(int, color.split(" ")))
                 voxel_colors_df.loc[
                     (voxel_colors_df["r"] == color[0])
