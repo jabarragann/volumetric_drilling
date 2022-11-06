@@ -36,19 +36,19 @@ class PerformanceMetrics:
             directory storing HDF5 files.
         """
         self.data_dir = data_dir
-        self.files_dict = None
+        self.data_dict = None
 
         if not data_dir.exists():
             print("provided path does not exists")
             exit(0)
 
-        self.files_dict = self.load_hdf5()
+        self.file_list, self.data_dict = self.load_hdf5()
         self.calculate_metrics()
         self.metrics_report()
         self.close_files()
 
     def load_hdf5(self) -> OrderedDict:
-        """Create a dictionary with all the hdf5 files sorted by name
+        """Create a dictionary with all the hdf5 files sorted by name. Load only files that contain at least one voxel removed.
 
         Returns
         -------
@@ -56,21 +56,31 @@ class PerformanceMetrics:
 
         """
         files_list = []
-        files_dict = OrderedDict()
+        data_dict = OrderedDict()
         for file in self.data_dir.glob("*.hdf5"):
             files_list.append(file)
 
         files_list = natsorted(files_list)  # sort files by name
-        for idx, file in enumerate(files_list):
-            files_dict[idx] = h5py.File(file, "r")
+        final_file_list = []
+        idx = 0
+        for file in files_list:
+            try:
+                h5py_file = h5py.File(file, "r")
+                # Only add files that have at least one voxel removed
+                if "voxels_removed/voxel_time_stamp" in h5py_file:
+                    final_file_list.append(file)
+                    data_dict[idx] = h5py_file
+                    idx += 1
+            except:
+                pass
 
-        print(f"Parsed {len(files_dict)} hdf5 files")
+        print(f"Parsed {len(data_dict)} hdf5 files")
 
-        return files_dict
+        return final_file_list, data_dict
 
     def close_files(self):
         v: h5py.File
-        for k, v in self.files_dict.items():
+        for k, v in self.data_dict.items():
             v.close()
 
     def calculate_metrics(self):
@@ -83,16 +93,27 @@ class PerformanceMetrics:
         print(f"Collisions dict: \n{self.collision_dict}")
 
     def calculate_completion_time(self):
-        s = len(self.files_dict)
-        first_ts = self.files_dict[0]["voxels_removed/voxel_time_stamp"][0]
-        last_ts = self.files_dict[s - 1]["voxels_removed/voxel_time_stamp"][-1]
+        s = len(self.data_dict)
+        # # look for hdf5 file that contains the first pixel removed
+        # for i in range(len(self.file_list)):
+        #     if "voxels_removed/voxel_time_stamp" in self.data_dict[i]:
+        #         first_idx = i
+        #         break
+        # # Look for hdf5 file that contains the last pixel removed
+        # for i in range(len(self.file_list)):
+        #     if "voxels_removed/voxel_time_stamp" in self.data_dict[i]:
+        #         last_idx = s - 1 - i
+        #         break
+
+        first_ts = self.data_dict[0]["voxels_removed/voxel_time_stamp"][0]
+        last_ts = self.data_dict[s - 1]["voxels_removed/voxel_time_stamp"][-1]
 
         self.completion_time = last_ts - first_ts
 
     def calculate_removed_voxel_summary(self):
 
         result_dict = defaultdict(int)
-        for k, v in self.files_dict.items():
+        for k, v in self.data_dict.items():
             voxel_colors: np.ndarray = v["voxels_removed/voxel_color"][()]
             voxel_colors = voxel_colors.astype(np.int32)
 
