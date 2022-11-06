@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(__file__)
 
-from PerformanceMetrics import PerformanceMetrics
+from pydrilling.Metrics.PerformanceMetrics import PerformanceMetrics
 from pathlib import Path
 from natsort import natsorted
 
