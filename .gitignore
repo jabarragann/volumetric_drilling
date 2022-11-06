@@ -11,7 +11,7 @@ build/
 *.edt
 *.ply
 
-
+*.egg-info
 *resources/volumes/
 hdf5_files
 *.hdf5
