@@ -85,6 +85,29 @@ class Recording:
 
         return result
 
+    def count_frames(self)->int:
+        frames_count= 0
+        for k, file in self.data_dict.items():
+            frames_count += file["data"]["time"].shape[0]
+        return frames_count
+
+    def img_data_iterator(self):
+        """Iterates over all the image data of a Recording
+
+        Yields
+        ------
+        Tuple
+            returns (l_img[idx], r_img[idx], depth[idx], segm[idx])
+        """
+        for k, file in self.data_dict.items():
+            l_img = file["data"]["l_img"]
+            r_img = file["data"]["r_img"]
+            depth = file["data"]["depth"]
+            segm = file["data"]["segm"]
+
+            for idx in range(l_img.shape[0]):
+                yield (l_img[idx], r_img[idx], depth[idx], segm[idx])
+
 
 if __name__ == "__main__":
     path = Path(

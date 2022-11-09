@@ -5,9 +5,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
+from pydrilling.Recording import Recording
 
 from pydrilling.data_validation import pose_to_matrix
 from pathlib import Path
+
+
+def generate_video_from_recording(recording: Recording, output_path: Path = None):
+
+    # Create video
+    cmap = plt.get_cmap()
+
+    if output_path is None:
+        output_path = recording.data_dir / "full_video.avi"
+    output_path = str(output_path)  # Opencv does not like Pathlib paths
+
+    # Write video
+    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (640, 480))
+    for l_img, r_img, depth, segm in tqdm(
+        recording.img_data_iterator(), total=recording.count_frames()
+    ):
+        out.write(l_img)
+
+    out.release()
 
 
 def generate_video(hdf5_path: Path, output_path: Path = None):
@@ -51,22 +71,44 @@ def generate_video(hdf5_path: Path, output_path: Path = None):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
-        "--file",
+        "--path_list",
         type=str,
-        default=None,
-        action="store",
-        help="Iterate through all data frame by frame",
-    )
-    parser.add_argument(
-        "--idx", nargs="+", default=None, action="store", help="View the data of provided index"
-    )
-    parser.add_argument(
-        "--generate_video", action="store_true", help="create a video of recorded data"
+        default=[],
+        nargs="+",
+        help="List of directories to process. Each directory contains the h5 files a single experiment.",
     )
     args = parser.parse_args()
 
-    file = Path(args.file)
-    if file.exists():
-        generate_video(file)
-    else:
-        print(f"{file} does not exists")
+    for path in args.path_list:
+        try:
+            print(f"processing {path}")
+            root = Path(path)
+            recording = Recording(
+                root, participant_id="None", anatomy="None", guidance_modality="None"
+            )
+            generate_video_from_recording(recording)
+        except Exception as e:
+            print(f"error with {path}")
+            print(e)
+
+    # parser = ArgumentParser()
+    # parser.add_argument(
+    #     "--file",
+    #     type=str,
+    #     default=None,
+    #     action="store",
+    #     help="Iterate through all data frame by frame",
+    # )
+    # parser.add_argument(
+    #     "--idx", nargs="+", default=None, action="store", help="View the data of provided index"
+    # )
+    # parser.add_argument(
+    #     "--generate_video", action="store_true", help="create a video of recorded data"
+    # )
+    # args = parser.parse_args()
+
+    # file = Path(args.file)
+    # if file.exists():
+    #     generate_video(file)
+    # else:
+    #     print(f"{file} does not exists")
