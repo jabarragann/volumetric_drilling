@@ -1,6 +1,8 @@
 import argparse
+import matplotlib.pyplot as plt
 from collections import OrderedDict, defaultdict
 from pathlib import Path
+from typing import Dict, List
 import numpy as np
 import h5py
 import pandas as pd
@@ -48,7 +50,8 @@ class PerformanceMetrics:
         """
 
         self.recording = recording
-        self.file_list, self.data_dict = self.recording.file_list, self.recording.data_dict
+        self.file_list: List[Path] = self.recording.file_list
+        self.data_dict: Dict[int, h5py.File] = self.recording.data_dict
 
         self.participant_id = self.recording.participant_id
         self.anatomy = self.recording.anatomy
@@ -56,9 +59,46 @@ class PerformanceMetrics:
 
         if generate_first_vid:
             self.generate_video()
+        self.generate_ts_plot()
 
         self.calculate_metrics()
         # self.metrics_report()
+
+    def generate_ts_plot(self):
+        root = self.file_list[0].parent
+        plt_name = root / "ts_plot.png"
+
+        burr_change_ts = self.recording.concatenate_data("burr_change/time_stamp")
+        data_ts = self.recording.concatenate_data("data/time")
+        voxels_removed_ts = self.recording.concatenate_data("voxels_removed/voxel_time_stamp")
+        fig, ax = plt.subplots(1)
+        # ax.plot(burr_change_ts)
+        # Normalize times
+        init_time = data_ts[0]
+        data_ts -= init_time
+        voxels_removed_ts -= init_time
+        burr_change_ts -= init_time
+
+        ax.plot(data_ts, np.ones_like(data_ts) * 3, "*", label="data_ts")
+        ax.plot(
+            voxels_removed_ts, np.ones_like(voxels_removed_ts) * 2, "*", label="voxels_removed_ts"
+        )
+        # ax.plot(burr_change_ts, np.ones_like(burr_change_ts) * 1, "*", label="burr_change_ts")
+        for b_c in burr_change_ts:
+            ax.axvline(b_c, label="burr_change_ts", color="black")
+
+        ax.set_xlabel("Time (S)")
+        ax.grid()
+        ax.set_ylim((0, 4))
+
+        # Create legend without repeated values
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys())
+        # ax.legend()
+
+        fig.savefig(plt_name)
+        plt.close(fig)
 
     def generate_video(self):
         # Check if the video is already generated
@@ -75,7 +115,7 @@ class PerformanceMetrics:
         print(
             f"participant_id: {self.participant_id}, anatomy: {self.anatomy}, guidance: {self.guidance_modality}"
         )
-        print(f"experiment path: {self.data_dir} ")
+        print(f"experiment path: {self.recording.data_dir} ")
         print(f"Completion time: {self.completion_time:0.2f}")
         print(f"Collisions dict: \n{self.collision_dict}")
 
@@ -135,7 +175,17 @@ class PerformanceMetrics:
 
 
 def main(data_dir: Path):
-    PerformanceMetrics(data_dir)
+
+    trial_meta_data = {
+        "participant_id": "pilot participant",
+        "guidance_modality": "Baseline",
+        "anatomy": "A",
+    }
+
+    with Recording(data_dir, **trial_meta_data) as recording:
+        print(f"Read {len(recording)} h5 files for {recording.participant_id}")
+        metrics = PerformanceMetrics(recording, generate_first_vid=True)
+        metrics.metrics_report()
 
 
 if __name__ == "__main__":

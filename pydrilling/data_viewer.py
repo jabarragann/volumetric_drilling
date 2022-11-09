@@ -17,14 +17,15 @@ def generate_video(hdf5_path: Path, output_path: Path = None):
     r_img = file["data"]["r_img"]
     depth = file["data"]["depth"]
     segm = file["data"]["segm"]
-    K = file["metadata"]["camera_intrinsic"]
-    extrinsic = file["metadata"]["camera_extrinsic"]
 
-    pose_cam = pose_to_matrix(file["data"]["pose_main_camera"])
-    pose_cam = np.matmul(
-        pose_cam, np.linalg.inv(extrinsic)[None]
-    )  # update pose so world directly maps to CV
-    pose_drill = pose_to_matrix(file["data"]["pose_mastoidectomy_drill"])
+    # K = file["metadata"]["camera_intrinsic"]
+    # extrinsic = file["metadata"]["camera_extrinsic"]
+
+    # pose_cam = pose_to_matrix(file["data"]["pose_main_camera"])
+    # pose_cam = np.matmul(
+    #     pose_cam, np.linalg.inv(extrinsic)[None]
+    # )  # update pose so world directly maps to CV
+    # pose_drill = pose_to_matrix(file["data"]["pose_mastoidectomy_drill"])
 
     # Create video
     cmap = plt.get_cmap()
@@ -32,7 +33,7 @@ def generate_video(hdf5_path: Path, output_path: Path = None):
     if output_path is None:
         output_path = hdf5_path.with_suffix(".avi")
 
-    output_path = str(output_path)  # Opencv does not like Pathlib
+    output_path = str(output_path)  # Opencv does not like Pathlib paths
     out = cv2.VideoWriter(
         output_path, cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (640 * 2, 480 * 2)
     )

@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict, List
 import numpy as np
 import h5py
 import pandas as pd
@@ -23,6 +24,8 @@ class Recording:
 
         # Store paths in self.file_list
         # Store hdf5 handlers in self.data_dict
+        self.file_list: List[Path] = None
+        self.data_dict: Dict[int, h5py.File] = None
         self.file_list, self.data_dict = self.load_hdf5()
 
     def load_hdf5(self) -> OrderedDict:
@@ -68,6 +71,19 @@ class Recording:
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.close_files()
+
+    def concatenate_data(self, dataset_name: str):
+        result = []
+        for k, v in self.data_dict.items():
+            if dataset_name in v:
+                result.append(v[dataset_name])
+
+        if len(result[0].shape) == 1:
+            result = np.concatenate(result)
+        else:
+            result = np.vstack(result)
+
+        return result
 
 
 if __name__ == "__main__":
