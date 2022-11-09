@@ -22,3 +22,4 @@ hdf5_files
 *.autosave
 
 *.blend1
+__pycache__/
