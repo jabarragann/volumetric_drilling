@@ -78,15 +78,13 @@ class Recording:
             if dataset_name in v:
                 result.append(v[dataset_name])
 
-        if len(result[0].shape) == 1:
-            result = np.concatenate(result)
-        else:
-            result = np.vstack(result)
+        if len(result) > 0:
+            result = np.concatenate(result) if len(result[0].shape) == 1 else np.vstack(result)
 
         return result
 
-    def count_frames(self)->int:
-        frames_count= 0
+    def count_frames(self) -> int:
+        frames_count = 0
         for k, file in self.data_dict.items():
             frames_count += file["data"]["time"].shape[0]
         return frames_count

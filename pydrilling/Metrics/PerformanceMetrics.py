@@ -182,10 +182,18 @@ def main(data_dir: Path):
         "anatomy": "A",
     }
 
+    def get_all(name):
+        print(name)
+
     with Recording(data_dir, **trial_meta_data) as recording:
         print(f"Read {len(recording)} h5 files for {recording.participant_id}")
         metrics = PerformanceMetrics(recording, generate_first_vid=True)
         metrics.metrics_report()
+        print()
+
+        # Print all available groups
+        print("Available datasets in file 0")
+        metrics.data_dict[0].visit(get_all)
 
 
 if __name__ == "__main__":
