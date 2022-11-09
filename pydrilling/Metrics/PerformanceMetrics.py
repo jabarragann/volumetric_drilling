@@ -7,6 +7,7 @@ import pandas as pd
 from natsort import natsorted
 
 from pydrilling.data_viewer import generate_video
+from pydrilling.Recording import Recording
 
 # {short_name: [color, "long_name"]}
 anatomy_dict = {
@@ -32,11 +33,8 @@ anatomy_dict = {
 class PerformanceMetrics:
     def __init__(
         self,
-        data_dir: Path,
+        recording: Recording,
         generate_first_vid: bool = False,
-        participant_id: str = None,
-        anatomy: str = None,
-        guidance_modality: str = None,
     ):
         """Calculate metrics from experiment.
 
@@ -49,64 +47,18 @@ class PerformanceMetrics:
             generated the video of the first valid hdf5 file. Valid files contain at least one collision.
         """
 
-        if participant_id is None or anatomy is None or guidance_modality is None:
-            raise Exception("Incomplete meta data")
-        else:
-            self.participant_id = participant_id
-            self.anatomy = anatomy
-            self.guidance_modality = guidance_modality
+        self.recording = recording
+        self.file_list, self.data_dict = self.recording.file_list, self.recording.data_dict
 
-        self.data_dir = data_dir
-        self.data_dict = None
-
-        if not data_dir.exists():
-            print("provided path does not exists")
-            exit(0)
-
-        self.file_list, self.data_dict = self.load_hdf5()
+        self.participant_id = self.recording.participant_id
+        self.anatomy = self.recording.anatomy
+        self.guidance_modality = self.recording.guidance_modality
 
         if generate_first_vid:
             self.generate_video()
 
         self.calculate_metrics()
         # self.metrics_report()
-        self.close_files()
-
-    def load_hdf5(self) -> OrderedDict:
-        """Create a dictionary with all the hdf5 files sorted by name. Load only files that contain at least one voxel removed.
-
-        Returns
-        -------
-        OrderedDict
-
-        """
-        files_list = []
-        data_dict = OrderedDict()
-        for file in self.data_dir.glob("*.hdf5"):
-            files_list.append(file)
-
-        files_list = natsorted(files_list)  # sort files by name
-        final_file_list = []
-        idx = 0
-        for file in files_list:
-            try:
-                h5py_file = h5py.File(file, "r")
-                # Only add files that have at least one voxel removed
-                if "voxels_removed/voxel_time_stamp" in h5py_file:
-                    final_file_list.append(file)
-                    data_dict[idx] = h5py_file
-                    idx += 1
-            except:
-                pass
-
-        print(f"Parsed {len(data_dict)} hdf5 files")
-
-        return final_file_list, data_dict
-
-    def close_files(self):
-        v: h5py.File
-        for k, v in self.data_dict.items():
-            v.close()
 
     def generate_video(self):
         # Check if the video is already generated

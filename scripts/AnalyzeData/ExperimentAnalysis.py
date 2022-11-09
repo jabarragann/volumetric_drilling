@@ -2,6 +2,8 @@ from collections import defaultdict
 import sys
 import pandas as pd
 
+from pydrilling.Recording import Recording
+
 sys.path.append(__file__)
 
 from pydrilling.Metrics.PerformanceMetrics import PerformanceMetrics
@@ -50,26 +52,28 @@ def analyze_experiment():
     results = []
     for participant_id, data_paths in participant_dict.items():
         for mode in ["Guidance", "Baseline"]:
-            for trial_idx, trial in enumerate(data_paths[mode]):
+            for trial_idx, trial_path in enumerate(data_paths[mode]):
                 if mode == "Guidance":
                     anatomy, guidance_type = metadata[participant_id][mode][trial_idx]
                 else:
                     anatomy = metadata[participant_id][mode][trial_idx]
                     guidance_type = mode
 
-                trial_meta = {
+                trial_meta_data = {
                     "participant_id": participant_id,
                     "guidance_modality": guidance_type,
                     "anatomy": anatomy,
                 }
 
-                metrics = PerformanceMetrics(trial, generate_first_vid=True, **trial_meta)
-                results.append(metrics.generate_summary_dataframe())
+                with Recording(trial_path, **trial_meta_data) as recording:
+                    print(f"Read {len(recording)} h5 files for {recording.participant_id}")
+                    metrics = PerformanceMetrics(recording, generate_first_vid=True)
+                    results.append(metrics.generate_summary_dataframe())
 
     results_df = pd.concat(results)
     results_df = results_df.reset_index(drop=True)
     results_df = results_df.sort_values(["participant_id", "anatomy", "guidance"])
-    results_df.to_csv(root / "results.csv")
+    results_df.to_csv(root/'results.csv')
 
     print(results_df)
 
