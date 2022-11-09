@@ -29,7 +29,9 @@ def generate_video_from_recording(recording: Recording, output_path: Path = None
 
     out.release()
 
-
+# TODO: Change generate_video function to work with the recording class
+# Add an argument that allows you to select the hdf5 that you want a use. Add an option to process all the files
+# Do the same for the function above
 def generate_video(hdf5_path: Path, output_path: Path = None):
     # Read HDF5 data
     file = h5py.File(hdf5_path, "r")
