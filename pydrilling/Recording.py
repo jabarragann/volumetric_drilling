@@ -16,6 +16,7 @@ class Recording:
     participant_id: str = None
     anatomy: str = None
     guidance_modality: str = None
+    trial_idx: int = None
 
     def __post_init__(self):
         if not self.data_dir.exists():

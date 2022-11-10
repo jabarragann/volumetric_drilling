@@ -22,7 +22,10 @@ metadata = {"Participant_1": {"Baseline":{0:"D",1:"E",2:"A",3:"B",4:"C"},
                               "Guidance":{0:["E","Haptic"]}},
             "Participant_3": {"Baseline":{0:"E",1:"A",2:"C"},
                               "Guidance":{0:["E","Haptic"],1:["A","Visual"]}},
-}
+            "Participant_4": {"Baseline":{0:"B"},
+                              "Guidance":{0:["D","Audio"],1:["D","Visual"],2:["D","Baseline"],3:["D","Haptic"],
+                                          4:["E","Baseline"],5:["E","Visual"],6:["E","Haptic"],7:["E","Audio"]}}
+                              }
 
 # fmt:on
 
@@ -63,6 +66,7 @@ def analyze_experiment():
                     "participant_id": participant_id,
                     "guidance_modality": guidance_type,
                     "anatomy": anatomy,
+                    "trial_idx": trial_idx,
                 }
 
                 with Recording(trial_path, **trial_meta_data) as recording:
@@ -72,8 +76,8 @@ def analyze_experiment():
 
     results_df = pd.concat(results)
     results_df = results_df.reset_index(drop=True)
-    results_df = results_df.sort_values(["participant_id", "anatomy", "guidance"])
-    results_df.to_csv(root/'results.csv')
+    results_df = results_df.sort_values(["participant_id", "anatomy", "trial_idx"])
+    results_df.to_csv(root / "results.csv", index=None)
 
     print(results_df)
 

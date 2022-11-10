@@ -56,6 +56,7 @@ class PerformanceMetrics:
         self.participant_id = self.recording.participant_id
         self.anatomy = self.recording.anatomy
         self.guidance_modality = self.recording.guidance_modality
+        self.trial_idx = self.recording.trial_idx
 
         if generate_first_vid:
             self.generate_video()
@@ -123,6 +124,7 @@ class PerformanceMetrics:
         df = dict(
             participant_id=[self.participant_id],
             anatomy=[self.anatomy],
+            trial_idx=[self.trial_idx],
             guidance=[self.guidance_modality],
             completion_time=self.completion_time,
         )
