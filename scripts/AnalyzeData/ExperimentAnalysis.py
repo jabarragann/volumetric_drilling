@@ -24,7 +24,13 @@ metadata = {"Participant_1": {"Baseline":{0:"D",1:"E",2:"A",3:"B",4:"C"},
                               "Guidance":{0:["E","Haptic"],1:["A","Visual"]}},
             "Participant_4": {"Baseline":{0:"B"},
                               "Guidance":{0:["D","Audio"],1:["D","Visual"],2:["D","Baseline"],3:["D","Haptic"],
-                                          4:["E","Baseline"],5:["E","Visual"],6:["E","Haptic"],7:["E","Audio"]}}
+                                          4:["E","Baseline"],5:["E","Visual"],6:["E","Haptic"],7:["E","Audio"]}},
+            "Participant_5": {"Baseline":{0:"B"},
+                              "Guidance":{0:["A","Haptic"],1:["A","Baseline"],2:["A","Audio"],3:["E","Baseline"],
+                                          4:["A","Visual"],5:["E","Visual"],6:["E","Haptic"],7:["E","Audio"]}},
+            "Participant_6": {"Baseline":{0:"B"},
+                              "Guidance":{0:["A","Visual"],1:["E","Audio"],2:["A","Haptic"],3:["E","Baseline"],
+                                          4:["A","Audio"],5:["E","Haptic"],6:["A","Baseline"],7:["E","Visual"]}}
                               }
 
 # fmt:on
