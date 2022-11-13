@@ -30,7 +30,11 @@ metadata = {"Participant_1": {"Baseline":{0:"D",1:"E",2:"A",3:"B",4:"C"},
                                           4:["A","Visual"],5:["E","Visual"],6:["E","Haptic"],7:["E","Audio"]}},
             "Participant_6": {"Baseline":{0:"B"},
                               "Guidance":{0:["A","Visual"],1:["E","Audio"],2:["A","Haptic"],3:["E","Baseline"],
-                                          4:["A","Audio"],5:["E","Haptic"],6:["A","Baseline"],7:["E","Visual"]}}
+                                          4:["A","Audio"],5:["E","Haptic"],6:["A","Baseline"],7:["E","Visual"]}},
+            "Participant_7": {"Baseline":{0:"B"},
+                              "Guidance":{0:["E","Baseline"],1:["A","Visual"],2:["E","Visual"],3:["A","Baseline"],
+                                          4:["A","Haptic"],5:["E","Haptic"],6:["A","Audio"],7:["E","Audio"],
+                                          }}
                               }
 
 # fmt:on
