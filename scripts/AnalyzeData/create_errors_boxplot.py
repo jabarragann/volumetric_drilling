@@ -10,7 +10,7 @@ import matplotlib.pylab as pylab
 params = {
     "legend.fontsize": "x-large",
     "figure.figsize": (9, 5),
-    "axes.labelsize": "x-large",
+    "axes.labelsize": "xx-large",
     "axes.titlesize": "x-large",
     "xtick.labelsize": "xx-large",
     "ytick.labelsize": "xx-large",
@@ -42,6 +42,25 @@ def main():
     # only use anatomy A, E , B
     df = df.loc[(df["anatomy"] == "A") | (df["anatomy"] == "E") | (df["anatomy"] == "B")]
 
+    # Calculate relative metrics
+    df.insert(df.shape[1], "relative_completion_time", 0)
+    df.insert(df.shape[1], "relative_total_errors", 0)
+
+    for idx in df.index:
+        anatomy = df.loc[idx]["anatomy"]
+        participant = df.loc[idx]["participant_id"]
+        # modality = df.iloc[idx]["guidance"]
+
+        base = df.loc[
+            (df["anatomy"] == anatomy)
+            & (df["guidance"] == "Baseline")
+            & (df["participant_id"] == participant)
+        ]
+        relative_time = df.loc[idx]["completion_time"] - base["completion_time"]
+        relative_errors = df.loc[idx]["total_errors"] - base["total_errors"]
+        df.at[idx, "relative_completion_time"] = relative_time
+        df.at[idx, "relative_total_errors"] = relative_errors
+
     #######################
     ## errors plot
     #######################
@@ -58,7 +77,7 @@ def main():
     # by_label = dict(zip(labels[:2], handles[:2]))
     # ax.legend(by_label.values(), by_label.keys())
     ax.set_xlabel("Feedback modality", labelpad=10)
-    ax.set_ylabel("Removed voxels", labelpad=10)
+    ax.set_ylabel("# of unintended voxels removed", labelpad=10)
     ax.grid(color="black", alpha=0.5, axis="y")
 
     #######################
