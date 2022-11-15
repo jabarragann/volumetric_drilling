@@ -12,8 +12,8 @@ params = {
     "figure.figsize": (9, 5),
     "axes.labelsize": "x-large",
     "axes.titlesize": "x-large",
-    "xtick.labelsize": "x-large",
-    "ytick.labelsize": "x-large",
+    "xtick.labelsize": "xx-large",
+    "ytick.labelsize": "xx-large",
 }
 pylab.rcParams.update(params)
 
@@ -39,8 +39,8 @@ def main():
     errors_df = df[voxel_cols]
     df.insert(df.shape[1], "total_errors", errors_df.sum(axis=1).to_numpy())
 
-    # only use anatomy A and E
-    df = df.loc[(df["anatomy"] == "A") | (df["anatomy"] == "E")]
+    # only use anatomy A, E , B
+    df = df.loc[(df["anatomy"] == "A") | (df["anatomy"] == "E") | (df["anatomy"] == "B")]
 
     #######################
     ## errors plot
@@ -48,42 +48,44 @@ def main():
 
     ax: plt.Axes
     fig, ax = plt.subplots(1)
+    fig.set_tight_layout(True)
     fig.subplots_adjust(**adjust_params)
-    sns.boxplot(df, x="guidance", y="total_errors", hue="anatomy", ax=ax)
-    sns.swarmplot(
-        df, x="guidance", y="total_errors", hue="anatomy", dodge=True, palette="dark:black", ax=ax
-    )
+    sns.boxplot(df, x="guidance", y="total_errors", ax=ax)
+    sns.swarmplot(df, x="guidance", y="total_errors", color="black", ax=ax)
 
     # Remove repeated labels
-    handles, labels = ax.get_legend_handles_labels()
-    by_label = dict(zip(labels[:2], handles[:2]))
-    ax.legend(by_label.values(), by_label.keys())
+    # handles, labels = ax.get_legend_handles_labels()
+    # by_label = dict(zip(labels[:2], handles[:2]))
+    # ax.legend(by_label.values(), by_label.keys())
     ax.set_xlabel("Feedback modality", labelpad=10)
     ax.set_ylabel("Removed voxels", labelpad=10)
+    ax.grid(color="black", alpha=0.5, axis="y")
 
     #######################
     ## errors plot
     #######################
     ax: plt.Axes
     fig, ax = plt.subplots(1)
+    fig.set_tight_layout(True)
     fig.subplots_adjust(**adjust_params)
-    sns.boxplot(df, x="guidance", y="completion_time", hue="anatomy", ax=ax)
+    sns.boxplot(df, x="guidance", y="completion_time", ax=ax)
     sns.swarmplot(
         df,
         x="guidance",
         y="completion_time",
-        hue="anatomy",
-        dodge=True,
-        palette="dark:black",
+        # hue="anatomy",
+        # dodge=True,
+        color="black",
         ax=ax,
     )
 
     # Remove repeated labels
-    handles, labels = ax.get_legend_handles_labels()
-    by_label = dict(zip(labels[:2], handles[:2]))
-    ax.legend(by_label.values(), by_label.keys())
+    # handles, labels = ax.get_legend_handles_labels()
+    # by_label = dict(zip(labels[:2], handles[:2]))
+    # ax.legend(by_label.values(), by_label.keys())
     ax.set_xlabel("Feedback modality", labelpad=10)
     ax.set_ylabel("Completion time (s)", labelpad=10)
+    ax.grid(color="black", alpha=0.5, axis="y")
 
     plt.show()
 
