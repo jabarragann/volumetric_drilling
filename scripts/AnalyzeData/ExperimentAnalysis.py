@@ -38,6 +38,45 @@ metadata = {"Participant_1": {"Baseline":{0:"D",1:"E",2:"A",3:"B",4:"C"},
                               }
 
 # fmt:on
+def add_total_unintended_voxels_removed(df: pd.DataFrame) -> pd.DataFrame:
+    voxel_cols = [col for col in df.columns if "voxel" in col]
+    voxel_cols.remove("Bone_voxels")
+    errors_df = df[voxel_cols]
+    df.insert(df.shape[1], "total_errors", errors_df.sum(axis=1).to_numpy())
+
+    return df
+
+
+def add_relative_metrics(df) -> pd.DataFrame:
+    """Calculate metrics that are normalized using the baseline performance.
+    For each metric and row substract the baseline.
+
+    Parameters
+    ----------
+    df : pd.Dataframe
+        df with metrics
+    """
+    # Calculate relative metrics
+    df.insert(df.shape[1], "relative_completion_time", 0)
+    df.insert(df.shape[1], "relative_total_errors", 0)
+
+    for idx in df.index:
+        anatomy = df.loc[idx]["anatomy"]
+        participant = df.loc[idx]["participant_id"]
+        # modality = df.iloc[idx]["guidance"]
+
+        base = df.loc[
+            (df["anatomy"] == anatomy)
+            & (df["guidance"] == "Baseline")
+            & (df["participant_id"] == participant)
+        ]
+        if base.shape[0] > 0:
+            relative_time = df.loc[idx]["completion_time"] - base["completion_time"]
+            relative_errors = df.loc[idx]["total_errors"] - base["total_errors"]
+            df.at[idx, "relative_completion_time"] = relative_time
+            df.at[idx, "relative_total_errors"] = relative_errors
+
+    return df
 
 
 def analyze_experiment():
@@ -86,6 +125,12 @@ def analyze_experiment():
 
     results_df = pd.concat(results)
     results_df = results_df.reset_index(drop=True)
+
+    # Add extra metrics
+    results_df = add_total_unintended_voxels_removed(results_df)
+    results_df = add_relative_metrics(results_df)
+
+    # Sort values and safe
     results_df = results_df.sort_values(["participant_id", "anatomy", "trial_idx"])
     results_df.to_csv(root / "results.csv", index=None)
 
