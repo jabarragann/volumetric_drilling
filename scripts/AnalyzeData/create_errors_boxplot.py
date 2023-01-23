@@ -21,7 +21,7 @@ adjust_params = dict(top=0.88, bottom=0.18, left=0.125, right=0.9, hspace=0.2, w
 
 
 def main():
-    root = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/results.csv")
+    root = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/final_objective_metrics.csv")
     df = pd.read_csv(root)
 
     voxel_cols = [col for col in df.columns if "voxel" in col]
@@ -37,29 +37,29 @@ def main():
     df.drop(index_to_drop, inplace=True)
 
     errors_df = df[voxel_cols]
-    df.insert(df.shape[1], "total_errors", errors_df.sum(axis=1).to_numpy())
+    # df.insert(df.shape[1], "total_errors", errors_df.sum(axis=1).to_numpy())
 
     # only use anatomy A, E , B
     df = df.loc[(df["anatomy"] == "A") | (df["anatomy"] == "E") | (df["anatomy"] == "B")]
 
     # Calculate relative metrics
-    df.insert(df.shape[1], "relative_completion_time", 0)
-    df.insert(df.shape[1], "relative_total_errors", 0)
+    # df.insert(df.shape[1], "relative_completion_time", 0)
+    # df.insert(df.shape[1], "relative_total_errors", 0)
 
-    for idx in df.index:
-        anatomy = df.loc[idx]["anatomy"]
-        participant = df.loc[idx]["participant_id"]
-        # modality = df.iloc[idx]["guidance"]
+    # for idx in df.index:
+    #     anatomy = df.loc[idx]["anatomy"]
+    #     participant = df.loc[idx]["participant_id"]
+    #     # modality = df.iloc[idx]["guidance"]
 
-        base = df.loc[
-            (df["anatomy"] == anatomy)
-            & (df["guidance"] == "Baseline")
-            & (df["participant_id"] == participant)
-        ]
-        relative_time = df.loc[idx]["completion_time"] - base["completion_time"]
-        relative_errors = df.loc[idx]["total_errors"] - base["total_errors"]
-        df.at[idx, "relative_completion_time"] = relative_time
-        df.at[idx, "relative_total_errors"] = relative_errors
+    #     base = df.loc[
+    #         (df["anatomy"] == anatomy)
+    #         & (df["guidance"] == "Baseline")
+    #         & (df["participant_id"] == participant)
+    #     ]
+    #     relative_time = df.loc[idx]["completion_time"] - base["completion_time"]
+    #     relative_errors = df.loc[idx]["total_errors"] - base["total_errors"]
+    #     df.at[idx, "relative_completion_time"] = relative_time
+    #     df.at[idx, "relative_total_errors"] = relative_errors
 
     #######################
     ## errors plot
