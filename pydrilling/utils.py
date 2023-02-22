@@ -1,5 +1,5 @@
 import os
-
+from enum import Enum
 
 def init_ambf(node_name="default"):
     from ambf_client import Client
@@ -25,7 +25,7 @@ def init_ambf(node_name="default"):
     return _client, objects_dict
 
 
-class bcolors:
+class ColorPrinting(Enum):
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
     OKCYAN = "\033[96m"
@@ -36,41 +36,44 @@ class bcolors:
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
 
+    @classmethod
+    def toStr(cls,f):
+        return "{:.3f}".format(f)
 
-def toStr(f):
-    return "{:.3f}".format(f)
+    @classmethod
+    def WARN_STR(cls,val):
+        if type(val) != str:
+            val = cls.toStr(val)
+        valStr = cls.WARNING.value + val + cls.ENDC.value
+        return valStr
 
+    @classmethod
+    def WARN2_STR(cls, val):
+        if type(val) != str:
+            val = cls.toStr(val)
+        valStr = cls.OKCYAN.value + val + cls.ENDC.value
+        return valStr
 
-def WARN_STR(val):
-    if type(val) != str:
-        val = toStr(val)
-    valStr = bcolors.WARNING + val + bcolors.ENDC
-    return valStr
+    @classmethod
+    def ok_str(cls, val):
+        if type(val) != str:
+            val = cls.toStr(val)
+        valStr = cls.OKGREEN.value + val + cls.ENDC.value
+        return valStr
 
+    @classmethod
+    def info_str(cls,val):
+        if type(val) != str:
+            val = cls.toStr(val)
+        valStr = cls.OKBLUE.value + val + cls.ENDC.value
+        return valStr
 
-def WARN2_STR(val):
-    if type(val) != str:
-        val = toStr(val)
-    valStr = bcolors.OKCYAN + val + bcolors.ENDC
-    return valStr
+    @classmethod
+    def fail_str(cls,val):
+        if type(val) != str:
+            val = cls.toStr(val)
+        valStr = cls.FAIL.value + val + cls.ENDC.value
+        return valStr
 
-
-def OK_STR(val):
-    if type(val) != str:
-        val = toStr(val)
-    valStr = bcolors.OKGREEN + val + bcolors.ENDC
-    return valStr
-
-
-def INFO_STR(val):
-    if type(val) != str:
-        val = toStr(val)
-    valStr = bcolors.OKBLUE + val + bcolors.ENDC
-    return valStr
-
-
-def FAIL_STR(val):
-    if type(val) != str:
-        val = toStr(val)
-    valStr = bcolors.FAIL + val + bcolors.ENDC
-    return valStr
+if __name__ =="__main__":
+    print(ColorPrinting.ok_str("hello\n"))
