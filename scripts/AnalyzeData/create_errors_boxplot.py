@@ -21,7 +21,8 @@ adjust_params = dict(top=0.88, bottom=0.18, left=0.125, right=0.9, hspace=0.2, w
 
 
 def main():
-    root = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/final_objective_metrics.csv")
+    # root = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/final_objective_metrics.csv")
+    root = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/UserStudy2_IROS/results.csv")
     df = pd.read_csv(root)
 
     voxel_cols = [col for col in df.columns if "voxel" in col]
@@ -40,7 +41,7 @@ def main():
     # df.insert(df.shape[1], "total_errors", errors_df.sum(axis=1).to_numpy())
 
     # only use anatomy A, E , B
-    df = df.loc[(df["anatomy"] == "A") | (df["anatomy"] == "E") | (df["anatomy"] == "B")]
+    # df = df.loc[(df["anatomy"] == "A") | (df["anatomy"] == "E") | (df["anatomy"] == "B")]
 
     # Calculate relative metrics
     # df.insert(df.shape[1], "relative_completion_time", 0)
@@ -77,7 +78,7 @@ def main():
     # by_label = dict(zip(labels[:2], handles[:2]))
     # ax.legend(by_label.values(), by_label.keys())
     ax.set_xlabel("Feedback modality", labelpad=10)
-    ax.set_ylabel("# of unintended voxels removed", labelpad=10)
+    ax.set_ylabel("Unintended voxels removed", labelpad=10)
     ax.grid(color="black", alpha=0.5, axis="y")
 
     #######################

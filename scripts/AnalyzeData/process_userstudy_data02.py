@@ -13,7 +13,7 @@ from natsort import natsorted
 # Custom
 from pydrilling.Recording import Recording
 from pydrilling.Metrics.PerformanceMetrics import PerformanceMetrics
-from pydrilling.utils import ColorPrinting as cp
+from pydrilling.utils import ColorPrinting as cp, SimulatorDataParser
 
 
 
@@ -33,42 +33,16 @@ def analyze_experiment():
         print("path does not exists")
         exit(0)
 
-    participant_dict = defaultdict(list)
-
-    for file in root.glob("*/*"):
-        # File structure ~/path2data/RedCap/mode/partipant_id/
-        participant_id = file.parent.name
-        mode = file.parent.parent.name
-        participant_dict[participant_id].append(file)
-
-    # Sort recordings 
-    participant_dict = dict(participant_dict)
-    for k, v in participant_dict.items():
-        participant_dict[k] = natsorted(v)
-        print(cp.info_str(k))
-        for e in v:
-            print(e.name)
-    print("\n\n")
+    participant_dict =  SimulatorDataParser.get_participants_recordings(root)
 
     # Calculate metrics
     results = []
     for participant_id, data_paths in participant_dict.items():
-        
         for trial_idx, trial_path in enumerate(data_paths):
-            #load metadata
-            with open(trial_path/"meta.json","r") as f:
-                metadata = json.load(f)
-            anatomy, guidance_type = metadata['anatomy'], metadata['guidance_modality'] 
-
-            trial_meta_data = {
-                "participant_id": participant_id,
-                "guidance_modality": guidance_type,
-                "anatomy": anatomy,
-                "trial_idx": trial_idx,
-            }
+            trial_meta_data = SimulatorDataParser.load_meta_data(trial_idx, trial_path) 
 
             with Recording(trial_path, **trial_meta_data) as recording:
-                print(f"Read {len(recording)} h5 files for {recording.participant_id}")
+                print(f"Read {len(recording)} h5 files for participant {recording.participant_id}")
                 metrics = PerformanceMetrics(recording, generate_first_vid=False)
                 results.append(metrics.generate_summary_dataframe())
 

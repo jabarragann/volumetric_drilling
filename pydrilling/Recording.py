@@ -109,10 +109,22 @@ class Recording:
 
 
 if __name__ == "__main__":
+    # path = Path(
+    #     "/home/juan1995/research_juan/cisII_SDF_project/Data/PilotData/sdf_daniel_pilot_guidance/"
+    # )
+    # meta_data = dict(participant_id="participant1", anatomy="A", guidance_modality="Baseline")
+
+    # with Recording(path, **meta_data) as recording:
+    #     print(f"Read {len(recording)} h5 files for {recording.participant_id}")
+
+
+    import json
     path = Path(
-        "/home/juan1995/research_juan/cisII_SDF_project/Data/PilotData/sdf_daniel_pilot_guidance/"
+        '/home/juan1995/research_juan/cisII_SDF_project/Data/UserStudy2_IROS/Participant_8/2023-02-13 09:39:29_AnatomyJ_Force'
     )
-    meta_data = dict(participant_id="participant1", anatomy="A", guidance_modality="Baseline")
+    with open(path/"meta.json","r") as f:
+        meta_data = json.load(f)
+    # meta_data = dict(participant_id="participant8", anatomy="J", guidance_modality="Haptic")
 
     with Recording(path, **meta_data) as recording:
         print(f"Read {len(recording)} h5 files for {recording.participant_id}")

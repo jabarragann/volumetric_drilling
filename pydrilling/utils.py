@@ -1,5 +1,10 @@
+from collections import defaultdict
+import json
 import os
 from enum import Enum
+from pathlib import Path
+
+from natsort import natsorted
 
 def init_ambf(node_name="default"):
     from ambf_client import Client
@@ -74,6 +79,86 @@ class ColorPrinting(Enum):
             val = cls.toStr(val)
         valStr = cls.FAIL.value + val + cls.ENDC.value
         return valStr
+
+class SimulatorDataParser:
+    @classmethod
+    def is_valid_recording_dir(cls, path:Path)->bool:
+        """A valid recording dir contains at least one .hdf5 file and a meta.json file."""
+        data_files = list(path.glob("*.hdf5") )
+        if len(data_files)==0:
+            return False 
+        if not (path/"meta.json").exists(): 
+            return False
+        else:
+            return True
+
+    @classmethod
+    def are_subdirs_valid(cls, path:Path)->bool:
+        """ Check that all subfolders are valid recording directories.  """
+
+        rec_dirs = list(path.glob("*"))
+        if len(rec_dirs) == 0:
+            print(ColorPrinting.fail_str("No subdirectories in {path}"))
+            return False
+
+        for f in rec_dirs: 
+            if not cls.is_valid_recording_dir(f):
+                print(ColorPrinting.fail_str("Subdirectory {f} is not a valid recording"))
+                return False 
+
+        return True
+    
+    @classmethod
+    def get_participants_recordings(cls, path: Path)->dict:
+        """Generate a dictionary of recording path to process.  Each entry in
+        the dictionary is sorted using natsort
+
+        Parameters
+        ----------
+        path : Path
+            Path containing recordings of multiple users 
+        """
+
+        participant_dict = defaultdict(list)
+
+        subdir_list = [p for p in path.glob("*") if p.is_dir()]
+        for subdir in subdir_list:
+            participant_id = subdir.name
+
+            if cls.are_subdirs_valid(subdir): 
+                for file in subdir.glob("*"):
+                    participant_dict[participant_id].append(file)
+            else:
+                exit(0)
+
+        participant_dict = cls.sort_recordings(participant_dict)            
+        return dict(participant_dict)
+
+    @classmethod
+    def sort_recordings(cls, participant_dict:dict)->dict:
+        """sort all valid recordings"""
+        for k, v in participant_dict.items():
+            participant_dict[k] = natsorted(v)
+        
+        return participant_dict
+
+    @classmethod
+    def load_meta_data(cls, trial_idx:int, rec_path:Path)->dict:
+
+        with open(rec_path/"meta.json","r") as f:
+            metadata = json.load(f)
+
+        anatomy  = metadata['anatomy'] 
+        guidance_type = metadata['guidance_modality'] 
+        participant_id = metadata['participant_id']
+
+        trial_meta_data = {
+            "participant_id": participant_id,
+            "guidance_modality": guidance_type,
+            "anatomy": anatomy,
+            "trial_idx": trial_idx,
+        }
+        return trial_meta_data
 
 if __name__ =="__main__":
     print(ColorPrinting.ok_str("hello\n"))

@@ -189,7 +189,7 @@ def main(data_dir: Path):
 
     with Recording(data_dir, **trial_meta_data) as recording:
         print(f"Read {len(recording)} h5 files for {recording.participant_id}")
-        metrics = PerformanceMetrics(recording, generate_first_vid=True)
+        metrics = PerformanceMetrics(recording, generate_first_vid=False)
         metrics.metrics_report()
         print()
 
