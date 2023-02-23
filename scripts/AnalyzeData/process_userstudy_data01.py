@@ -1,3 +1,8 @@
+"""
+Script used for IPCAI 2023 submission
+
+"""
+
 from collections import defaultdict
 import sys
 import pandas as pd
