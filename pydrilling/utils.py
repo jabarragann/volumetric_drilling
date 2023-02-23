@@ -98,12 +98,13 @@ class SimulatorDataParser:
 
         rec_dirs = list(path.glob("*"))
         if len(rec_dirs) == 0:
-            print(ColorPrinting.fail_str("No subdirectories in {path}"))
+            print(ColorPrinting.fail_str(f"No subdirectories in {path}"))
             return False
 
         for f in rec_dirs: 
             if not cls.is_valid_recording_dir(f):
-                print(ColorPrinting.fail_str("Subdirectory {f} is not a valid recording"))
+                print(ColorPrinting.fail_str(f"Subdirectory {f} is not a valid recording"))
+                print("A valid recording dir contains at least one .hdf5 file and a meta.json file.")
                 return False 
 
         return True
