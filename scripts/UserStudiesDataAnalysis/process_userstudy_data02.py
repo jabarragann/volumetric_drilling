@@ -11,7 +11,7 @@ import pandas as pd
 from pathlib import Path
 from natsort import natsorted
 # Custom
-from pydrilling.Recording import Recording
+from pydrilling.DataUtils.Recording import Recording
 from pydrilling.Metrics.PerformanceMetrics import PerformanceMetrics
 from pydrilling.utils import ColorPrinting as cp, SimulatorDataParser
 

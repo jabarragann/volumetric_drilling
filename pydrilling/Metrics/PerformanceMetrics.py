@@ -9,7 +9,7 @@ import pandas as pd
 from natsort import natsorted
 
 from pydrilling.data_viewer import generate_video
-from pydrilling.Recording import Recording
+from pydrilling.DataUtils.Recording import Recording
 
 # {short_name: [color, "long_name"]}
 anatomy_dict = {

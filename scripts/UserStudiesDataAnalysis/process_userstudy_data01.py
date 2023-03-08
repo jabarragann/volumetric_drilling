@@ -7,7 +7,7 @@ from collections import defaultdict
 import sys
 import pandas as pd
 
-from pydrilling.Recording import Recording
+from pydrilling.DataUtils.Recording import Recording
 
 sys.path.append(__file__)
 

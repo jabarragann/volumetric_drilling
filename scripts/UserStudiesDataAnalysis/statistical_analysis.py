@@ -73,7 +73,7 @@ def create_plots(df):
 
 
 def main():
-    root = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/results.csv")
+    root = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/final_objective_metrics.csv")
     df = pd.read_csv(root)
 
     # Drop participants 1,2,3
@@ -81,6 +81,7 @@ def main():
         (df["participant_id"] == "Participant_1")
         | (df["participant_id"] == "Participant_2")
         | (df["participant_id"] == "Participant_3")
+        | (df["participant_id"] == "Participant_6")
     ].index
 
     df.drop(index_to_drop, inplace=True)

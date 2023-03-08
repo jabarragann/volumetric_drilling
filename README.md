@@ -14,9 +14,38 @@ The virtual reality drilling simulator is able to actively modify anatomy with a
 * C++ library to calculate EDT voluments can be found in the following [repository](https://github.com/jabarragann/EDT?organization=jabarragann&organization=jabarragann).
 * For the python preprocessing scripts to generate SDF files please refer to this [link](./scripts/EdtGeneration/README.MD)
 
+## Installation of python analysis scripts
+To install the python analysis package use the command.
+```
+pip install -e .
+```
+
+To test if the installation was successful try the following command on your python terminal 
+
+``` python
+import pydrilling
+```
+
+
+
 
 # References
+Consider citing our article if this project is useful to you!
+
 ```
+@article{https://doi.org/10.48550/arxiv.2303.01733,
+  doi = {10.48550/ARXIV.2303.01733},
+  url = {https://arxiv.org/abs/2303.01733},
+  author = {Ishida, Hisashi and Barragan, Juan Antonio and Munawar, Adnan and Li, Zhaoshuo and Kazanzides, Peter and Kazhdan, Michael and Trakimas, Danielle and Creighton, Francis X. and Taylor, Russell H.},
+  keywords = {Human-Computer Interaction (cs.HC), Robotics (cs.RO), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  title = {Improving Surgical Situational Awareness with Signed Distance Field: A Pilot Study in Virtual Reality},
+  publisher = {arXiv},
+  year = {2023},
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+```
+
+<!-- ```
 @article{munawar2021virtual,
   title={Virtual reality for synergistic surgical training and data generation},
   author={Munawar, Adnan and Li, Zhaoshuo and Kunjam, Punit and Nagururu, Nimesh and Ding, Andy S and Kazanzides, Peter and Looi, Thomas and Creighton, Francis X and Taylor, Russell H and Unberath, Mathias},
@@ -25,4 +54,4 @@ The virtual reality drilling simulator is able to actively modify anatomy with a
   year={2021},
   publisher={Taylor \& Francis}
 }
-```
+``` -->

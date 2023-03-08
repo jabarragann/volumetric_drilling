@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
-from pydrilling.Recording import Recording
+from pydrilling.DataUtils.Recording import Recording
 
 from pydrilling.data_validation import pose_to_matrix
 from pathlib import Path
