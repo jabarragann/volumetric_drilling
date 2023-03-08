@@ -1,55 +1,79 @@
-from mpl_toolkits import mplot3d
-import matplotlib.pyplot as plt
+import os
+from pathlib import Path
 import h5py
 import numpy as np
+from natsort import natsorted
+from collections import OrderedDict
 
-from pydrilling.DataUtils.DataMerger import DataMerger
 
-params = {
-    "legend.fontsize": "x-large",
-    "figure.figsize": (9, 5),
-    "axes.labelsize": "large",
-    "axes.titlesize": "x-large",
-    "xtick.labelsize": "medium",
-    "ytick.labelsize": "medium",
-}
+class DataMerger:
+    def __init__(self):
+        self._data = OrderedDict()
+        self.file_names = []
 
-plt.rcParams.update(params)
+    def _clear_data(self):
+        for g in self._data.keys():
+            self._data[g].clear()
 
-def rgb_to_hex(r, g, b):
-    return '#%02x%02x%02x' % (int(r), int(g), int(b))
+        self.file_names = []
 
-files = []
-files.append(['P1', '/home/amunawa2/Downloads/2022-11-03 14.00.17'])
-# files.append(['P2', '/home/amunawa2/RedCap/Baseline/Participant_2/2022-11-04 11.56.44'])
-# files.append(['P3', '/home/amunawa2/RedCap/Guidance/Participant_3/2022-11-04 14.59.22'])
-# files.append(['P4', '/home/amunawa2/RedCap/Guidance/Participant_4/2022-11-09 19:26:43'])
-# files.append(['P5', '/home/amunawa2/RedCap/Guidance/Participant_5/2022-11-10 12:54:16'])
-# files.append(['P6', '/home/amunawa2/RedCap/Guidance/Participant_6/2022-11-10 18:16:42'])
-# files.append(['P7', '/home/amunawa2/RedCap/Guidance/Participant_7/2022-11-11 10:42:18'])
+    def get_merged_data(self, dir, verbose=False):
+        self._clear_data()
 
-data_merger = DataMerger()
+        os.chdir(dir)
+        names = os.listdir(dir)
 
-for lab, f in files:
-    data = data_merger.get_merged_data(f, False)
+        for n in names:
+            if n.endswith('.hdf5'):
+                self.file_names.append(n)
 
-    vrm = data['voxels_removed']['voxel_removed'][()]
-    vcol = data['voxels_removed']['voxel_color'][()]
+        self.file_names = natsorted(self.file_names)
+        print('Number of Files ', len(self.file_names))
 
-    colors = [None for _ in range(vcol.shape[0])]
+        for idx, file_name in enumerate(self.file_names):
+            file = h5py.File(file_name, 'r')
+            if verbose: print(idx, 'Opening', file_name)
+            for grp in file.keys():
+                if grp == 'metadata':
+                    continue
 
-    for i, c in enumerate(vcol):
-        colors[i] = rgb_to_hex(c[1], c[2], c[3])
+                if grp not in self._data:
+                    self._data[grp] = OrderedDict()
+                if verbose: print('\t Processing Group ', grp)
+                for dset in file[grp].keys():
+                    if grp == 'data' and dset != 'time' and 'pose_' not in dset:
+                        continue
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+                    if len(file[grp][dset]) == 0:
+                        continue
 
-    ax.scatter(vrm[:, 1], vrm[:, 2], vrm[:, 3], alpha=.3, c=colors)
-    # ax.scatter([1, 2, 3], [5, 6, 4], [9, 5, 4], label="X")
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    # plt.legend(["Dura", "Tegmen"])
-    plt.title('Removed Voxels')
-    plt.show()
-    # plt.savefig('/home/amunawa2/Desktop/voxels_removed_' + lab + '.png')
+                    if verbose: print('\t\t Processing Dataset ', dset)
+                    if dset not in self._data[grp]:
+                        self._data[grp][dset] = file[grp][dset][()]
+                    else:
+                        self._data[grp][dset] = np.append(self._data[grp][dset], file[grp][dset][()], axis=0)
+            file.close()
+        return self._data
+
+    @classmethod 
+    def save_data_to_hdf5(self, data, dst_path, outfile='output.hdf5'):
+        output_file = h5py.File(dst_path /outfile, 'w')
+        for grp in data.keys():
+            output_grp = output_file.create_group(grp)
+            for dset in data[grp].keys():
+                print('Writing Dataset', dset)
+                output_grp.create_dataset(dset, data=data[grp][dset], compression='gzip')
+
+        output_file.close()
+
+
+def main():
+    data_merge = DataMerger()
+    data_path = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/Baseline")
+    data_path  = data_path / "Participant_3/2022-11-04 14.32.45"
+
+    data = data_merge.get_merged_data(data_path)
+    DataMerger.save_data_to_hdf5(data, data_path)
+
+if __name__ == "__main__":
+    main()
