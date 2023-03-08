@@ -117,11 +117,12 @@ if __name__ == "__main__":
     # with Recording(path, **meta_data) as recording:
     #     print(f"Read {len(recording)} h5 files for {recording.participant_id}")
 
-
     import json
-    path = Path(
-        '/home/juan1995/research_juan/cisII_SDF_project/Data/UserStudy2_IROS/Participant_8/2023-02-13 09:39:29_AnatomyJ_Force'
-    )
+    root_path = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/UserStudy2_IROS/")
+    p1 = root_path / "Participant_08/2023-02-08 10:07:14_AnatomyA_baseline"
+    p2 = root_path / 'Participant_08/2023-02-13 09:39:29_AnatomyJ_Force'
+
+    path = p2
     with open(path/"meta.json","r") as f:
         meta_data = json.load(f)
     # meta_data = dict(participant_id="participant8", anatomy="J", guidance_modality="Haptic")

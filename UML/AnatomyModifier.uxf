@@ -1,0 +1,16 @@
+<diagram program="umletino" version="15.0.0"><zoom_level>10</zoom_level><element><id>UMLClass</id><coordinates><x>90</x><y>320</y><w>390</w><h>160</h></coordinates><panel_attributes>AnatomicalVolume
+--
++ anatomy_matrix: ndarray
+--
++ save_png_images(Path)
++ save_data_matrix(Path)
++ remove_all_voxels(voxels, voxels_colors)
+- _remove_voxel(AnatomicalVolume, voxel_index, voxel_color)
+--
++ from_png_list(): AnatomicalVolume
++ from_matrix(ndarray, Path): AnatomicalVolume
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>90</x><y>110</y><w>390</w><h>90</h></coordinates><panel_attributes>DataMerger
+--
+- _data: OrderedDict
+--
+- extract_voxels(): np.ndarray </panel_attributes><additional_attributes></additional_attributes></element></diagram>
