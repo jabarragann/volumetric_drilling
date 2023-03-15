@@ -9,7 +9,7 @@ def main():
     # Load Anatomy
     root_path = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/Anatomies/AnatomyA")
     src_path = Path(root_path)/"Images"
-    dst_path = Path(root_path)/"ModifiedImages"
+    dst_path = Path(root_path)/"FinalImages"
     print("Loading anatomy ...")
     anatomical_vol = AnatomicalVolume.from_png_list(src_path)
 
@@ -24,7 +24,7 @@ def main():
     removed_voxels = experiment_data.get_removed_voxels()
     anatomical_vol.remove_voxels(removed_voxels)    
 
-    # anatomical_vol.save_png_images(dst_path)
+    anatomical_vol.save_png_images(dst_path, im_prefix="finalplane")
 
 
 if __name__ == "__main__":

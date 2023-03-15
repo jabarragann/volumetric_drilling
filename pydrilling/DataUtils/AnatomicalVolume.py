@@ -30,7 +30,7 @@ class AnatomicalVolume:
         self.z_dim = self.anatomy_matrix.shape[2]
 
 
-    def save_png_images(self, dst_path:Path, im_prefix="modifiedplane"):
+    def save_png_images(self, dst_path:Path, im_prefix="plane"):
         print("Saving volume to png images ....")
         for nz in range(self.z_dim):
             im_name = im_prefix + f"{nz:06d}" + ".png"
@@ -50,26 +50,35 @@ class AnatomicalVolume:
         for idx, (ts,loc,color) in enumerate(voxels_to_remove): 
             # print(idx)
             consistent += self.__remove_voxel(loc.squeeze(), color.squeeze())
-        print(f"consistent: {consistent}") 
-        print(f"error: {total-consistent}") 
-        print(f"correct %: {consistent/total*100:0.03f}") 
+
             # if idx >10:
             #     break
 
+        print(f"consistent: {consistent}") 
+        print(f"error: {total-consistent}") 
+        print(f"correct %: {consistent/total*100:0.03f}") 
+
     def __remove_voxel(self, voxel_loc:np.ndarray, voxel_color:np.ndarray):
-        color_in_anatomy = self.anatomy_matrix[voxel_loc[2],voxel_loc[1], voxel_loc[0]]  
-        # color_in_anatomy = self.anatomy_matrix[voxel_loc[0],voxel_loc[1], voxel_loc[2]]  
+        # color_in_anatomy = self.anatomy_matrix[voxel_loc[1],voxel_loc[0], voxel_loc[2]]  
+        color_in_anatomy = self.anatomy_matrix[255 - voxel_loc[1],voxel_loc[0], voxel_loc[2]]  
+        # self.anatomy_matrix[255 - voxel_loc[1], voxel_loc[0], voxel_loc[2]] = np.array(0 
         # color_in_anatomy = self.anatomy_matrix[voxel_loc[2],voxel_loc[0], voxel_loc[1]]  
         is_color_the_same = np.all(color_in_anatomy==voxel_color)
         if not is_color_the_same:
+            # print(f"loc {np.array([0,255,0]) - voxel_loc}")
             # print(f"loc {voxel_loc}")
-            # print(f"volume color(xyz): { self.anatomy_matrix[voxel_loc[0],voxel_loc[1], voxel_loc[2]]  }")
-            # print(f"volume color(zxy): { self.anatomy_matrix[voxel_loc[2],voxel_loc[0], voxel_loc[1]]  }")
-            # print(f"volume color(zyx): { self.anatomy_matrix[voxel_loc[2],voxel_loc[1], voxel_loc[0]]  }")
-            # print(f"hdf5 color:   {voxel_color}")
-            # print(np.all(color_in_anatomy==voxel_color))
+            print(f"volume color(xyz): { self.anatomy_matrix[255 - voxel_loc[1], voxel_loc[0], voxel_loc[2]]  }")
+            print(f"volume color(zxy): { self.anatomy_matrix[voxel_loc[2],voxel_loc[0], voxel_loc[1]]  }")
+            print(f"volume color(zyx): { self.anatomy_matrix[voxel_loc[2],voxel_loc[1], voxel_loc[0]]  }")
+            print(f"volume color(yxz): { self.anatomy_matrix[voxel_loc[1],voxel_loc[0], voxel_loc[2]]  }")
+            print(f"volume color(yzx): { self.anatomy_matrix[voxel_loc[1],voxel_loc[2], voxel_loc[0]]  }")
+            print(f"volume color(xzy): { self.anatomy_matrix[voxel_loc[0],voxel_loc[2], voxel_loc[1]]  }")
+            print(f"hdf5 color:   {voxel_color}")
+            print(np.all(color_in_anatomy==voxel_color))
             return 0
         else:
+            #remove voxel
+            self.anatomy_matrix[255 - voxel_loc[1],voxel_loc[0], voxel_loc[2]] = np.array([0.0,0.0,0.0,0.0])
             return 1
 
     def is_remove_voxel_data(self):
@@ -116,6 +125,6 @@ if __name__ == "__main__":
 
     anatomical_vol = AnatomicalVolume.from_png_list(src_path)
 
-    anatomical_vol.save_png_images(dst_path)
+    anatomical_vol.save_png_images(dst_path, im_prefix="modifiedplane_")
 
 
