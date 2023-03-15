@@ -6,6 +6,8 @@ from natsort import natsorted
 from collections import OrderedDict
 from dataclasses import dataclass
 
+#{0:{ts:float, voxels:ndarray, color:}}
+# https://github.com/uvemas/ViTables
 @dataclass
 class Voxels:
     voxels_loc: np.ndarray
@@ -15,7 +17,7 @@ class Voxels:
     def __post_init__(self):
         self.__current_index = -1 
     def __len__(self): 
-        return self.voxels_ts.shape[0]
+        return self.voxels_loc.shape[0]
     def __iter__(self):
         self.__current_index = -1 
         return self
@@ -27,7 +29,7 @@ class Voxels:
 
     def __getitem__(self, idx):
 
-        ts = self.voxels_ts[idx]
+        ts = self.voxels_ts[0]
         loc = self.voxels_loc[idx]
         color = self.voxels_color[idx]
 

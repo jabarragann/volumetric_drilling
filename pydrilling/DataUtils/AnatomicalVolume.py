@@ -78,7 +78,7 @@ class AnatomicalVolume:
             return 0
         else:
             #remove voxel
-            self.anatomy_matrix[255 - voxel_loc[1],voxel_loc[0], voxel_loc[2]] = np.array([0.0,0.0,0.0,0.0])
+            self.anatomy_matrix[255 - voxel_loc[1],voxel_loc[0], voxel_loc[2]] = np.array([255.0,0.0,0.0,50.0])
             return 1
 
     def is_remove_voxel_data(self):

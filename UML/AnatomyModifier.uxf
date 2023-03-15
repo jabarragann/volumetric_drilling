@@ -4,7 +4,7 @@
 --
 + save_png_images(Path)
 + save_data_matrix(Path)
-+ remove_all_voxels(voxels, voxels_colors)
++ remove_all_voxels(Voxels)
 - _remove_voxel(AnatomicalVolume, voxel_index, voxel_color)
 --
 + from_png_list(): AnatomicalVolume
