@@ -7,6 +7,8 @@ import numpy as np
 from dataclasses import dataclass
 from PIL import Image
 
+from pydrilling.DataUtils.DataMerger import Voxels
+
 
 @dataclass
 class AnatomicalVolume:
@@ -25,7 +27,7 @@ class AnatomicalVolume:
 
     def __post_init__(self):
         assert len(self.anatomy_matrix.shape)  == 4, "wrong shape for input matrix"
-        self.z_dim = self.anatomy_matrix.shape[0]
+        self.z_dim = self.anatomy_matrix.shape[2]
 
 
     def save_png_images(self, dst_path:Path, im_prefix="modifiedplane"):
@@ -42,11 +44,18 @@ class AnatomicalVolume:
     def save_data_matrix(self, path:Path):
         pass
 
-    def remove_all_voxels(self, voxels:np.ndarray, voxels_colors:np.ndarray):
-        pass
+    def remove_voxels(self, voxels_to_remove:Voxels):
+        for idx, (ts,loc,color) in enumerate(voxels_to_remove): 
+            print(idx)
+            self.__remove_voxel(loc.squeeze(), color.squeeze())
+
+            if idx >10:
+                break
 
     def __remove_voxel(self, voxel_loc:np.ndarray, voxel_color:np.ndarray):
-        pass
+        print(f"loc {voxel_loc}")
+        print(f"volume color: { self.anatomy_matrix[voxel_loc[0],voxel_loc[1], voxel_loc[2]]  }")
+        print(f"hdf5 color:   {voxel_color}")
 
     def is_remove_voxel_data(self):
         pass
