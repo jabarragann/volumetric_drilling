@@ -45,17 +45,32 @@ class AnatomicalVolume:
         pass
 
     def remove_voxels(self, voxels_to_remove:Voxels):
+        consistent   = 0
+        total = len(voxels_to_remove)
         for idx, (ts,loc,color) in enumerate(voxels_to_remove): 
-            print(idx)
-            self.__remove_voxel(loc.squeeze(), color.squeeze())
-
-            if idx >10:
-                break
+            # print(idx)
+            consistent += self.__remove_voxel(loc.squeeze(), color.squeeze())
+        print(f"consistent: {consistent}") 
+        print(f"error: {total-consistent}") 
+        print(f"correct %: {consistent/total*100:0.03f}") 
+            # if idx >10:
+            #     break
 
     def __remove_voxel(self, voxel_loc:np.ndarray, voxel_color:np.ndarray):
-        print(f"loc {voxel_loc}")
-        print(f"volume color: { self.anatomy_matrix[voxel_loc[0],voxel_loc[1], voxel_loc[2]]  }")
-        print(f"hdf5 color:   {voxel_color}")
+        color_in_anatomy = self.anatomy_matrix[voxel_loc[2],voxel_loc[1], voxel_loc[0]]  
+        # color_in_anatomy = self.anatomy_matrix[voxel_loc[0],voxel_loc[1], voxel_loc[2]]  
+        # color_in_anatomy = self.anatomy_matrix[voxel_loc[2],voxel_loc[0], voxel_loc[1]]  
+        is_color_the_same = np.all(color_in_anatomy==voxel_color)
+        if not is_color_the_same:
+            # print(f"loc {voxel_loc}")
+            # print(f"volume color(xyz): { self.anatomy_matrix[voxel_loc[0],voxel_loc[1], voxel_loc[2]]  }")
+            # print(f"volume color(zxy): { self.anatomy_matrix[voxel_loc[2],voxel_loc[0], voxel_loc[1]]  }")
+            # print(f"volume color(zyx): { self.anatomy_matrix[voxel_loc[2],voxel_loc[1], voxel_loc[0]]  }")
+            # print(f"hdf5 color:   {voxel_color}")
+            # print(np.all(color_in_anatomy==voxel_color))
+            return 0
+        else:
+            return 1
 
     def is_remove_voxel_data(self):
         pass

@@ -1,4 +1,4 @@
-<diagram program="umletino" version="15.0.0"><zoom_level>10</zoom_level><element><id>UMLClass</id><coordinates><x>90</x><y>320</y><w>390</w><h>160</h></coordinates><panel_attributes>AnatomicalVolume
+<diagram program="umletino" version="15.0.0"><zoom_level>10</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>70</x><y>60</y><w>390</w><h>160</h></coordinates><panel_attributes>AnatomicalVolume
 --
 + anatomy_matrix: ndarray
 --
@@ -9,8 +9,17 @@
 --
 + from_png_list(): AnatomicalVolume
 + from_matrix(ndarray, Path): AnatomicalVolume
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>90</x><y>110</y><w>390</w><h>90</h></coordinates><panel_attributes>DataMerger
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>70</x><y>280</y><w>200</w><h>90</h></coordinates><panel_attributes>DataMerger
 --
 - _data: OrderedDict
 --
-- extract_voxels(): np.ndarray </panel_attributes><additional_attributes></additional_attributes></element></diagram>
+- extract_voxels(): Voxels </panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>390</x><y>280</y><w>150</w><h>90</h></coordinates><panel_attributes>Voxels
+--
++ loc: np.ndarray
++ color: np.ndarray
++ ts: np.ndarray
+--
++Voxels(loc, color, ts)
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>400</x><y>210</y><w>70</w><h>90</h></coordinates><panel_attributes>lt=&lt;&lt;.
+&lt;&lt;uses&gt;&gt;</panel_attributes><additional_attributes>10;70;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>260</x><y>300</y><w>150</w><h>40</h></coordinates><panel_attributes>lt=&lt;&lt;.
+&lt;&lt;instantiates&gt;&gt;</panel_attributes><additional_attributes>130;20;10;20</additional_attributes></element></diagram>

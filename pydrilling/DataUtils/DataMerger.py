@@ -14,13 +14,16 @@ class Voxels:
 
     def __post_init__(self):
         self.__current_index = -1 
-    
+    def __len__(self): 
+        return self.voxels_ts.shape[0]
     def __iter__(self):
         self.__current_index = -1 
         return self
     def __next__(self):
         self.__current_index += 1
-        return self[self.__current_index]
+        if self.__current_index < len(self):
+            return self[self.__current_index]
+        raise StopIteration
 
     def __getitem__(self, idx):
 
