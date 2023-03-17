@@ -13,6 +13,13 @@ def check_path(path: Path):
     return path
 
 
+def create_path(path: Path):
+    if not path.exists():
+        print("creating dst_path")
+        path.mkdir()
+    return path
+
+
 @click.command()
 @click.option("--png_dir", required=True, help="path to png images")
 @click.option("--hdf5_dir", required=True, help="path to hdf5 file")
@@ -20,7 +27,7 @@ def check_path(path: Path):
 def modify_anatomy_with_hdf5(png_dir: str, hdf5_dir: str, output_dir: str):
     png_dir = check_path(Path(png_dir))
     hdf5_dir = check_path(Path(hdf5_dir))
-    output_dir = check_path(Path(output_dir))
+    output_dir = create_path(Path(output_dir))
 
     print(f"Loading png images ....")
     anatomical_vol = AnatomicalVolume.from_png_list(png_dir)

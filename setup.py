@@ -12,7 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    install_requires=["numpy", "scipy", "rich", "click", "fire", "pynrrd"],
+    install_requires=["numpy", "scipy", "rich", "click", "fire", "pynrrd", "Pillow", "natsort", "h5py"],
     include_package_data=True,
     python_requires=">=3.7",
 )

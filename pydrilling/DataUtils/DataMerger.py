@@ -88,13 +88,13 @@ class DataMerger:
     def get_merged_data(self, dir, verbose=False):
         self._clear_data()
 
-        os.chdir(dir)
-        names = os.listdir(dir)
+        # os.chdir(dir)
+        # names = os.listdir(dir)
 
-        for n in names:
-            if n.endswith(".hdf5"):
-                self.file_names.append(n)
-
+        # for n in names:
+        #     if n.endswith(".hdf5"):
+        #         self.file_names.append(n)
+        self.file_names = list(dir.glob("*.hdf5"))
         self.file_names = natsorted(self.file_names)
         print("Number of Files ", len(self.file_names))
 
