@@ -1,3 +1,8 @@
+"""
+Requires 
+- seaborn=>0.12.1
+"""
+
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -85,6 +90,7 @@ def main():
 
     # "Unintended voxels removed"
     ax.grid(color="black", alpha=0.5, axis="y")
+    fig.savefig(root.parent / "errors_boxplot.png", dpi=100, bbox_inches="tight", transparent=True)
 
     #######################
     ## errors plot
@@ -111,6 +117,8 @@ def main():
     ax.set_xlabel("Feedback modality", labelpad=10)
     ax.set_ylabel("Completion time (s)", labelpad=10)
     ax.grid(color="black", alpha=0.5, axis="y")
+
+    fig.savefig(root.parent / "completion_time_boxplot.png", dpi=100, bbox_inches="tight", transparent=True)
 
     plt.show()
 
