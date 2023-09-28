@@ -72,14 +72,21 @@ def main():
     #######################
     ## errors plot
     #######################
+    sns.color_palette("hls", 8)
+    my_order = ["Baseline","Visual","Haptic","Audio"]
+    my_pal = {"Baseline": "#2596be", #blue
+              "Visual": "#e8842c",  #orange
+              "Haptic":"#3c983c", #green
+              "Audio":"#c83c3c"} #red
+
     df["total_errors"] =  df["total_errors"] * 0.007 
 
     ax: plt.Axes
     fig, ax = plt.subplots(1)
     fig.set_tight_layout(True)
     fig.subplots_adjust(**adjust_params)
-    sns.boxplot(df, x="guidance", y="total_errors", ax=ax, order=["Baseline","Visual","Haptic","Audio"])
-    sns.swarmplot(df, x="guidance", y="total_errors", color="black", ax=ax, order=["Baseline","Visual","Haptic","Audio"])
+    sns.boxplot(df, x="guidance", y="total_errors", ax=ax, order=my_order, palette=my_pal)
+    sns.swarmplot(df, x="guidance", y="total_errors", color="black", ax=ax, order=my_order)
 
     # Remove repeated labels
     # handles, labels = ax.get_legend_handles_labels()
@@ -90,7 +97,9 @@ def main():
 
     # "Unintended voxels removed"
     ax.grid(color="black", alpha=0.5, axis="y")
+
     fig.savefig(root.parent / "errors_boxplot.png", dpi=100, bbox_inches="tight", transparent=True)
+    fig.savefig(root.parent / "errors_boxplot.svg", dpi=100, bbox_inches="tight", transparent=True)
 
     #######################
     ## errors plot
@@ -99,7 +108,7 @@ def main():
     fig, ax = plt.subplots(1)
     fig.set_tight_layout(True)
     fig.subplots_adjust(**adjust_params)
-    sns.boxplot(df, x="guidance", y="completion_time", ax=ax)
+    sns.boxplot(df, x="guidance", y="completion_time", ax=ax, order=my_order, palette=my_pal)
     sns.swarmplot(
         df,
         x="guidance",
@@ -108,7 +117,8 @@ def main():
         # dodge=True,
         color="black",
         ax=ax,
-    )
+        order=my_order,
+        )
 
     # Remove repeated labels
     # handles, labels = ax.get_legend_handles_labels()
@@ -119,6 +129,7 @@ def main():
     ax.grid(color="black", alpha=0.5, axis="y")
 
     fig.savefig(root.parent / "completion_time_boxplot.png", dpi=100, bbox_inches="tight", transparent=True)
+    fig.savefig(root.parent / "completion_time_boxplot.svg", dpi=100, bbox_inches="tight", transparent=True)
 
     plt.show()
 
