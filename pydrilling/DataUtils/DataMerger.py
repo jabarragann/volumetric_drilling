@@ -167,8 +167,11 @@ def main():
     # data_path = data_path / "Participant_3/2022-11-04 14.32.45"
 
     data_path = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/UserStudy2_IROS")
-    # data_path = data_path / "Participant_08/2023-02-08 10:07:14_AnatomyA_baseline"
-    data_path = data_path / "Participant_09/2023-02-10 09:54:45"
+    data_path = data_path / "Participant_08/2023-02-08 10:07:14_AnatomyA_baseline"
+
+    # data_path = data_path / "Participant_08/test_dir"
+
+    # data_path = data_path / "Participant_09/2023-02-10 09:54:45"
 
     data = data_merge.get_merged_data(data_path)
     removed_voxels: Voxels = data_merge.get_removed_voxels()
