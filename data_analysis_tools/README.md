@@ -28,7 +28,7 @@ Scripts are added to your path using console entry points. The access the script
 volusim_tools_mark_removed_voxels --help
 ```
 
-Alternatively, scripts can be called using the -m as follows
+Alternatively, scripts can be called using the `-m`  flag as follows
 ```bash
 python -m volumetric_sim_tools.Scripts.mark_removed_voxels
 ```
