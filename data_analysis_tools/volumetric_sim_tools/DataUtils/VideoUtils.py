@@ -1,17 +1,25 @@
-from argparse import ArgumentParser
 import cv2
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
-from pydrilling.DataUtils.Recording import Recording
-
-from pydrilling.data_validation import pose_to_matrix
+from volumetric_sim_tools.DataUtils.Recording import Recording
 from pathlib import Path
 
+def pose_to_matrix(pose):
+    quat_norm = np.linalg.norm(pose[:, 3:], axis=-1)
+    assert np.all(np.isclose(quat_norm, 1.0))
+    r = R.from_quat(pose[:, 3:]).as_matrix()
+    t = pose[:, :3]
+    tau = np.identity(4)[None].repeat(pose.shape[0], axis=0)
+    tau[:, :3, :3] = r
+    tau[:, :3, -1] = t
+
+    return tau
 
 def generate_video_from_recording(recording: Recording, output_path: Path = None):
+    """Generate rgb video from a Recording object"""
 
     # Create video
     cmap = plt.get_cmap()
@@ -68,49 +76,3 @@ def generate_video(hdf5_path: Path, output_path: Path = None):
         out.write(frame)
 
     out.release()
-
-
-if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument(
-        "--path_list",
-        type=str,
-        default=[],
-        nargs="+",
-        help="List of directories to process. Each directory contains the h5 files a single experiment.",
-    )
-    args = parser.parse_args()
-
-    for path in args.path_list:
-        try:
-            print(f"processing {path}")
-            root = Path(path)
-            recording = Recording(
-                root, participant_id="None", anatomy="None", guidance_modality="None"
-            )
-            generate_video_from_recording(recording)
-        except Exception as e:
-            print(f"error with {path}")
-            print(e)
-
-    # parser = ArgumentParser()
-    # parser.add_argument(
-    #     "--file",
-    #     type=str,
-    #     default=None,
-    #     action="store",
-    #     help="Iterate through all data frame by frame",
-    # )
-    # parser.add_argument(
-    #     "--idx", nargs="+", default=None, action="store", help="View the data of provided index"
-    # )
-    # parser.add_argument(
-    #     "--generate_video", action="store_true", help="create a video of recorded data"
-    # )
-    # args = parser.parse_args()
-
-    # file = Path(args.file)
-    # if file.exists():
-    #     generate_video(file)
-    # else:
-    #     print(f"{file} does not exists")

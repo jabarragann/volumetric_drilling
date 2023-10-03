@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
-from pydrilling.DataUtils.AnatomicalVolume import AnatomicalVolume
-from pydrilling.DataUtils.DataMerger import DataMerger
+from volumetric_sim_tools.DataUtils.AnatomicalVolume import AnatomicalVolume
+from volumetric_sim_tools.DataUtils.DataMerger import DataMerger
 import click
 
 
@@ -12,13 +12,11 @@ def check_path(path: Path):
 
     return path
 
-
 def create_path(path: Path):
     if not path.exists():
         print("creating dst_path")
         path.mkdir()
     return path
-
 
 @click.command()
 @click.option("--png_dir", required=True, help="path to png images")
@@ -40,6 +38,8 @@ def modify_anatomy_with_hdf5(png_dir: str, hdf5_dir: str, output_dir: str):
 
     anatomical_vol.save_png_images(output_dir, im_prefix="finalplane")
 
+def main():
+    modify_anatomy_with_hdf5()
 
 if __name__ == "__main__":
-    modify_anatomy_with_hdf5()
+    main()

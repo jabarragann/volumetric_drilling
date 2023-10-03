@@ -8,8 +8,8 @@ import h5py
 import pandas as pd
 from natsort import natsorted
 
-from pydrilling.data_viewer import generate_video
-from pydrilling.DataUtils.Recording import Recording
+from volumetric_sim_tools.DataUtils.VideoUtils import generate_video
+from volumetric_sim_tools.DataUtils.Recording import Recording
 
 # {short_name: [color, "long_name"]}
 anatomy_dict = {

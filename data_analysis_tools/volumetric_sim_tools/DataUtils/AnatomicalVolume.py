@@ -6,7 +6,7 @@ import numpy as np
 from dataclasses import dataclass
 from PIL import Image
 
-from pydrilling.DataUtils.DataMerger import Voxels
+from volumetric_sim_tools.DataUtils.DataMerger import Voxels
 
 
 @dataclass

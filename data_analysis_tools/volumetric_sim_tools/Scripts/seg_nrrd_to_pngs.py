@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from pathlib import Path
-from pydrilling.DataUtils.NrrdConverter import NrrdConverter
+from volumetric_sim_tools.DataUtils.NrrdConverter import NrrdConverter
 
 
 def main():
