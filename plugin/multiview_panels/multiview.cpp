@@ -62,6 +62,34 @@ afCameraMultiview::afCameraMultiview()
     m_alias_scaling = 1.0;
 }
 
+void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_height)
+{
+    // update display panel sizes and positions
+    int halfW = new_width / 2;
+    int halfH = new_height / 2;
+    int offset = 1;
+    world_panel->setLocalPos(0.0, 0.0);
+    world_panel->setSize(halfW, new_height);
+    side_panel->setLocalPos(halfW + offset, 0.0);
+    side_panel->setSize(halfW, new_height);
+    // update frame buffer sizes
+    world_buff->setSize(halfW, new_height);
+    side_buff->setSize(halfW, new_height);
+}
+
+void afCameraMultiview::assignGLFWCallbacks()
+{
+    glfwSetWindowUserPointer(m_camera->m_window, this);
+
+    // Configure callbacks
+    // The lambda function can only get access to the class method by using `glfwGetWindowUserPointer`
+    void (*lambda_resize_window)(GLFWwindow *, int, int) = [](GLFWwindow *w, int width, int height)
+    {
+        static_cast<afCameraMultiview *>(glfwGetWindowUserPointer(w))->windowSizeCallback(w, width, height);
+    };
+    glfwSetFramebufferSizeCallback(m_camera->m_window, lambda_resize_window);
+}
+
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     m_camera = (afCameraPtr)a_afObjectPtr;
@@ -90,16 +118,8 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     main_cam->m_frontLayer->addChild(side_panel);
 
     // update display panel sizes and positions
-    int halfW = m_width / 2;
-    int halfH = m_height / 2;
-    int offset = 1;
-    world_panel->setLocalPos(0.0, 0.0);
-    world_panel->setSize(halfW, m_height);
-    side_panel->setLocalPos(halfW + offset, 0.0);
-    side_panel->setSize(halfW, m_height);
-    // update frame buffer sizes
-    world_buff->setSize(halfW, m_height);
-    side_buff->setSize(halfW, m_height);
+    windowSizeCallback(m_camera->m_window, m_width, m_height);
+    assignGLFWCallbacks();
 
     // Set background
     cBackground *background2 = new cBackground();

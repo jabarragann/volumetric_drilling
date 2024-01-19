@@ -62,7 +62,8 @@ public:
 
     void makeFullScreen();
 
-    // void windowSizeCallback();
+    void windowSizeCallback(GLFWwindow *w, int width, int height);
+    void assignGLFWCallbacks();
 
 protected:
     afCameraPtr m_camera;
