@@ -62,6 +62,8 @@ public:
 
     void makeFullScreen();
 
+    // void windowSizeCallback();
+
 protected:
     afCameraPtr m_camera;
     cFrameBufferPtr m_frameBuffer;

@@ -57,8 +57,8 @@ string g_current_filepath;
 afCameraMultiview::afCameraMultiview()
 {
     // For HTC Vive Pro
-    m_width = 2880;
-    m_height = 1600;
+    m_width = 0;
+    m_height = 0;
     m_alias_scaling = 1.0;
 }
 
@@ -67,6 +67,9 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
 
+    m_width = m_camera->m_width;
+    m_height = m_camera->m_height;
+
     main_cam = new cCamera(NULL);
     world_cam = m_camera->getInternalCamera();
     side_cam = new cCamera(world_cam->getParentWorld());
@@ -74,6 +77,7 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     world_buff = cFrameBuffer::create();
     world_buff->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
     side_buff = cFrameBuffer::create();
+    side_buff->setup(side_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
 
     m_frameBuffer = cFrameBuffer::create();
     m_frameBuffer->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
@@ -85,6 +89,19 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     side_panel = new cViewPanel(side_buff);
     main_cam->m_frontLayer->addChild(side_panel);
 
+    // update display panel sizes and positions
+    int halfW = m_width / 2;
+    int halfH = m_height / 2;
+    int offset = 1;
+    world_panel->setLocalPos(0.0, 0.0);
+    world_panel->setSize(halfW, m_height);
+    side_panel->setLocalPos(halfW + offset, 0.0);
+    side_panel->setSize(halfW, m_height);
+    // update frame buffer sizes
+    world_buff->setSize(halfW, m_height);
+    side_buff->setSize(halfW, m_height);
+
+    // Set background
     cBackground *background2 = new cBackground();
     side_cam->m_backLayer->addChild(background2);
     background2->setCornerColors(cColorf(1.0f, 0.0f, 1.0f),
@@ -114,7 +131,13 @@ void afCameraMultiview::graphicsUpdate()
     // get width and height of window
     glfwGetFramebufferSize(m_camera->m_window, &m_width, &m_height);
     // render world
-    world_cam->renderView(m_width, m_height);
+
+    // world_cam->renderView(m_width, m_height);
+
+    side_buff->renderView();
+    world_buff->renderView();
+    main_cam->renderView(m_width, m_height);
+
     // swap buffers
     glfwSwapBuffers(m_camera->m_window);
 }
