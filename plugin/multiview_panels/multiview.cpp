@@ -129,7 +129,14 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
                                  cColorf(0.0f, 0.8f, 0.8f),
                                  cColorf(0.0f, 0.8f, 0.8f));
 
-    cout << "Load Juan multiview pane plugin V1.1" << endl;
+    // load bitmap
+    std::string img_path = "plugin/multiview_panels/sample_imgs/sample_CT_img.jpg";
+    sample_bitmap = new cBitmap();
+    side_cam->m_frontLayer->addChild(sample_bitmap);
+    bool success = sample_bitmap->loadFromFile(img_path);
+
+    cout << "Load Juan multiview pane plugin V1.2" << endl;
+    cout << "Bitmap upload status: " << success << endl;
     cout << "\n\n\n\n\n"
          << endl;
 

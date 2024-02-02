@@ -84,6 +84,8 @@ protected:
     int m_alias_scaling;
     cShaderProgramPtr m_shaderPgm;
 
+    cBitmap* sample_bitmap = new cBitmap();
+
 protected:
     float m_viewport_scale[2];
     float m_distortion_coeffs[4];
