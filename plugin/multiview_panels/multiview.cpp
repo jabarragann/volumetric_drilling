@@ -99,8 +99,9 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     m_height = m_camera->m_height;
 
     main_cam = new cCamera(NULL);
+    side_view_world = new cWorld();
     world_cam = m_camera->getInternalCamera();
-    side_cam = new cCamera(world_cam->getParentWorld());
+    side_cam = new cCamera(side_view_world);
 
     world_buff = cFrameBuffer::create();
     world_buff->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);

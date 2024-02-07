@@ -77,14 +77,14 @@ protected:
     cViewPanel *world_panel;
     cViewPanel *side_panel;
 
-    cWorld *m_vrWorld;
+    cWorld *side_view_world;
     cMesh *m_quadMesh;
     int m_width;
     int m_height;
     int m_alias_scaling;
     cShaderProgramPtr m_shaderPgm;
 
-    cBitmap* sample_bitmap = new cBitmap();
+    cBitmap *sample_bitmap = new cBitmap();
 
 protected:
     float m_viewport_scale[2];
