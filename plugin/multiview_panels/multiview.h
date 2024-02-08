@@ -65,13 +65,16 @@ public:
     void windowSizeCallback(GLFWwindow *w, int width, int height);
     void assignGLFWCallbacks();
 
+    void init_volume_pointer();
+
 protected:
-    afCameraPtr m_camera;
+    afCameraPtr m_camera; // AMBF camera pointer
     cFrameBufferPtr m_frameBuffer;
 
-    cCamera *main_cam;
-    cCamera *world_cam;
-    cCamera *side_cam;
+    cCamera *main_cam; // Parent camera for the word and side cameras
+
+    cCamera *world_cam; // Camera rendering the volumen
+    cCamera *side_cam;  // Camera pointing to a empty world to display CT slices
     cFrameBufferPtr world_buff;
     cFrameBufferPtr side_buff;
     cViewPanel *world_panel;
@@ -85,6 +88,10 @@ protected:
     cShaderProgramPtr m_shaderPgm;
 
     cBitmap *sample_bitmap = new cBitmap();
+
+    // Volume
+    cVoxelObject *volume_voxels;
+    bool volume_initialized = false;
 
 protected:
     float m_viewport_scale[2];

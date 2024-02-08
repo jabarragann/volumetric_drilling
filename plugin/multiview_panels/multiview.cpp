@@ -90,14 +90,32 @@ void afCameraMultiview::assignGLFWCallbacks()
     glfwSetFramebufferSizeCallback(m_camera->m_window, lambda_resize_window);
 }
 
+void afCameraMultiview::init_volume_pointer()
+{
+    ambf::afWorldPtr m_worldPtr = m_camera->m_afWorld;
+    ambf::afVolumePtr volume_ptr = m_worldPtr->getVolume("mastoidectomy_volume");
+
+    if (!volume_ptr)
+    {
+        std::cerr << "ERROR! FAILED TO FIND VOLUME NAMED "
+                  << "mastoidectomy_volume" << endl;
+
+        std::runtime_error("Volume not found");
+    }
+
+    volume_voxels = volume_ptr->getInternalVolume();
+}
+
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
+    // AMBF OBJECTS CONFIG
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
 
     m_width = m_camera->m_width;
     m_height = m_camera->m_height;
 
+    // ADDITIONAL CHAI OBJECTS CONFIG
     main_cam = new cCamera(NULL);
     side_view_world = new cWorld();
     world_cam = m_camera->getInternalCamera();
@@ -146,6 +164,22 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
 
 void afCameraMultiview::graphicsUpdate()
 {
+    if (!volume_initialized)
+    {
+        // Volume pointer needs to be initialized in first graphics update.
+        // Volume might not be available when calling the init function
+        init_volume_pointer();
+        volume_initialized = true;
+
+        cColorb m_storedColor;
+
+        unsigned char *raw_voxels = volume_voxels->m_texture->m_image->getData();
+
+        cout << "Voxel data: " << (int)raw_voxels[0] << ", " << (int)raw_voxels[1] << endl;
+        cout << "\n\n\n\n"
+             << endl;
+    }
+
     glfwMakeContextCurrent(m_camera->m_window);
     world_buff->renderView();
 
