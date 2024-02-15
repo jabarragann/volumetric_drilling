@@ -149,7 +149,7 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
                                  cColorf(0.0f, 0.8f, 0.8f));
 
     // load bitmap
-    std::string img_path = "plugin/multiview_panels/sample_imgs/sample_CT_img.jpg";
+    std::string img_path = "plugin/multiview_panels/sample_imgs/white_background.jpg";
     sample_bitmap = new cBitmap();
     side_cam->m_frontLayer->addChild(sample_bitmap);
     bool success = sample_bitmap->loadFromFile(img_path);
@@ -173,6 +173,29 @@ void afCameraMultiview::graphicsUpdate()
 
         cColorb m_storedColor;
 
+        cImage *img_ptr = volume_voxels->m_texture->m_image.get();
+        cMultiImage *ptr = dynamic_cast<cMultiImage *>(img_ptr);
+
+        if (ptr)
+        {
+            ptr->selectImage(75);
+            cImage *img = ptr->getImage();
+            std::shared_ptr<cImage> img_shared(ptr);
+            cout << "image count " << img->getImageCount() << endl;
+            cBitmap *volume_bitmap = new cBitmap();
+            side_cam->m_frontLayer->addChild(volume_bitmap);
+            bool success = volume_bitmap->loadFromImage(img_shared);
+            volume_bitmap->setSize(500, 500);
+
+            // we can safely use ptr
+            cout << "safe downcast" << endl;
+            cout << "image count " << ptr->getImageCount() << endl;
+            cout << "get current idx " << ptr->getCurrentIndex() << endl;
+            cout << "(width, height) = (" << ptr->getWidth() << ", " << ptr->getHeight() << ")" << endl;
+            cout << "get fmt " << ptr->getFormat() << endl;
+            cout << "get type " << ptr->getType() << endl;
+            cout << "get bits per pixel " << ptr->getBitsPerPixel() << endl;
+        }
         unsigned char *raw_voxels = volume_voxels->m_texture->m_image->getData();
 
         cout << "Voxel data: " << (int)raw_voxels[0] << ", " << (int)raw_voxels[1] << endl;
