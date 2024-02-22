@@ -66,6 +66,7 @@ public:
     void assignGLFWCallbacks();
 
     void init_volume_pointer();
+    cMultiImage* set_ct_slice(int slice);
 
 protected:
     afCameraPtr m_camera; // AMBF camera pointer
@@ -87,7 +88,9 @@ protected:
     int m_alias_scaling;
     cShaderProgramPtr m_shaderPgm;
 
-    cBitmap *sample_bitmap = new cBitmap();
+    // Bitmaps
+    cBitmap *sample_bitmap;
+    cBitmap *ct_slice1;
 
     // Volume
     cVoxelObject *volume_voxels;
