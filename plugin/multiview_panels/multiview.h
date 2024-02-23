@@ -66,7 +66,7 @@ public:
     void assignGLFWCallbacks();
 
     void init_volume_pointer();
-    cMultiImage* set_ct_slice(int slice);
+    void set_slice_in_side_view(int slice);
 
 protected:
     afCameraPtr m_camera; // AMBF camera pointer
@@ -92,9 +92,15 @@ protected:
     cBitmap *sample_bitmap;
     cBitmap *ct_slice1;
 
+    // Timers
+    int ct_slice_idx = 0;
+    int total_slices = 0;
+    float ct_slice_update_time = 0.0;
+
     // Volume
     cVoxelObject *volume_voxels;
     bool volume_initialized = false;
+    cMultiImagePtr volume_slices_ptr;
 
 protected:
     float m_viewport_scale[2];
