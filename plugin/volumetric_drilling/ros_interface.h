@@ -75,11 +75,14 @@ public:
 
     void publishForceFeedback(cVector3d& force, cVector3d& moment, double time);
 
+    void publishDrillLocationInVolume(cVector3d& location, double time);
+
 private:
     ros::Publisher m_voxelsRemovalPub;
     ros::Publisher m_drillSizePub;
     ros::Publisher m_volumeInfoPub;
     ros::Publisher m_forcefeedbackPub;
+    ros::Publisher m_drillLocationInVolumePub;
 
     volumetric_drilling_msgs::Voxels m_voxel_msg;
     volumetric_drilling_msgs::DrillSize m_drill_size_msg;

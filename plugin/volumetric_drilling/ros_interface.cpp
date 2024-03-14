@@ -62,6 +62,7 @@ void DrillingPublisher::init(string a_namespace, string a_plugin){
     m_drillSizePub = m_rosNode->advertise<volumetric_drilling_msgs::DrillSize>(a_namespace + "/" + a_plugin + "/drill_size", 1, true);
     m_volumeInfoPub = m_rosNode->advertise<volumetric_drilling_msgs::VolumeInfo>(a_namespace + "/" + a_plugin + "/volume_info", 1, true);
     m_forcefeedbackPub = m_rosNode->advertise<geometry_msgs::WrenchStamped>(a_namespace + "/" + a_plugin + "/drill_force_feedback", 1, true);
+    m_drillLocationInVolumePub = m_rosNode->advertise<geometry_msgs::PointStamped>(a_namespace + "/" + a_plugin + "/drill_location_in_volume", 1, true);
 }
 
 void DrillingPublisher::publishDrillSize(int burrSize, double time){
@@ -138,4 +139,15 @@ void DrillingPublisher::publishForceFeedback(cVector3d& force, cVector3d& moment
     m_force_feedback_msg.wrench.torque.z = moment.z();
 
     m_forcefeedbackPub.publish(m_force_feedback_msg);
+}
+
+void DrillingPublisher::publishDrillLocationInVolume(cVector3d &location, double time)
+{
+    geometry_msgs::PointStamped loc;
+    loc.header.stamp.fromSec(time);
+    loc.point.x = location.x();
+    loc.point.y = location.y();
+    loc.point.z = location.z();
+
+    m_drillLocationInVolumePub.publish(loc);
 }

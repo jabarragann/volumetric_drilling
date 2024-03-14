@@ -237,6 +237,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
         cCollisionEvent* contact = m_drillManager.m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
 
         cVector3d orig(contact->m_voxelIndexX, contact->m_voxelIndexY, contact->m_voxelIndexZ); // This is the closest voxel index to the drill tip
+        m_drillManager.m_drillingPub->publishDrillLocationInVolume(orig, m_worldPtr->getCurrentTimeStamp());
 
         m_voxelObj->m_texture->m_image->getVoxelColor(uint(orig.x()), uint(orig.y()), uint(orig.z()), m_storedColor);
 
