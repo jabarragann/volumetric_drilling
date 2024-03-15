@@ -230,6 +230,17 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
 
     m_drillManager.update(dt);
 
+    cVector3d drill_tip_in_world = m_drillManager.m_toolCursorList[0] -> getGlobalPos();
+    cVector3d drill_tip_in_volume;
+    cTransform T_world_volume = m_volumeObject->getGlobalTransform();
+    cTransform T_volume_world(T_world_volume);
+    T_volume_world.invert(); 
+    T_volume_world.mulr(drill_tip_in_world, drill_tip_in_volume);
+
+    cVector3d drill_coordinates;
+    bool result = m_volumeObject->localPosToVoxelIndex(drill_tip_in_volume, drill_coordinates);
+    m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
+
     if (m_drillManager.m_toolCursorList[0]->isInContact(m_voxelObj) && m_drillManager.m_targetToolCursorIdx == 0 /*&& (userSwitches == 2)*/)
     {
 
@@ -237,7 +248,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
         cCollisionEvent* contact = m_drillManager.m_toolCursorList[0]->m_hapticPoint->getCollisionEvent(0);
 
         cVector3d orig(contact->m_voxelIndexX, contact->m_voxelIndexY, contact->m_voxelIndexZ); // This is the closest voxel index to the drill tip
-        m_drillManager.m_drillingPub->publishDrillLocationInVolume(orig, m_worldPtr->getCurrentTimeStamp());
+        // m_drillManager.m_drillingPub->publishDrillLocationInVolume(orig, m_worldPtr->getCurrentTimeStamp());
 
         m_voxelObj->m_texture->m_image->getVoxelColor(uint(orig.x()), uint(orig.y()), uint(orig.z()), m_storedColor);
 
@@ -838,7 +849,7 @@ void afVolmetricDrillingPlugin::mouseScrollUpdate(GLFWwindow *a_window, double x
 }
 
 void afVolmetricDrillingPlugin::reset(){
-    cerr << "INFO! PLUGIN RESET CALLED" << endl;
+    std::cerr << "INFO! PLUGIN RESET CALLED" << endl;
     m_drillManager.reset();
 }
 
