@@ -229,16 +229,19 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     m_worldPtr->getChaiWorld()->computeGlobalPositions(true);
 
     m_drillManager.update(dt);
+    
+    // Calculate drill in volume coordinates
+    cVector3d drill_tip_in_volumecoord;
+    cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
 
-    cVector3d drill_tip_in_world = m_drillManager.m_toolCursorList[0] -> getGlobalPos();
-    cVector3d drill_tip_in_volume;
     cTransform T_world_volume = m_volumeObject->getGlobalTransform();
     cTransform T_volume_world(T_world_volume);
     T_volume_world.invert(); 
-    T_volume_world.mulr(drill_tip_in_world, drill_tip_in_volume);
+
+    T_volume_world.mulr(drill_tip_in_worldcoord, drill_tip_in_volumecoord);
 
     cVector3d drill_coordinates;
-    bool result = m_volumeObject->localPosToVoxelIndex(drill_tip_in_volume, drill_coordinates);
+    bool result = m_volumeObject->localPosToVoxelIndex(drill_tip_in_volumecoord, drill_coordinates);
     m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
 
     if (m_drillManager.m_toolCursorList[0]->isInContact(m_voxelObj) && m_drillManager.m_targetToolCursorIdx == 0 /*&& (userSwitches == 2)*/)
