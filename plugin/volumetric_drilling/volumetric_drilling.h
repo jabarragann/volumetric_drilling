@@ -48,10 +48,12 @@
 #include "wave_generator.h"
 #include "gaze_marker_controller.h"
 #include "drill_manager.h"
+#include "memory"
 
 using namespace std;
 using namespace ambf;
 
+class Transform2VolumeCoordinates;
 
 class afVolmetricDrillingPlugin: public afSimulatorPlugin{
 public:
@@ -136,7 +138,24 @@ private:
     GazeMarkerController m_gazeMarkerController;
 
     CameraPanelManager m_panelManager;
+
+    std::unique_ptr<Transform2VolumeCoordinates> m_volume_coord_utils;
 };
 
+class Transform2VolumeCoordinates
+{
+    /*
+    Transformations in this class should be read from right to left.
+    For instance T_world_volume is the transform from volume coordinates to world coordinates.
+    */ 
+    afVolumePtr m_volume_object;
+    cTransform T_world_volume;
+    cTransform T_volume_world;
+    bool initialized = false;
+
+    public:
+        void init(afVolumePtr m_volume_object); 
+        bool get_index_location_of_drill_tip(cVector3d& drill_tip_in_worldcoord, cVector3d& result_vec);
+};
 
 AF_REGISTER_SIMULATOR_PLUGIN(afVolmetricDrillingPlugin)

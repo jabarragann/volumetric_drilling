@@ -56,6 +56,30 @@ using namespace std;
 //------------------------------------------------------------------------------
 namespace p_opt = boost::program_options;
 
+void Transform2VolumeCoordinates::init(afVolumePtr m_volume_object) 
+{
+    this->m_volume_object = m_volume_object;
+    this->initialized = true;
+}
+
+bool Transform2VolumeCoordinates::get_index_location_of_drill_tip(cVector3d& drill_tip_in_worldcoord, cVector3d& result_vec)
+{
+    if (!initialized)
+    {
+        throw(std::runtime_error("Volume coordinates util class not initialized"));
+    }
+
+    cVector3d drill_tip_in_volumecoord;
+
+    T_world_volume.copyfrom(this->m_volume_object->getGlobalTransform());
+    T_volume_world.copyfrom(T_world_volume);
+    T_volume_world.invert();
+
+    T_volume_world.mulr(drill_tip_in_worldcoord, drill_tip_in_volumecoord);
+    bool result = m_volume_object->localPosToVoxelIndex(drill_tip_in_volumecoord, result_vec);
+
+    return result;
+}
 
 afVolmetricDrillingPlugin::afVolmetricDrillingPlugin(){
 
@@ -195,6 +219,9 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     m_gazeMarkerController.init(m_worldPtr, &m_panelManager, var_map);
 
+    m_volume_coord_utils = unique_ptr<Transform2VolumeCoordinates>(new Transform2VolumeCoordinates());
+    m_volume_coord_utils->init(m_volumeObject);
+
     return 1;
 }
 
@@ -231,17 +258,9 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     m_drillManager.update(dt);
     
     // Calculate drill in volume coordinates
-    cVector3d drill_tip_in_volumecoord;
-    cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
-
-    cTransform T_world_volume = m_volumeObject->getGlobalTransform();
-    cTransform T_volume_world(T_world_volume);
-    T_volume_world.invert(); 
-
-    T_volume_world.mulr(drill_tip_in_worldcoord, drill_tip_in_volumecoord);
-
     cVector3d drill_coordinates;
-    bool result = m_volumeObject->localPosToVoxelIndex(drill_tip_in_volumecoord, drill_coordinates);
+    cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
+    m_volume_coord_utils->get_index_location_of_drill_tip(drill_tip_in_worldcoord, drill_coordinates);
     m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
 
     if (m_drillManager.m_toolCursorList[0]->isInContact(m_voxelObj) && m_drillManager.m_targetToolCursorIdx == 0 /*&& (userSwitches == 2)*/)
