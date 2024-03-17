@@ -78,6 +78,8 @@ bool Transform2VolumeCoordinates::get_index_location_of_drill_tip(cVector3d& dri
     T_volume_world.mulr(drill_tip_in_worldcoord, drill_tip_in_volumecoord);
     bool result = m_volume_object->localPosToVoxelIndex(drill_tip_in_volumecoord, result_vec);
 
+    result_vec = cVector3d(static_cast<int>(result_vec.x()), static_cast<int>(result_vec.y()), static_cast<int>(result_vec.z()));
+
     //Remove negative values
     if (result_vec.x() < 0 || result_vec.y() < 0 || result_vec.z() < 0)
     {

@@ -43,6 +43,7 @@
 //==============================================================================
 
 #include "multiview.h"
+#include <ambf_server/RosComBase.h>
 
 using namespace std;
 
@@ -54,12 +55,53 @@ using namespace std;
 
 string g_current_filepath;
 
+SliceAnnotator::SliceAnnotator(cMultiImagePtr volume_slices_ptr)
+{
+    this->volume_slices_ptr = volume_slices_ptr;
+
+    this->slice_width = volume_slices_ptr->getWidth();
+    this->slice_height = volume_slices_ptr->getHeight();
+    this->number_of_slices = volume_slices_ptr->getImageCount();
+
+    this->marker_color = cColorb(254, 0, 0);
+}
+
+void SliceAnnotator::select_and_annotate(int slice_idx, int x, int y)
+{
+    volume_slices_ptr->selectImage(slice_idx);
+    for (int i = 0; i < marker_size; i++)
+    {
+        for (int j = 0; j < marker_size; j++)
+        {
+            volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, marker_color);
+        }
+    }
+}
+
+void SliceAnnotator::print_volume_information()
+{
+    cout << "image count " << volume_slices_ptr->getImageCount() << endl;
+    cout << "get current idx " << volume_slices_ptr->getCurrentIndex() << endl;
+    cout << "(width, height) = (" << volume_slices_ptr->getWidth() << ", " << volume_slices_ptr->getHeight() << ")" << endl;
+    cout << "get fmt " << volume_slices_ptr->getFormat() << endl;
+    cout << "get type " << volume_slices_ptr->getType() << endl;
+    cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
+    cout << "\n\n\n\n"
+            << endl;
+}
+
 afCameraMultiview::afCameraMultiview()
 {
     // For HTC Vive Pro
     m_width = 0;
     m_height = 0;
     m_alias_scaling = 1.0;
+}
+
+void afCameraMultiview::drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
+{
+    // std::cout << "Received drill location: " << msg->point.x << " " << msg->point.y << " " << msg->point.z << endl;
+    drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
 }
 
 void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_height)
@@ -181,6 +223,10 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     std::cout << "\n\n\n\n\n"
               << endl;
 
+    // ROS subscriber config
+    ros_node_handle = afROSNode::getNode();
+    drill_loc_subscriber = ros_node_handle->subscribe(drill_loc_topic, 300, &afCameraMultiview::drill_location_callback, this);
+
     return 1;
 }
 
@@ -202,9 +248,13 @@ void afCameraMultiview::graphicsUpdate()
 
     if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
     {
-        ct_slice_idx = (ct_slice_idx + 1) % total_slices;
-        slice_annotator->select_and_annotate(ct_slice_idx, 30, 30);
-        set_slice_in_side_view(ct_slice_idx);
+        // Receive location of drill
+        // ct_slice_idx = (ct_slice_idx + 1) % total_slices;
+        if (drill_location.x() > 0 && drill_location.y() > 0 && drill_location.z() > 0)
+        {
+            slice_annotator->select_and_annotate(drill_location.y(), drill_location.x(), drill_location.z());
+            set_slice_in_side_view(ct_slice_idx);
+        }
         ct_slice_update_time = glfwGetTime();
     }
 

@@ -45,6 +45,7 @@
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
 #include "memory"
+#include "ros/ros.h"
 
 using namespace std;
 using namespace ambf;
@@ -69,6 +70,8 @@ public:
 
     void init_volume_pointer();
     void set_slice_in_side_view(int slice);
+
+    void drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
 
 protected:
     afCameraPtr m_camera; // AMBF camera pointer
@@ -106,6 +109,11 @@ protected:
 
     std::unique_ptr<SliceAnnotator> slice_annotator;
 
+    ros::NodeHandle *ros_node_handle;
+    ros::Subscriber drill_loc_subscriber;
+    std::string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";
+    cVector3d drill_location;
+
 protected:
     float m_viewport_scale[2];
     float m_distortion_coeffs[4];
@@ -118,7 +126,6 @@ protected:
     float m_vpos;
 };
 
-// TODO: Move the function implementations in this class to `multiview.cpp`
 class SliceAnnotator
 {
 public:
@@ -129,40 +136,11 @@ public:
     cColorb marker_color;
     int marker_size = 6;
 
-    SliceAnnotator(cMultiImagePtr volume_slices_ptr)
-    {
-        this->volume_slices_ptr = volume_slices_ptr;
+    SliceAnnotator(cMultiImagePtr volume_slices_ptr);
 
-        this->slice_width = volume_slices_ptr->getWidth();
-        this->slice_height = volume_slices_ptr->getHeight();
-        this->number_of_slices = volume_slices_ptr->getImageCount();
+    void select_and_annotate(int slice_idx, int x, int y);
 
-        this->marker_color = cColorb(254, 0, 0);
-    }
-
-    void select_and_annotate(int slice_idx, int x, int y)
-    {
-        volume_slices_ptr->selectImage(slice_idx);
-        for (int i = 0; i < marker_size; i++)
-        {
-            for (int j = 0; j < marker_size; j++)
-            {
-                volume_slices_ptr->setPixelColor((i + x + slice_idx) % slice_width, (j + y + slice_idx) % slice_height, marker_color);
-            }
-        }
-    }
-
-    void print_volume_information()
-    {
-        cout << "image count " << volume_slices_ptr->getImageCount() << endl;
-        cout << "get current idx " << volume_slices_ptr->getCurrentIndex() << endl;
-        cout << "(width, height) = (" << volume_slices_ptr->getWidth() << ", " << volume_slices_ptr->getHeight() << ")" << endl;
-        cout << "get fmt " << volume_slices_ptr->getFormat() << endl;
-        cout << "get type " << volume_slices_ptr->getType() << endl;
-        cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
-        cout << "\n\n\n\n"
-             << endl;
-    }
+    void print_volume_information();
 };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraMultiview)
