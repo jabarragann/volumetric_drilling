@@ -95,6 +95,14 @@ void afCameraMultiview::init_volume_pointer()
     ambf::afWorldPtr m_worldPtr = m_camera->m_afWorld;
     ambf::afVolumePtr volume_ptr = m_worldPtr->getVolume("mastoidectomy_volume");
 
+    if (!volume_ptr)
+    {
+        std::cerr << "ERROR! FAILED TO FIND VOLUME NAMED "
+                  << "mastoidectomy_volume" << endl;
+
+        throw(std::runtime_error("Volume not found"));
+    }
+
     volume_voxels = volume_ptr->getInternalVolume();
     cImagePtr img_ptr = volume_voxels->m_texture->m_image;
 
@@ -102,23 +110,19 @@ void afCameraMultiview::init_volume_pointer()
     // Using dynamic_pointer_cast instead of dynamic_cast
     volume_slices_ptr = dynamic_pointer_cast<cMultiImage>(img_ptr);
 
-    if (!volume_ptr)
+    if (!volume_slices_ptr)
     {
-        std::cerr << "ERROR! FAILED TO FIND VOLUME NAMED "
-                  << "mastoidectomy_volume" << endl;
-
-        std::runtime_error("Volume not found");
+        std::cerr << "ERROR! FAILED TO LOAD IMAGES FROM VOLUME " << endl;
+        throw(std::runtime_error("Volume not found"));
     }
+
+    slice_annotator = unique_ptr<SliceAnnotator>(new SliceAnnotator(volume_slices_ptr));
 }
 
 void afCameraMultiview::set_slice_in_side_view(int slice_idx)
 {
-    if (volume_slices_ptr)
-    {
-        volume_slices_ptr->selectImage(slice_idx);
-        bool success = ct_slice1->loadFromImage(volume_slices_ptr);
-        ct_slice1->setSize(500, 500);
-    }
+    bool success = ct_slice1->loadFromImage(volume_slices_ptr);
+    ct_slice1->setSize(500, 500);
 }
 
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -172,10 +176,10 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     bool success = sample_bitmap->loadFromFile(img_path);
     side_cam->m_frontLayer->addChild(ct_slice1);
 
-    cout << "Load Juan multiview pane plugin V1.2" << endl;
-    cout << "Bitmap upload status: " << success << endl;
-    cout << "\n\n\n\n\n"
-         << endl;
+    std::cout << "Load Juan multiview pane plugin V1.2" << endl;
+    std::cout << "Bitmap upload status: " << success << endl;
+    std::cout << "\n\n\n\n\n"
+              << endl;
 
     return 1;
 }
@@ -189,26 +193,9 @@ void afCameraMultiview::graphicsUpdate()
         init_volume_pointer();
         volume_initialized = true;
 
-        if (volume_slices_ptr) // if not nullptr
-        {
-            double start_time = glfwGetTime();
-            set_slice_in_side_view(ct_slice_idx);
-            total_slices = volume_slices_ptr->getImageCount();
-
-            cout << "image count " << volume_slices_ptr->getImageCount() << endl;
-            cout << "get current idx " << volume_slices_ptr->getCurrentIndex() << endl;
-            cout << "(width, height) = (" << volume_slices_ptr->getWidth() << ", " << volume_slices_ptr->getHeight() << ")" << endl;
-            cout << "get fmt " << volume_slices_ptr->getFormat() << endl;
-            cout << "get type " << volume_slices_ptr->getType() << endl;
-            cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
-            cout << "Time to load img: " << glfwGetTime() - start_time << endl;
-            cout << "\n\n\n\n"
-                 << endl;
-        }
-        else
-        {
-            cout << "Error loading slices" << endl;
-        }
+        set_slice_in_side_view(ct_slice_idx);
+        total_slices = volume_slices_ptr->getImageCount();
+        slice_annotator->print_volume_information();
 
         ct_slice_update_time = glfwGetTime();
     }
@@ -216,6 +203,7 @@ void afCameraMultiview::graphicsUpdate()
     if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
     {
         ct_slice_idx = (ct_slice_idx + 1) % total_slices;
+        slice_annotator->select_and_annotate(ct_slice_idx, 30, 30);
         set_slice_in_side_view(ct_slice_idx);
         ct_slice_update_time = glfwGetTime();
     }

@@ -44,10 +44,12 @@
 // To silence warnings on MacOS
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
+#include "memory"
 
 using namespace std;
 using namespace ambf;
 
+class SliceAnnotator;
 class afCameraMultiview : public afObjectPlugin
 {
 public:
@@ -102,6 +104,8 @@ protected:
     bool volume_initialized = false;
     cMultiImagePtr volume_slices_ptr;
 
+    std::unique_ptr<SliceAnnotator> slice_annotator;
+
 protected:
     float m_viewport_scale[2];
     float m_distortion_coeffs[4];
@@ -112,6 +116,53 @@ protected:
     float m_warp_scale;
     float m_warp_adj;
     float m_vpos;
+};
+
+// TODO: Move the function implementations in this class to `multiview.cpp`
+class SliceAnnotator
+{
+public:
+    int slice_width;
+    int slice_height;
+    int number_of_slices;
+    cMultiImagePtr volume_slices_ptr;
+    cColorb marker_color;
+    int marker_size = 6;
+
+    SliceAnnotator(cMultiImagePtr volume_slices_ptr)
+    {
+        this->volume_slices_ptr = volume_slices_ptr;
+
+        this->slice_width = volume_slices_ptr->getWidth();
+        this->slice_height = volume_slices_ptr->getHeight();
+        this->number_of_slices = volume_slices_ptr->getImageCount();
+
+        this->marker_color = cColorb(254, 0, 0);
+    }
+
+    void select_and_annotate(int slice_idx, int x, int y)
+    {
+        volume_slices_ptr->selectImage(slice_idx);
+        for (int i = 0; i < marker_size; i++)
+        {
+            for (int j = 0; j < marker_size; j++)
+            {
+                volume_slices_ptr->setPixelColor((i + x + slice_idx) % slice_width, (j + y + slice_idx) % slice_height, marker_color);
+            }
+        }
+    }
+
+    void print_volume_information()
+    {
+        cout << "image count " << volume_slices_ptr->getImageCount() << endl;
+        cout << "get current idx " << volume_slices_ptr->getCurrentIndex() << endl;
+        cout << "(width, height) = (" << volume_slices_ptr->getWidth() << ", " << volume_slices_ptr->getHeight() << ")" << endl;
+        cout << "get fmt " << volume_slices_ptr->getFormat() << endl;
+        cout << "get type " << volume_slices_ptr->getType() << endl;
+        cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
+        cout << "\n\n\n\n"
+             << endl;
+    }
 };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraMultiview)
