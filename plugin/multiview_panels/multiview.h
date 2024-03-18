@@ -45,6 +45,7 @@
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
 #include "memory"
+#include "vector"
 #include "ros/ros.h"
 
 using namespace std;
@@ -126,6 +127,22 @@ protected:
     float m_vpos;
 };
 
+struct AnnotationLocation
+{
+    int slice_idx;
+    int x;
+    int y;
+    bool initialized = false;
+
+    void set(int slice_idx, int x, int y)
+    {
+        this->slice_idx = slice_idx;
+        this->x = x;
+        this->y = y;
+        this->initialized = true;
+    }
+};
+
 class SliceAnnotator
 {
 public:
@@ -136,9 +153,17 @@ public:
     cColorb marker_color;
     int marker_size = 6;
 
+    vector<vector<cColorb>> pixels_backup;
+
+    AnnotationLocation location_of_last_annotation;
+
     SliceAnnotator(cMultiImagePtr volume_slices_ptr);
 
+    void init_pixels_backup();
+
     void select_and_annotate(int slice_idx, int x, int y);
+
+    void restore_slice();
 
     void print_volume_information();
 };

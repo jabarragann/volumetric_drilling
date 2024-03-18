@@ -64,6 +64,21 @@ SliceAnnotator::SliceAnnotator(cMultiImagePtr volume_slices_ptr)
     this->number_of_slices = volume_slices_ptr->getImageCount();
 
     this->marker_color = cColorb(254, 0, 0);
+
+    init_pixels_backup();
+}
+
+void SliceAnnotator::init_pixels_backup()
+{
+    for(int i =0; i< marker_size; i++)
+    {
+        vector<cColorb> row;
+        for(int j = 0; j< marker_size; j++)
+        {
+            row.push_back(cColorb(0,0,0));
+        }
+        pixels_backup.push_back(row);
+    }
 }
 
 void SliceAnnotator::select_and_annotate(int slice_idx, int x, int y)
@@ -73,7 +88,30 @@ void SliceAnnotator::select_and_annotate(int slice_idx, int x, int y)
     {
         for (int j = 0; j < marker_size; j++)
         {
+            volume_slices_ptr->getPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
             volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, marker_color);
+        }
+    }
+
+    location_of_last_annotation = AnnotationLocation();
+    location_of_last_annotation.set(slice_idx, x, y);
+}
+
+void SliceAnnotator::restore_slice()
+{
+    if (location_of_last_annotation.initialized)
+    {
+        int slice_idx = location_of_last_annotation.slice_idx;
+        int x = location_of_last_annotation.x;
+        int y = location_of_last_annotation.y;
+
+        volume_slices_ptr->selectImage(slice_idx);
+        for (int i = 0; i < marker_size; i++)
+        {
+            for (int j = 0; j < marker_size; j++)
+            {
+                volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
+            }
         }
     }
 }
@@ -87,7 +125,7 @@ void SliceAnnotator::print_volume_information()
     cout << "get type " << volume_slices_ptr->getType() << endl;
     cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
     cout << "\n\n\n\n"
-            << endl;
+         << endl;
 }
 
 afCameraMultiview::afCameraMultiview()
@@ -244,15 +282,19 @@ void afCameraMultiview::graphicsUpdate()
         slice_annotator->print_volume_information();
 
         ct_slice_update_time = glfwGetTime();
+
+        volume_slices_ptr->selectImage(0);
+        set_slice_in_side_view(ct_slice_idx);
     }
 
     if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
     {
-        // Receive location of drill
         // ct_slice_idx = (ct_slice_idx + 1) % total_slices;
         if (drill_location.x() > 0 && drill_location.y() > 0 && drill_location.z() > 0)
         {
+            slice_annotator->restore_slice(); // Removed red marker from previous location
             slice_annotator->select_and_annotate(drill_location.y(), drill_location.x(), drill_location.z());
+            // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
             set_slice_in_side_view(ct_slice_idx);
         }
         ct_slice_update_time = glfwGetTime();
