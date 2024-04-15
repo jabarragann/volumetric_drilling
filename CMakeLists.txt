@@ -91,3 +91,7 @@ set(multiview_dir plugin/multiview_panels)
 add_library(multiview ${multiview_dir}/multiview.cpp ${multiview_dir}/multiview.h)
 target_link_libraries(multiview ${AMBF_LIBRARIES})
 set_property(TARGET multiview PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+set(multiview_scripts_dir ${multiview_dir}/test_executables/)
+add_executable(slicer_test01 ${multiview_scripts_dir}/slicer_test01.cpp)
+target_link_libraries(slicer_test01 ${AMBF_LIBRARIES})
