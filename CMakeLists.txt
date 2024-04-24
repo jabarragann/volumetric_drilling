@@ -93,5 +93,5 @@ target_link_libraries(multiview ${AMBF_LIBRARIES})
 set_property(TARGET multiview PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 set(multiview_scripts_dir ${multiview_dir}/test_executables/)
-add_executable(slicer_test01 ${multiview_scripts_dir}/slicer_test01.cpp)
-target_link_libraries(slicer_test01 ${AMBF_LIBRARIES})
+add_executable(create_orthogonal_slices_test ${multiview_scripts_dir}/create_orthogonal_slices_test.cpp)
+target_link_libraries(create_orthogonal_slices_test ${AMBF_LIBRARIES})
