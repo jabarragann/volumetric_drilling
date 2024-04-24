@@ -30,7 +30,7 @@ int main()
 
     // create multi image data structure
     cMultiImagePtr mult_img = cMultiImage::create();
-    string base_path = "../resources/volumes/ear3_171/plane00";
+    string base_path = "../resources/volumes/RT143_256/plane00";
     string extension = "png";
     int images_loaded = mult_img->loadFromFiles(base_path, extension);
 
@@ -49,7 +49,7 @@ int main()
     x_slice->allocate(mult_img->getWidth(), mult_img->getHeight(), mult_img->getFormat(), mult_img->getType());
     /* x_slice->allocate(mult_img->getWidth(), 169, mult_img->getFormat(), mult_img->getType()); */
 
-    int z = 50;
+    int z = 70;
     int W = mult_img->getWidth();
     int H = mult_img->getHeight();
     unsigned char r;
@@ -57,7 +57,7 @@ int main()
     unsigned char b;
     unsigned char a;
 
-    for (int y = 0; y < 169; y++)
+    for (int y = 0; y < mult_img->getHeight(); y++)
     {
         for (int x = 0; x < mult_img->getWidth(); x++)
         {
@@ -69,13 +69,13 @@ int main()
             colorz.set(r, g, b, a);
             z_slice->setPixelColor(x, y, colorz);
 
-            cColorb colorx;
-            r = raw_data[z * W * 4 + y * W * H * 4 + x * 4];
-            g = raw_data[z * W * 4 + y * W * H * 4 + x * 4 + 1];
-            b = raw_data[z * W * 4 + y * W * H * 4 + x * 4 + 2];
-            a = raw_data[z * W * 4 + y * W * H * 4 + x * 4 + 3];
-            colorx.set(r, g, b, a);
-            x_slice->setPixelColor(x, y, colorx);
+            // cColorb colorx;
+            // r = raw_data[z * W * 4 + y * W * H * 4 + x * 4];
+            // g = raw_data[z * W * 4 + y * W * H * 4 + x * 4 + 1];
+            // b = raw_data[z * W * 4 + y * W * H * 4 + x * 4 + 2];
+            // a = raw_data[z * W * 4 + y * W * H * 4 + x * 4 + 3];
+            // colorx.set(r, g, b, a);
+            // x_slice->setPixelColor(x, y, colorx);
         }
     }
 
