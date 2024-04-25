@@ -39,7 +39,7 @@ int main()
     print_volume_information(mult_img);
 
     // Get raw data
-    unsigned char *raw_data = mult_img->getData();
+    unsigned char const * const raw_data = mult_img->getData();
 
     // create a new slice
     cImagePtr z_slice = cImage::create();

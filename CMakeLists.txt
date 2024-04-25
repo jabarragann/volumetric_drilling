@@ -87,11 +87,20 @@ add_library(camera_hmd plugin/camera_hmd/hmd.cpp plugin/camera_hmd/hmd.h)
 target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
 set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
+# Multiview plugin
+include_directories(plugin/multiview_panels)
 set(multiview_dir plugin/multiview_panels)
-add_library(multiview ${multiview_dir}/multiview.cpp ${multiview_dir}/multiview.h)
-target_link_libraries(multiview ${AMBF_LIBRARIES})
-set_property(TARGET multiview PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+add_library(slicer_lib ${multiview_dir}/volume_slicer.cpp ${multiview_dir}/volume_slicer.h)
+target_link_libraries(slicer_lib ${AMBF_LIBRARIES})
+set_property(TARGET slicer_lib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
+# Slicer lib test executables
 set(multiview_scripts_dir ${multiview_dir}/test_executables/)
 add_executable(create_orthogonal_slices_test ${multiview_scripts_dir}/create_orthogonal_slices_test.cpp)
 target_link_libraries(create_orthogonal_slices_test ${AMBF_LIBRARIES})
+add_executable(test_volume_slicer_01 ${multiview_scripts_dir}/test_volume_slicer_01.cpp)
+target_link_libraries(test_volume_slicer_01 slicer_lib ${AMBF_LIBRARIES})
+
+add_library(multiview ${multiview_dir}/multiview.cpp ${multiview_dir}/multiview.h)
+target_link_libraries(multiview ${AMBF_LIBRARIES})
+set_property(TARGET multiview PROPERTY POSITION_INDEPENDENT_CODE TRUE)
