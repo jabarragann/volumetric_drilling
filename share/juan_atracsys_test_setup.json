@@ -1,0 +1,13 @@
+{
+    "tools":
+    [
+        {
+            "name": "Reference",
+            "json-file": "juan_three_marker_tool.json"
+        },
+        {
+            "name": "juan_four_marker",
+            "json-file": "juan_four_marker_tool.json"
+        }
+    ]
+}
