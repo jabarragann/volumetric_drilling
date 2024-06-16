@@ -45,52 +45,6 @@ void VolumeSlicer::fill_slice_maps(std::string slice_name, const std::vector<int
     stride_expressions_map[slice_name] = slice_expressions;
 }
 
-void VolumeSlicer::print_slices_information()
-{
-    for (auto const &entry : strides_map)
-    {
-        cout << "Slice: " << entry.first << endl;
-        cout << "Strides: ";
-        for (auto const &stride : entry.second)
-        {
-            cout << stride << " ";
-        }
-        cout << endl;
-
-        cout << "Strides expressions: ";
-        for (auto const &stride : stride_expressions_map[entry.first])
-        {
-            cout << stride << " ";
-        }
-        cout << endl;
-
-        cout << "Limits: ";
-        for (auto const &limit : limits_map[entry.first])
-        {
-            cout << limit << " ";
-        }
-        cout << endl;
-
-        cout << "Names: ";
-        for (auto const &name : names_map[entry.first])
-        {
-            cout << name << " ";
-        }
-        cout << endl;
-
-        cout << "Index calculation: [";
-        int i = 0;
-        for (auto const &exp : stride_expressions_map[entry.first])
-        {
-            cout << exp << "*" << "i" << i << " + ";
-            i++;
-        }
-        cout << "]" << endl;
-
-        cout << endl;
-    }
-}
-
 unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, std::array<int, 4> permutation_array, int slice_idx)
 {
     if (strides_map.find(slice_name) == strides_map.end())
@@ -159,5 +113,51 @@ void VolumeSlicer::permute_array(const std::array<string, NUM_OF_DIM> &arr, cons
     for (int i = 0; i < NUM_OF_DIM; ++i)
     {
         out_arr[i] = arr[indexes[i]];
+    }
+}
+
+void VolumeSlicer::print_slices_information()
+{
+    for (auto const &entry : strides_map)
+    {
+        cout << "Slice: " << entry.first << endl;
+        cout << "Strides: ";
+        for (auto const &stride : entry.second)
+        {
+            cout << stride << " ";
+        }
+        cout << endl;
+
+        cout << "Strides expressions: ";
+        for (auto const &stride : stride_expressions_map[entry.first])
+        {
+            cout << stride << " ";
+        }
+        cout << endl;
+
+        cout << "Limits: ";
+        for (auto const &limit : limits_map[entry.first])
+        {
+            cout << limit << " ";
+        }
+        cout << endl;
+
+        cout << "Names: ";
+        for (auto const &name : names_map[entry.first])
+        {
+            cout << name << " ";
+        }
+        cout << endl;
+
+        cout << "Index calculation: [";
+        int i = 0;
+        for (auto const &exp : stride_expressions_map[entry.first])
+        {
+            cout << exp << "*" << "i" << i << " + ";
+            i++;
+        }
+        cout << "]" << endl;
+
+        cout << endl;
     }
 }
