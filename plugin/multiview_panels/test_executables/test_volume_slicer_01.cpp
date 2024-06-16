@@ -44,7 +44,9 @@ int main()
     array<int, 4> volume_shape;
     array<string, 4> dim_names = {"B", "W", "H", "D"};
     generate_stride_array(mult_img, volume_shape);
+
     VolumeSlicer volume_slicer(raw_data, dim_names, volume_shape);
+    volume_slicer.print_slices_information();
 
     volume_slicer.create_2d_slice({0, 1, 2, 3}, 70);
 }
