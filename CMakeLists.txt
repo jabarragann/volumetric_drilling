@@ -96,7 +96,7 @@ set_property(TARGET slicer_lib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 # Slicer lib test executables
 set(multiview_scripts_dir ${multiview_dir}/test_executables/)
-add_executable(create_orthogonal_slices_test ${multiview_scripts_dir}/create_orthogonal_slices_test.cpp)
+add_executable(create_orthogonal_slices_test ${multiview_scripts_dir}/create_orthogonal_slices_test_deprecated.cpp)
 target_link_libraries(create_orthogonal_slices_test ${AMBF_LIBRARIES})
 add_executable(test_volume_slicer_01 ${multiview_scripts_dir}/test_volume_slicer_01.cpp)
 target_link_libraries(test_volume_slicer_01 slicer_lib ${AMBF_LIBRARIES})
