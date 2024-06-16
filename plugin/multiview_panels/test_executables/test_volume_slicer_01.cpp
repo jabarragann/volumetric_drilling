@@ -48,5 +48,7 @@ int main()
     VolumeSlicer volume_slicer(raw_data, dim_names, volume_shape);
     volume_slicer.print_slices_information();
 
-    volume_slicer.create_2d_slice({0, 1, 2, 3}, 70);
+    volume_slicer.create_2d_slice("xy", {0, 1, 2, 3}, 70);
+    volume_slicer.create_2d_slice("xz", {0, 1, 2, 3}, 70);
+    volume_slicer.create_2d_slice("yz", {0, 1, 2, 3}, 70);
 }

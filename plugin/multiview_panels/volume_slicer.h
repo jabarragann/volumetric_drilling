@@ -4,6 +4,7 @@
 #include "chai3d.h"
 #include <memory>
 
+using std::vector;
 using std::array;
 using std::cout;
 using std::endl;
@@ -24,11 +25,11 @@ class VolumeSlicer
 
 public:
     VolumeSlicer(unsigned char const *const raw_data, array<string, 4> dim_names, array<int, 4> volume_shape);
-    unique_ptr<Slice2D> create_2d_slice(std::array<int, 4> permutation_array, int slice_idx);
-    void permute_array(const std::array<int, NUM_OF_DIM> &arr, const std::vector<int> &indexes, std::array<int, NUM_OF_DIM> &out_arr);
-    void permute_array(const std::array<string, NUM_OF_DIM> &arr, const std::vector<int> &indexes, std::array<string, NUM_OF_DIM> &out_arr);
+    unique_ptr<Slice2D> create_2d_slice(string slice_name, array<int, 4> permutation_array, int slice_idx);
+    void permute_array(const array<int, NUM_OF_DIM> &arr, const vector<int> &indexes, array<int, NUM_OF_DIM> &out_arr);
+    void permute_array(const array<string, NUM_OF_DIM> &arr, const vector<int> &indexes, array<string, NUM_OF_DIM> &out_arr);
 
-    void fill_slice_maps(std::string slice_name, const std::vector<int> &permutation_indexes);
+    void fill_slice_maps(string slice_name, const vector<int> &permutation_indexes);
     void print_slices_information();
 
 private:

@@ -1,4 +1,5 @@
 #include "volume_slicer.h"
+#include <sstream>
 
 using namespace chai3d;
 
@@ -21,16 +22,6 @@ VolumeSlicer::VolumeSlicer(unsigned char const *const raw_data, array<string, 4>
     stride_expressions[1] = dim_names[0] + "*" + dim_names[1];
     stride_expressions[2] = dim_names[0] + "*" + dim_names[1] + "*" + dim_names[2];
     stride_expressions[3] = dim_names[0] + "*" + dim_names[1] + "*" + dim_names[2] + "*" + dim_names[3];
-
-    // array<int, 4> xy_slice_strides;
-    // array<int, 4> xy_slice_limits;
-    // array<string, 4> xy_slice_names;
-    // permute_array(stride_array, {0, 1, 2, 3}, xy_slice_strides);
-    // strides_map["xy"] = xy_slice_strides;
-    // permute_array(volume_shape, {0, 1, 2, 3}, xy_slice_limits);
-    // limits_map["xy"] = xy_slice_limits;
-    // permute_array(dim_names, {0, 1, 2, 3}, xy_slice_names);
-    // names_map["xy"] = xy_slice_names;
 
     fill_slice_maps("xy", {0, 1, 2, 3});
     fill_slice_maps("yz", {0, 2, 3, 1});
@@ -65,7 +56,7 @@ void VolumeSlicer::print_slices_information()
             cout << stride << " ";
         }
         cout << endl;
-        
+
         cout << "Strides expressions: ";
         for (auto const &stride : stride_expressions_map[entry.first])
         {
@@ -100,27 +91,33 @@ void VolumeSlicer::print_slices_information()
     }
 }
 
-unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(std::array<int, 4> permutation_array, int slice_idx)
+unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, std::array<int, 4> permutation_array, int slice_idx)
 {
-    // TODO: USE PERMUTATION ARRAY TO SLICE VOLUMES DIFFERENTLY.
+    if (strides_map.find(slice_name) == strides_map.end())
+    {
+        throw std::invalid_argument("Slice name not found");
+    }
+
+    array<int, NUM_OF_DIM> slice_strides = strides_map[slice_name];
+    array<int, NUM_OF_DIM> slice_limits = limits_map[slice_name];
 
     cImagePtr z_slice = cImage::create();
-    z_slice->allocate(volume_shape[1], volume_shape[2], GL_RGBA, GL_UNSIGNED_BYTE);
+    z_slice->allocate(slice_limits[1], slice_limits[2], GL_RGBA, GL_UNSIGNED_BYTE);
 
     int z = 70;
-    int W = volume_shape[1];
-    int H = volume_shape[2];
+    int W = slice_limits[1];
+    int H = slice_limits[2];
 
     unsigned char r;
     unsigned char g;
     unsigned char b;
     unsigned char a;
 
-    for (int y = 0; y < volume_shape[2]; y++)
+    for (int y = 0; y < slice_limits[2]; y++)
     {
-        for (int x = 0; x < volume_shape[1]; x++)
+        for (int x = 0; x < slice_limits[1]; x++)
         {
-            int pix_index = x * stride_array[1] + y * stride_array[2] + z * stride_array[3];
+            int pix_index = x * slice_strides[1] + y * slice_strides[2] + z * slice_strides[3];
             cColorb colorz;
             r = raw_data[pix_index];
             g = raw_data[pix_index + 1];
@@ -131,7 +128,10 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(std::array<int, 4> permutation
         }
     }
 
-    z_slice->saveToFile("slice_juan.png");
+    std::stringstream ss;
+    ss << "slice_" << slice_name << "_" << slice_idx << ".png";
+    string output_filename = ss.str();
+    z_slice->saveToFile(output_filename);
 
     return unique_ptr<Slice2D>();
 }
