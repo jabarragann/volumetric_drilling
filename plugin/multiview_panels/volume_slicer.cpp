@@ -45,7 +45,7 @@ void VolumeSlicer::fill_slice_maps(std::string slice_name, const std::vector<int
     stride_expressions_map[slice_name] = slice_expressions;
 }
 
-unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, std::array<int, 4> permutation_array, int slice_idx)
+unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, int slice_idx)
 {
     if (strides_map.find(slice_name) == strides_map.end())
     {

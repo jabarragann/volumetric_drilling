@@ -34,7 +34,7 @@ class VolumeSlicer
 
 public:
     VolumeSlicer(unsigned char const *const raw_data, array<string, 4> dim_names, array<int, 4> volume_shape);
-    unique_ptr<Slice2D> create_2d_slice(string slice_name, array<int, 4> permutation_array, int slice_idx);
+    unique_ptr<Slice2D> create_2d_slice(string slice_name, int slice_idx);
     void permute_array(const array<int, NUM_OF_DIM> &arr, const vector<int> &indexes, array<int, NUM_OF_DIM> &out_arr);
     void permute_array(const array<string, NUM_OF_DIM> &arr, const vector<int> &indexes, array<string, NUM_OF_DIM> &out_arr);
 

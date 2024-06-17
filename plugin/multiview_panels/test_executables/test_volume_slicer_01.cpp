@@ -48,9 +48,9 @@ int main()
     VolumeSlicer volume_slicer(raw_data, dim_names, volume_shape);
     volume_slicer.print_slices_information();
 
-    unique_ptr<Slice2D> xy_slice = volume_slicer.create_2d_slice("xy", {0, 1, 2, 3}, 70);
-    unique_ptr<Slice2D> xz_slice = volume_slicer.create_2d_slice("xz", {0, 1, 2, 3}, 70);
-    unique_ptr<Slice2D> yz_slice = volume_slicer.create_2d_slice("yz", {0, 1, 2, 3}, 70);
+    unique_ptr<Slice2D> xy_slice = volume_slicer.create_2d_slice("xy", 70);
+    unique_ptr<Slice2D> xz_slice = volume_slicer.create_2d_slice("xz", 70);
+    unique_ptr<Slice2D> yz_slice = volume_slicer.create_2d_slice("yz", 70);
 
     xy_slice->save_to_file();
     xz_slice->save_to_file();
