@@ -180,3 +180,14 @@ void Slice2D::save_to_file(string filename)
 
     volume_slice->saveToFile(output_filename);
 }
+
+void Slice2D::annotate(int x, int y, int marker_size, cColorb marker_color)
+{
+    for (int i = 0; i < marker_size; i++)
+    {
+        for (int j = 0; j < marker_size; j++)
+        {
+            volume_slice->setPixelColor((i + x) % slice_width, (j + y) % slice_height, marker_color);
+        }
+    }
+}

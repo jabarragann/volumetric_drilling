@@ -47,6 +47,7 @@
 #include "memory"
 #include "vector"
 #include "ros/ros.h"
+#include "volume_slicer.h"
 
 using namespace std;
 using namespace ambf;
@@ -70,6 +71,7 @@ public:
     void assignGLFWCallbacks();
 
     void init_volume_pointer();
+    void init_volume_slicer();
     void set_slice_in_side_view(int slice);
 
     void drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
@@ -104,11 +106,12 @@ protected:
     float ct_slice_update_time = 0.0;
 
     // Volume
-    cVoxelObject *volume_voxels;
+    cVoxelObject *c_voxel_object;
     bool volume_initialized = false;
     cMultiImagePtr volume_slices_ptr;
 
     std::unique_ptr<SliceAnnotator> slice_annotator;
+    std::unique_ptr<VolumeSlicer> volume_slicer;
 
     ros::NodeHandle *ros_node_handle;
     ros::Subscriber drill_loc_subscriber;

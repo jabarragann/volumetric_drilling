@@ -70,12 +70,12 @@ SliceAnnotator::SliceAnnotator(cMultiImagePtr volume_slices_ptr)
 
 void SliceAnnotator::init_pixels_backup()
 {
-    for(int i =0; i< marker_size; i++)
+    for (int i = 0; i < marker_size; i++)
     {
         vector<cColorb> row;
-        for(int j = 0; j< marker_size; j++)
+        for (int j = 0; j < marker_size; j++)
         {
-            row.push_back(cColorb(0,0,0));
+            row.push_back(cColorb(0, 0, 0));
         }
         pixels_backup.push_back(row);
     }
@@ -183,8 +183,8 @@ void afCameraMultiview::init_volume_pointer()
         throw(std::runtime_error("Volume not found"));
     }
 
-    volume_voxels = volume_ptr->getInternalVolume();
-    cImagePtr img_ptr = volume_voxels->m_texture->m_image;
+    c_voxel_object = volume_ptr->getInternalVolume();
+    cImagePtr img_ptr = c_voxel_object->m_texture->m_image;
 
     // Shared pointers can also be downcasted!
     // Using dynamic_pointer_cast instead of dynamic_cast
@@ -197,6 +197,19 @@ void afCameraMultiview::init_volume_pointer()
     }
 
     slice_annotator = unique_ptr<SliceAnnotator>(new SliceAnnotator(volume_slices_ptr));
+}
+
+void afCameraMultiview::init_volume_slicer()
+{
+    array<int, 4> volume_shape;
+    array<string, 4> dim_names = {"B", "W", "H", "D"};
+    volume_shape[0] = volume_slices_ptr->getBitsPerPixel() / 8;
+    volume_shape[1] = volume_slices_ptr->getWidth();
+    volume_shape[2] = volume_slices_ptr->getHeight();
+    volume_shape[3] = volume_slices_ptr->getImageCount();
+    unsigned char const *const raw_data = volume_slices_ptr->getData();
+
+    volume_slicer = unique_ptr<VolumeSlicer>(new VolumeSlicer(raw_data, dim_names, volume_shape));
 }
 
 void afCameraMultiview::set_slice_in_side_view(int slice_idx)
@@ -275,6 +288,7 @@ void afCameraMultiview::graphicsUpdate()
         // Volume pointer needs to be initialized in first graphics update.
         // Volume might not be available when calling the init function
         init_volume_pointer();
+        init_volume_slicer();
         volume_initialized = true;
 
         set_slice_in_side_view(ct_slice_idx);
@@ -292,14 +306,18 @@ void afCameraMultiview::graphicsUpdate()
         // ct_slice_idx = (ct_slice_idx + 1) % total_slices;
         if (drill_location.x() > 0 && drill_location.y() > 0 && drill_location.z() > 0)
         {
-            //1) CREATE SLICES
-            //2) ANNOTATED SLICES WITH DRILL LOCATION 
-            //3) DISPLAY SLICE
+            // 1) CREATE SLICES
+            unique_ptr<Slice2D> xy_slice = volume_slicer->create_2d_slice("xy", drill_location.z());
+            // 2) ANNOTATED SLICES WITH DRILL LOCATION
+            xy_slice->annotate(drill_location.x(), drill_location.y());
+            // 3) DISPLAY SLICE
+            bool success = ct_slice1->loadFromImage(xy_slice->volume_slice);
+            ct_slice1->setSize(500, 500);
 
-            slice_annotator->restore_slice(); // Removed red marker from previous location
-            slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
-            // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
-            set_slice_in_side_view(ct_slice_idx);
+            // slice_annotator->restore_slice(); // Removed red marker from previous location
+            // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
+            // // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
+            // set_slice_in_side_view(ct_slice_idx);
         }
         ct_slice_update_time = glfwGetTime();
     }

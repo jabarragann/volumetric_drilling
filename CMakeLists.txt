@@ -90,6 +90,8 @@ set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 # Multiview plugin
 include_directories(plugin/multiview_panels)
 set(multiview_dir plugin/multiview_panels)
+
+# Slicer lib
 add_library(slicer_lib ${multiview_dir}/volume_slicer.cpp ${multiview_dir}/volume_slicer.h)
 target_link_libraries(slicer_lib ${AMBF_LIBRARIES})
 set_property(TARGET slicer_lib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
@@ -102,5 +104,5 @@ add_executable(test_volume_slicer_01 ${multiview_scripts_dir}/test_volume_slicer
 target_link_libraries(test_volume_slicer_01 slicer_lib ${AMBF_LIBRARIES})
 
 add_library(multiview ${multiview_dir}/multiview.cpp ${multiview_dir}/multiview.h)
-target_link_libraries(multiview ${AMBF_LIBRARIES})
+target_link_libraries(multiview ${AMBF_LIBRARIES} slicer_lib)
 set_property(TARGET multiview PROPERTY POSITION_INDEPENDENT_CODE TRUE)

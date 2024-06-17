@@ -23,10 +23,17 @@ public:
     cImagePtr volume_slice;
     int slice_idx;
     string slice_name;
+    int slice_width;
+    int slice_height;
 
-    Slice2D(cImagePtr volume_slice, int slice_idx, string slice_name) : volume_slice(volume_slice), slice_idx(slice_idx), slice_name(slice_name){};
+    Slice2D(cImagePtr volume_slice, int slice_idx, string slice_name) : volume_slice(volume_slice), slice_idx(slice_idx), slice_name(slice_name)
+    {
+        slice_width = volume_slice->getWidth();
+        slice_height = volume_slice->getHeight();
+    };
 
     void save_to_file(string filename = "");
+    void annotate(int x, int y, int marker_size = 6, cColorb marker_color = cColorb(255, 0, 0));
 };
 
 class VolumeSlicer
