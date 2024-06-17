@@ -292,8 +292,12 @@ void afCameraMultiview::graphicsUpdate()
         // ct_slice_idx = (ct_slice_idx + 1) % total_slices;
         if (drill_location.x() > 0 && drill_location.y() > 0 && drill_location.z() > 0)
         {
+            //1) CREATE SLICES
+            //2) ANNOTATED SLICES WITH DRILL LOCATION 
+            //3) DISPLAY SLICE
+
             slice_annotator->restore_slice(); // Removed red marker from previous location
-            slice_annotator->select_and_annotate(drill_location.y(), drill_location.x(), drill_location.z());
+            slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
             // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
             set_slice_in_side_view(ct_slice_idx);
         }

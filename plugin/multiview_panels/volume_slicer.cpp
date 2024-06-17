@@ -55,10 +55,10 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, std::array<
     array<int, NUM_OF_DIM> slice_strides = strides_map[slice_name];
     array<int, NUM_OF_DIM> slice_limits = limits_map[slice_name];
 
-    cImagePtr z_slice = cImage::create();
-    z_slice->allocate(slice_limits[1], slice_limits[2], GL_RGBA, GL_UNSIGNED_BYTE);
+    cImagePtr volume_slice = cImage::create();
+    volume_slice->allocate(slice_limits[1], slice_limits[2], GL_RGBA, GL_UNSIGNED_BYTE);
 
-    int z = 70;
+    int z = slice_idx;
     int W = slice_limits[1];
     int H = slice_limits[2];
 
@@ -67,6 +67,10 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, std::array<
     unsigned char b;
     unsigned char a;
 
+    /*
+     * In this for loop, x is the fastest changing dimension, y is the second fastest and z is the slowest.
+     * They do not correspond to the actual xyz dimension of the volume.
+     */
     for (int y = 0; y < slice_limits[2]; y++)
     {
         for (int x = 0; x < slice_limits[1]; x++)
@@ -78,16 +82,13 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, std::array<
             b = raw_data[pix_index + 2];
             a = raw_data[pix_index + 3];
             colorz.set(r, g, b, a);
-            z_slice->setPixelColor(x, y, colorz);
+            volume_slice->setPixelColor(x, y, colorz);
         }
     }
 
-    std::stringstream ss;
-    ss << "slice_" << slice_name << "_" << slice_idx << ".png";
-    string output_filename = ss.str();
-    z_slice->saveToFile(output_filename);
+    unique_ptr<Slice2D> volume_slice_ptr(new Slice2D(volume_slice, slice_idx, slice_name));
 
-    return unique_ptr<Slice2D>();
+    return volume_slice_ptr;
 }
 
 void VolumeSlicer::permute_array(const std::array<int, NUM_OF_DIM> &arr, const std::vector<int> &indexes, std::array<int, NUM_OF_DIM> &out_arr)
@@ -160,4 +161,22 @@ void VolumeSlicer::print_slices_information()
 
         cout << endl;
     }
+}
+
+void Slice2D::save_to_file(string filename)
+{
+    std::stringstream ss;
+    string output_filename;
+
+    if (filename.empty())
+    {
+        ss << "slice_" << slice_name << "_" << slice_idx << ".png";
+        output_filename = ss.str();
+    }
+    else
+    {
+        output_filename = filename;
+    }
+
+    volume_slice->saveToFile(output_filename);
 }

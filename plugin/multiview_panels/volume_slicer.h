@@ -1,15 +1,17 @@
 #include <iostream>
 #include <array>
 #include <string>
-#include "chai3d.h"
+#include <afFramework.h>
 #include <memory>
 
-using std::vector;
+using namespace ambf;
+
 using std::array;
 using std::cout;
 using std::endl;
 using std::string;
 using std::unique_ptr;
+using std::vector;
 
 const int NUM_OF_DIM = 4;
 typedef std::map<string, std::array<int, NUM_OF_DIM>> MapOfArrays;
@@ -17,7 +19,14 @@ typedef std::map<string, std::array<string, NUM_OF_DIM>> MapOfStringArrays;
 
 class Slice2D
 {
+public:
+    cImagePtr volume_slice;
     int slice_idx;
+    string slice_name;
+
+    Slice2D(cImagePtr volume_slice, int slice_idx, string slice_name) : volume_slice(volume_slice), slice_idx(slice_idx), slice_name(slice_name){};
+
+    void save_to_file(string filename = "");
 };
 
 class VolumeSlicer
