@@ -99,6 +99,7 @@ protected:
     // Bitmaps
     cBitmap *sample_bitmap;
     cBitmap *ct_slice1;
+    cImagePtr out_of_volume_img;
 
     // Timers
     int ct_slice_idx = 0;

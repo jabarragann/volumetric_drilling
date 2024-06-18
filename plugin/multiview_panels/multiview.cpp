@@ -260,17 +260,31 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
                                  cColorf(0.0f, 0.8f, 0.8f),
                                  cColorf(0.0f, 0.8f, 0.8f));
 
-    // load bitmap
+    // load bitmaps
     sample_bitmap = new cBitmap();
     ct_slice1 = new cBitmap();
 
     std::string img_path = "plugin/multiview_panels/sample_imgs/white_background.jpg";
     side_cam->m_frontLayer->addChild(sample_bitmap);
-    bool success = sample_bitmap->loadFromFile(img_path);
+    bool success1 = sample_bitmap->loadFromFile(img_path);
     side_cam->m_frontLayer->addChild(ct_slice1);
 
+    out_of_volume_img = cImage::create();
+    bool success2 = out_of_volume_img->loadFromFile("plugin/multiview_panels/sample_imgs/out_of_volume.jpg");
+
+    if (!success1)
+    {
+        std::cerr << "ERROR! FAILED TO LOAD WHITE BACKGROUND" << endl;
+        exit(1);
+    }
+    if (!success2)
+    {
+        std::cerr << "ERROR! FAILED TO LOAD OUT OF VOLUME IMAGE" << endl;
+        exit(1);
+    }
+
     std::cout << "Load Juan multiview pane plugin V1.2" << endl;
-    std::cout << "Bitmap upload status: " << success << endl;
+    std::cout << "Bitmap upload status: " << success1 << endl;
     std::cout << "\n\n\n\n\n"
               << endl;
 
@@ -299,6 +313,9 @@ void afCameraMultiview::graphicsUpdate()
 
         volume_slices_ptr->selectImage(0);
         set_slice_in_side_view(ct_slice_idx);
+
+        bool success = ct_slice1->loadFromImage(out_of_volume_img);
+        ct_slice1->setSize(500, 500);
     }
 
     if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
@@ -318,6 +335,11 @@ void afCameraMultiview::graphicsUpdate()
             // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
             // // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
             // set_slice_in_side_view(ct_slice_idx);
+        }
+        else
+        {
+            bool success = ct_slice1->loadFromImage(out_of_volume_img);
+            ct_slice1->setSize(500, 500);
         }
         ct_slice_update_time = glfwGetTime();
     }
