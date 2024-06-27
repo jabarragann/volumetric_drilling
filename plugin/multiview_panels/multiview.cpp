@@ -148,13 +148,17 @@ void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_
     int halfW = new_width / 2;
     int halfH = new_height / 2;
     int offset = 1;
-    world_panel->setLocalPos(0.0, 0.0);
-    world_panel->setSize(halfW, new_height);
-    side_panel->setLocalPos(halfW + offset, 0.0);
-    side_panel->setSize(halfW, new_height);
-    // update frame buffer sizes
-    world_buff->setSize(halfW, new_height);
-    side_buff->setSize(halfW, new_height);
+    world_window->update_window_size(halfW, new_height);
+    world_window->update_panel_location(0, 0);
+    // world_panel->setLocalPos(0.0, 0.0);
+    // world_panel->setSize(halfW, new_height);
+    // world_buff->setSize(halfW, new_height);
+
+    ct_slice1_window->update_window_size(halfW, new_height);
+    ct_slice1_window->update_panel_location(halfW + offset, 0);
+    // side_panel->setLocalPos(halfW + offset, 0.0);
+    // side_panel->setSize(halfW, new_height);
+    // side_buff->setSize(halfW, new_height);
 }
 
 void afCameraMultiview::assignGLFWCallbacks()
@@ -224,8 +228,11 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
 
-    m_width = m_camera->m_width;
-    m_height = m_camera->m_height;
+    m_width = 1000;
+    m_height = 500;
+    m_camera->m_width = m_width;
+    m_camera->m_height = m_height;
+    glfwSetWindowSize(m_camera->m_window, m_width, m_height);
 
     // ADDITIONAL CHAI OBJECTS CONFIG
     main_cam = new cCamera(NULL);
@@ -233,24 +240,14 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     world_cam = m_camera->getInternalCamera();
     side_cam = new cCamera(side_view_world);
 
-    world_buff = cFrameBuffer::create();
-    world_buff->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
-    side_buff = cFrameBuffer::create();
-    side_buff->setup(side_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
-
     m_frameBuffer = cFrameBuffer::create();
     m_frameBuffer->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
 
-    // create and setup view panel 1
-    world_panel = new cViewPanel(world_buff);
-    main_cam->m_frontLayer->addChild(world_panel);
-    // create and setup view panel 2
-    side_panel = new cViewPanel(side_buff);
-    main_cam->m_frontLayer->addChild(side_panel);
+    world_window = new SideViewWindow(world_cam, m_width, m_height, m_alias_scaling);
+    ct_slice1_window = new SideViewWindow(side_cam, m_width, m_height, m_alias_scaling);
+    main_cam->m_frontLayer->addChild(world_window->get_panel());
+    main_cam->m_frontLayer->addChild(ct_slice1_window->get_panel());
 
-    // update display panel sizes and positions
-    windowSizeCallback(m_camera->m_window, m_width, m_height);
-    assignGLFWCallbacks();
 
     // Set background
     cBackground *background2 = new cBackground();
@@ -259,6 +256,10 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
                                  cColorf(1.0f, 0.0f, 1.0f),
                                  cColorf(0.0f, 0.8f, 0.8f),
                                  cColorf(0.0f, 0.8f, 0.8f));
+
+    // update display panel sizes and positions
+    windowSizeCallback(m_camera->m_window, m_width, m_height);
+    assignGLFWCallbacks();
 
     // load bitmaps
     sample_bitmap = new cBitmap();
@@ -345,7 +346,6 @@ void afCameraMultiview::graphicsUpdate()
     }
 
     glfwMakeContextCurrent(m_camera->m_window);
-    world_buff->renderView();
 
     // SIMPLE RENDER
     // afRenderOptions ro;
@@ -358,10 +358,8 @@ void afCameraMultiview::graphicsUpdate()
     glfwGetFramebufferSize(m_camera->m_window, &m_width, &m_height);
     // render world
 
-    // world_cam->renderView(m_width, m_height);
-
-    side_buff->renderView();
-    world_buff->renderView();
+    ct_slice1_window->render_view();
+    world_window->render_view();
     main_cam->renderView(m_width, m_height);
 
     // swap buffers
@@ -402,4 +400,13 @@ void afCameraMultiview::makeFullScreen()
     // m_camera->m_height = h;
     // glfwSwapInterval(0);
     // cerr << "\t Making " << m_camera->getName() << " fullscreen \n";
+}
+
+SideViewWindow::SideViewWindow(cCamera *camera, int m_width, int m_height, int m_alias_scaling) : camera(camera), m_width(m_width),
+                                                                                                  m_height(m_height), m_alias_scaling(m_alias_scaling)
+{
+    int x;
+    buffer = cFrameBuffer::create();
+    buffer->setup(camera, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
+    panel = new cViewPanel(buffer);
 }

@@ -53,6 +53,8 @@ using namespace std;
 using namespace ambf;
 
 class SliceAnnotator;
+class SideViewWindow;
+
 class afCameraMultiview : public afObjectPlugin
 {
 public:
@@ -84,10 +86,13 @@ protected:
 
     cCamera *world_cam; // Camera rendering the volumen
     cCamera *side_cam;  // Camera pointing to a empty world to display CT slices
-    cFrameBufferPtr world_buff;
-    cFrameBufferPtr side_buff;
-    cViewPanel *world_panel;
-    cViewPanel *side_panel;
+    // cFrameBufferPtr world_buff;
+    // cFrameBufferPtr side_buff;
+    // cViewPanel *world_panel;
+    // cViewPanel *side_panel;
+
+    SideViewWindow *world_window;
+    SideViewWindow *ct_slice1_window;
 
     cWorld *side_view_world;
     cMesh *m_quadMesh;
@@ -129,6 +134,27 @@ protected:
     float m_warp_scale;
     float m_warp_adj;
     float m_vpos;
+};
+
+class SideViewWindow
+{
+    cFrameBufferPtr buffer;
+    cViewPanel *panel;
+    cCamera *camera;
+    int m_width;
+    int m_height;
+    int m_alias_scaling;
+
+public:
+    SideViewWindow(cCamera *camera, int m_width, int m_height, int m_alias_scaling);
+    cViewPanel *get_panel() { return panel; }
+    void render_view() { buffer->renderView(); }
+    void update_window_size(int width, int height)
+    {
+        buffer->setSize(width, height);
+        panel->setSize(width, height);
+    }
+    void update_panel_location(int x, int y) { panel->setLocalPos(x, y); }
 };
 
 struct AnnotationLocation
