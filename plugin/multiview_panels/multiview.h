@@ -54,6 +54,7 @@ using namespace ambf;
 
 class SliceAnnotator;
 class SideViewWindow;
+class CtSliceSideWindow;
 
 class afCameraMultiview : public afObjectPlugin
 {
@@ -82,17 +83,12 @@ protected:
     afCameraPtr m_camera; // AMBF camera pointer
     cFrameBufferPtr m_frameBuffer;
 
-    cCamera *main_cam; // Parent camera for the word and side cameras
-
+    cCamera *main_cam;  // Parent camera for the word and side cameras
     cCamera *world_cam; // Camera rendering the volumen
     cCamera *side_cam;  // Camera pointing to a empty world to display CT slices
-    // cFrameBufferPtr world_buff;
-    // cFrameBufferPtr side_buff;
-    // cViewPanel *world_panel;
-    // cViewPanel *side_panel;
 
     SideViewWindow *world_window;
-    SideViewWindow *ct_slice1_window;
+    CtSliceSideWindow *ct_slice1_window;
 
     cWorld *side_view_world;
     cMesh *m_quadMesh;
@@ -101,10 +97,9 @@ protected:
     int m_alias_scaling;
     cShaderProgramPtr m_shaderPgm;
 
-    // Bitmaps
-    cBitmap *sample_bitmap;
-    cBitmap *ct_slice1;
+    // Images loaded from file
     cImagePtr out_of_volume_img;
+    cImagePtr white_background_img;
 
     // Timers
     int ct_slice_idx = 0;
@@ -121,8 +116,12 @@ protected:
 
     ros::NodeHandle *ros_node_handle;
     ros::Subscriber drill_loc_subscriber;
-    std::string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";
     cVector3d drill_location;
+
+    // Config strings
+    string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";
+    string out_of_volume_img_path = "plugin/multiview_panels/sample_imgs/out_of_volume.jpg";
+    string white_background_img_path = "plugin/multiview_panels/sample_imgs/white_background.jpg";
 
 protected:
     float m_viewport_scale[2];
@@ -138,6 +137,7 @@ protected:
 
 class SideViewWindow
 {
+    string window_name;
     cFrameBufferPtr buffer;
     cViewPanel *panel;
     cCamera *camera;
@@ -146,7 +146,7 @@ class SideViewWindow
     int m_alias_scaling;
 
 public:
-    SideViewWindow(cCamera *camera, int m_width, int m_height, int m_alias_scaling);
+    SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int m_alias_scaling);
     cViewPanel *get_panel() { return panel; }
     void render_view() { buffer->renderView(); }
     void update_window_size(int width, int height)
@@ -155,6 +155,24 @@ public:
         panel->setSize(width, height);
     }
     void update_panel_location(int x, int y) { panel->setLocalPos(x, y); }
+};
+class CtSliceSideWindow : public SideViewWindow
+{
+    cBitmap *white_background;
+    cBitmap *ct_slice;
+    cBackground *background;
+    cImagePtr out_of_volume_img;
+    cImagePtr white_background_img;
+
+public:
+    CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int m_alias_scaling,
+                      cImagePtr white_brackground_img, cImagePtr out_of_volume_img);
+    bool update_ct_slice(cImagePtr ct_slice_img) { return ct_slice->loadFromImage(ct_slice_img); };
+    void update_ct_slice_size(int width, int height)
+    {
+        ct_slice->setSize(width, height);
+        white_background->setSize(width, height);
+    }
 };
 
 struct AnnotationLocation

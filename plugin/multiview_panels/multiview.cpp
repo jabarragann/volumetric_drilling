@@ -150,15 +150,11 @@ void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_
     int offset = 1;
     world_window->update_window_size(halfW, new_height);
     world_window->update_panel_location(0, 0);
-    // world_panel->setLocalPos(0.0, 0.0);
-    // world_panel->setSize(halfW, new_height);
-    // world_buff->setSize(halfW, new_height);
 
     ct_slice1_window->update_window_size(halfW, new_height);
     ct_slice1_window->update_panel_location(halfW + offset, 0);
-    // side_panel->setLocalPos(halfW + offset, 0.0);
-    // side_panel->setSize(halfW, new_height);
-    // side_buff->setSize(halfW, new_height);
+
+    // TODO: ADD HERE THE LOCATION FOR THE REMAINING TWO PANELS.
 }
 
 void afCameraMultiview::assignGLFWCallbacks()
@@ -218,8 +214,26 @@ void afCameraMultiview::init_volume_slicer()
 
 void afCameraMultiview::set_slice_in_side_view(int slice_idx)
 {
-    bool success = ct_slice1->loadFromImage(volume_slices_ptr);
-    ct_slice1->setSize(500, 500);
+    // bool success = ct_slice1->loadFromImage(volume_slices_ptr);
+    // ct_slice1->setSize(500, 500);
+
+    // bool success = ct_slice1_window->update_ct_slice(out_of_volume_img);
+    // ct_slice1_window->update_ct_slice_size(500, 500);
+}
+
+cImagePtr create_c_image_from_file(string path)
+{
+
+    cImagePtr image = cImage::create();
+    bool success = image->loadFromFile(path);
+
+    if (!success)
+    {
+        std::cerr << "ERROR! FAILED TO LOAD OUT OF VOLUME IMAGE " << path << endl;
+        exit(1);
+    }
+
+    return image;
 }
 
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -243,50 +257,21 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     m_frameBuffer = cFrameBuffer::create();
     m_frameBuffer->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
 
-    world_window = new SideViewWindow(world_cam, m_width, m_height, m_alias_scaling);
-    ct_slice1_window = new SideViewWindow(side_cam, m_width, m_height, m_alias_scaling);
+    out_of_volume_img = create_c_image_from_file(out_of_volume_img_path);
+    white_background_img = create_c_image_from_file(white_background_img_path);
+
+    world_window = new SideViewWindow("world_window", world_cam, m_width, m_height, m_alias_scaling);
+    ct_slice1_window = new CtSliceSideWindow("ct_slice1_window", side_cam, m_width, m_height, m_alias_scaling, white_background_img, out_of_volume_img);
+    // TODO: INITIALIZE HERE THE OTHER TWO PANELS.
+
     main_cam->m_frontLayer->addChild(world_window->get_panel());
     main_cam->m_frontLayer->addChild(ct_slice1_window->get_panel());
-
-
-    // Set background
-    cBackground *background2 = new cBackground();
-    side_cam->m_backLayer->addChild(background2);
-    background2->setCornerColors(cColorf(1.0f, 0.0f, 1.0f),
-                                 cColorf(1.0f, 0.0f, 1.0f),
-                                 cColorf(0.0f, 0.8f, 0.8f),
-                                 cColorf(0.0f, 0.8f, 0.8f));
 
     // update display panel sizes and positions
     windowSizeCallback(m_camera->m_window, m_width, m_height);
     assignGLFWCallbacks();
 
-    // load bitmaps
-    sample_bitmap = new cBitmap();
-    ct_slice1 = new cBitmap();
-
-    std::string img_path = "plugin/multiview_panels/sample_imgs/white_background.jpg";
-    side_cam->m_frontLayer->addChild(sample_bitmap);
-    bool success1 = sample_bitmap->loadFromFile(img_path);
-    side_cam->m_frontLayer->addChild(ct_slice1);
-
-    out_of_volume_img = cImage::create();
-    bool success2 = out_of_volume_img->loadFromFile("plugin/multiview_panels/sample_imgs/out_of_volume.jpg");
-
-    if (!success1)
-    {
-        std::cerr << "ERROR! FAILED TO LOAD WHITE BACKGROUND" << endl;
-        exit(1);
-    }
-    if (!success2)
-    {
-        std::cerr << "ERROR! FAILED TO LOAD OUT OF VOLUME IMAGE" << endl;
-        exit(1);
-    }
-
-    std::cout << "Load Juan multiview pane plugin V1.2" << endl;
-    std::cout << "Bitmap upload status: " << success1 << endl;
-    std::cout << "\n\n\n\n\n"
+    std::cout << "End of init" << "\n\n\n\n\n"
               << endl;
 
     // ROS subscriber config
@@ -315,8 +300,10 @@ void afCameraMultiview::graphicsUpdate()
         volume_slices_ptr->selectImage(0);
         set_slice_in_side_view(ct_slice_idx);
 
-        bool success = ct_slice1->loadFromImage(out_of_volume_img);
-        ct_slice1->setSize(500, 500);
+        // bool success = ct_slice1->loadFromImage(out_of_volume_img);
+        // ct_slice1->setSize(500, 500);
+        bool success = ct_slice1_window->update_ct_slice(out_of_volume_img);
+        ct_slice1_window->update_ct_slice_size(500, 500);
     }
 
     if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
@@ -329,8 +316,8 @@ void afCameraMultiview::graphicsUpdate()
             // 2) ANNOTATED SLICES WITH DRILL LOCATION
             xy_slice->annotate(drill_location.x(), drill_location.y());
             // 3) DISPLAY SLICE
-            bool success = ct_slice1->loadFromImage(xy_slice->volume_slice);
-            ct_slice1->setSize(500, 500);
+            bool success = ct_slice1_window->update_ct_slice(xy_slice->volume_slice);
+            ct_slice1_window->update_ct_slice_size(500, 500);
 
             // slice_annotator->restore_slice(); // Removed red marker from previous location
             // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
@@ -339,8 +326,9 @@ void afCameraMultiview::graphicsUpdate()
         }
         else
         {
-            bool success = ct_slice1->loadFromImage(out_of_volume_img);
-            ct_slice1->setSize(500, 500);
+
+            bool success = ct_slice1_window->update_ct_slice(out_of_volume_img);
+            ct_slice1_window->update_ct_slice_size(500, 500);
         }
         ct_slice_update_time = glfwGetTime();
     }
@@ -402,11 +390,35 @@ void afCameraMultiview::makeFullScreen()
     // cerr << "\t Making " << m_camera->getName() << " fullscreen \n";
 }
 
-SideViewWindow::SideViewWindow(cCamera *camera, int m_width, int m_height, int m_alias_scaling) : camera(camera), m_width(m_width),
-                                                                                                  m_height(m_height), m_alias_scaling(m_alias_scaling)
+SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height,
+                               int m_alias_scaling) : window_name(window_name), camera(camera), m_width(m_width),
+                                                      m_height(m_height), m_alias_scaling(m_alias_scaling)
 {
-    int x;
+    cout << "initilize " << window_name << endl;
     buffer = cFrameBuffer::create();
     buffer->setup(camera, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
     panel = new cViewPanel(buffer);
+}
+
+CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height,
+                                     int m_alias_scaling, cImagePtr white_brackground_img,
+                                     cImagePtr out_of_volume_img) : SideViewWindow(window_name, camera, m_width, m_height, m_alias_scaling),
+                                                                    white_background_img(white_brackground_img), out_of_volume_img(out_of_volume_img)
+{
+    // Set background
+    background = new cBackground();
+    camera->m_backLayer->addChild(background);
+    background->setCornerColors(cColorf(1.0f, 0.0f, 1.0f),
+                                cColorf(1.0f, 0.0f, 1.0f),
+                                cColorf(0.0f, 0.8f, 0.8f),
+                                cColorf(0.0f, 0.8f, 0.8f));
+
+    // load bitmaps
+    white_background = new cBitmap();
+    white_background->loadFromImage(white_background_img);
+    camera->m_frontLayer->addChild(white_background);
+
+    ct_slice = new cBitmap();
+    ct_slice->loadFromImage(out_of_volume_img);
+    camera->m_frontLayer->addChild(ct_slice);
 }
