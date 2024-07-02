@@ -60,6 +60,7 @@ class afCameraMultiview : public afObjectPlugin
 {
 public:
     afCameraMultiview();
+    ~afCameraMultiview();
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double dt) override;
@@ -88,7 +89,7 @@ protected:
     cCamera *side_cam;  // Camera pointing to a empty world to display CT slices
 
     SideViewWindow *world_window;
-    CtSliceSideWindow *ct_slice1_window;
+    std::unique_ptr<CtSliceSideWindow> ct_slice1_window;
 
     cWorld *side_view_world;
     cMesh *m_quadMesh;
@@ -137,6 +138,7 @@ protected:
 
 class SideViewWindow
 {
+protected:
     string window_name;
     cFrameBufferPtr buffer;
     cViewPanel *panel;
@@ -147,6 +149,7 @@ class SideViewWindow
 
 public:
     SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int m_alias_scaling);
+    ~SideViewWindow();
     cViewPanel *get_panel() { return panel; }
     void render_view() { buffer->renderView(); }
     void update_window_size(int width, int height)
@@ -167,6 +170,7 @@ class CtSliceSideWindow : public SideViewWindow
 public:
     CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int m_alias_scaling,
                       cImagePtr white_brackground_img, cImagePtr out_of_volume_img);
+    ~CtSliceSideWindow();
     bool update_ct_slice(cImagePtr ct_slice_img) { return ct_slice->loadFromImage(ct_slice_img); };
     void update_ct_slice_size(int width, int height)
     {

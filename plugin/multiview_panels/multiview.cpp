@@ -136,6 +136,11 @@ afCameraMultiview::afCameraMultiview()
     m_alias_scaling = 1.0;
 }
 
+afCameraMultiview::~afCameraMultiview()
+{
+    cout << "Destroying afCameraMultivew plugin object" << endl;
+}
+
 void afCameraMultiview::drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
 {
     // std::cout << "Received drill location: " << msg->point.x << " " << msg->point.y << " " << msg->point.z << endl;
@@ -261,7 +266,10 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     white_background_img = create_c_image_from_file(white_background_img_path);
 
     world_window = new SideViewWindow("world_window", world_cam, m_width, m_height, m_alias_scaling);
-    ct_slice1_window = new CtSliceSideWindow("ct_slice1_window", side_cam, m_width, m_height, m_alias_scaling, white_background_img, out_of_volume_img);
+    ct_slice1_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice1_window", side_cam, m_width, m_height,
+                                                                                m_alias_scaling, white_background_img,
+                                                                                out_of_volume_img));
+
     // TODO: INITIALIZE HERE THE OTHER TWO PANELS.
 
     main_cam->m_frontLayer->addChild(world_window->get_panel());
@@ -364,6 +372,7 @@ void afCameraMultiview::reset()
 
 bool afCameraMultiview::close()
 {
+    cout << "Closing " << m_camera->getName() << endl;
     return true;
 }
 
@@ -400,6 +409,14 @@ SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width,
     panel = new cViewPanel(buffer);
 }
 
+SideViewWindow::~SideViewWindow()
+{
+
+    cout << "Destroying Side view window " << window_name << endl;
+    delete panel;
+    delete camera;
+}
+
 CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height,
                                      int m_alias_scaling, cImagePtr white_brackground_img,
                                      cImagePtr out_of_volume_img) : SideViewWindow(window_name, camera, m_width, m_height, m_alias_scaling),
@@ -421,4 +438,12 @@ CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_
     ct_slice = new cBitmap();
     ct_slice->loadFromImage(out_of_volume_img);
     camera->m_frontLayer->addChild(ct_slice);
+}
+
+CtSliceSideWindow::~CtSliceSideWindow()
+{
+    cout << "Destroying CT slice " << window_name << endl;
+    delete white_background;
+    delete background;
+    delete ct_slice;
 }
