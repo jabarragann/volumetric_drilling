@@ -372,7 +372,7 @@ void afCameraMultiview::reset()
 
 bool afCameraMultiview::close()
 {
-    cout << "Closing " << m_camera->getName() << endl;
+    // cout << "Closing " << m_camera->getName() << endl;
     return true;
 }
 
@@ -403,7 +403,6 @@ SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width,
                                int m_alias_scaling) : window_name(window_name), camera(camera), m_width(m_width),
                                                       m_height(m_height), m_alias_scaling(m_alias_scaling)
 {
-    cout << "initilize " << window_name << endl;
     buffer = cFrameBuffer::create();
     buffer->setup(camera, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
     panel = new cViewPanel(buffer);
@@ -412,9 +411,11 @@ SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width,
 SideViewWindow::~SideViewWindow()
 {
 
-    cout << "Destroying Side view window " << window_name << endl;
+    // cout << "Destroying Side view window " << window_name << endl;
     delete panel;
-    delete camera;
+
+    // This will trigger a seg fault
+    // delete camera;
 }
 
 CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height,
