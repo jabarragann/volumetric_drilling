@@ -273,16 +273,16 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
 
     world_window = new SideViewWindow("world_window", world_cam, m_width, m_height, m_alias_scaling);
 
-    ct_slice1_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice1_window", side_cam1, m_width/2,
-                                                                                m_height/2, m_alias_scaling,
+    ct_slice1_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice1_window", side_cam1, m_width / 2,
+                                                                                m_height / 2, m_alias_scaling,
                                                                                 white_background_img, out_of_volume_img));
 
-    ct_slice2_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice2_window", side_cam2, m_width/2,
-                                                                                m_height/2, m_alias_scaling,
+    ct_slice2_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice2_window", side_cam2, m_width / 2,
+                                                                                m_height / 2, m_alias_scaling,
                                                                                 white_background_img, out_of_volume_img));
 
-    ct_slice3_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice3_window", side_cam3, m_width/2,
-                                                                                m_height/2, m_alias_scaling,
+    ct_slice3_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice3_window", side_cam3, m_width / 2,
+                                                                                m_height / 2, m_alias_scaling,
                                                                                 white_background_img, out_of_volume_img));
 
     main_cam->m_frontLayer->addChild(world_window->get_panel());

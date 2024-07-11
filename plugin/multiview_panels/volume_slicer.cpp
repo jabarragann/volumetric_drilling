@@ -181,13 +181,49 @@ void Slice2D::save_to_file(string filename)
     volume_slice->saveToFile(output_filename);
 }
 
-void Slice2D::annotate(int x, int y, int marker_size, cColorb marker_color)
+void Slice2D::annotate(int x, int y, cColorb marker_color)
 {
-    for (int i = 0; i < marker_size; i++)
+    int drill_radius = 14;
+    int marker_size = 3;
+
+    // Draw external circle
+    draw_circle(x, y, drill_radius, marker_color);
+    // Draw center
+    draw_circle(x, y, marker_size, marker_color);
+    draw_circle(x, y, marker_size - 1, marker_color);
+}
+
+/*
+ * Chat gpt generated Bresenham's circle drawing algorithm
+ * https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
+ */
+void Slice2D::draw_circle(int center_x, int center_y, int radius, cColorb color)
+{
+    int x = radius;
+    int y = 0;
+    int radiusError = 1 - x;
+
+    while (x >= y)
     {
-        for (int j = 0; j < marker_size; j++)
+        volume_slice->setPixelColor(center_x + x, center_y + y, color);
+        volume_slice->setPixelColor(center_x - x, center_y + y, color);
+        volume_slice->setPixelColor(center_x + x, center_y - y, color);
+        volume_slice->setPixelColor(center_x - x, center_y - y, color);
+        volume_slice->setPixelColor(center_x + y, center_y + x, color);
+        volume_slice->setPixelColor(center_x - y, center_y + x, color);
+        volume_slice->setPixelColor(center_x + y, center_y - x, color);
+        volume_slice->setPixelColor(center_x - y, center_y - x, color);
+
+        y++;
+
+        if (radiusError < 0)
         {
-            volume_slice->setPixelColor((i + x) % slice_width, (j + y) % slice_height, marker_color);
+            radiusError += 2 * y + 1;
+        }
+        else
+        {
+            x--;
+            radiusError += 2 * (y - x + 1);
         }
     }
 }

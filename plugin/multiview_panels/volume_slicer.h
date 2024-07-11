@@ -33,7 +33,9 @@ public:
     };
 
     void save_to_file(string filename = "");
-    void annotate(int x, int y, int marker_size = 6, cColorb marker_color = cColorb(255, 0, 0));
+    void annotate(int x, int y, cColorb marker_color = cColorb(255, 0, 0));
+
+    void draw_circle(int center_x, int center_y, int radius, cColorb color = cColorb(255, 0, 0));
 };
 
 class VolumeSlicer
