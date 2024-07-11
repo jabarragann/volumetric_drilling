@@ -86,10 +86,16 @@ protected:
 
     cCamera *main_cam;  // Parent camera for the word and side cameras
     cCamera *world_cam; // Camera rendering the volumen
-    cCamera *side_cam;  // Camera pointing to a empty world to display CT slices
+
+    // Camera pointing to a empty world to display CT slices
+    cCamera *side_cam1;
+    cCamera *side_cam2; // Camera pointing to a empty world to display CT slices
+    cCamera *side_cam3; // Camera pointing to a empty world to display CT slices
 
     SideViewWindow *world_window;
     std::unique_ptr<CtSliceSideWindow> ct_slice1_window;
+    std::unique_ptr<CtSliceSideWindow> ct_slice2_window;
+    std::unique_ptr<CtSliceSideWindow> ct_slice3_window;
 
     cWorld *side_view_world;
     cMesh *m_quadMesh;
