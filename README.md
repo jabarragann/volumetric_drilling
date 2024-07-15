@@ -13,6 +13,11 @@ If you found this work helpful, please reference us using the following citation
   publisher={Taylor \& Francis}
 }
 ```
+## Run assisted navigation plugin
+
+```
+ambf_simulator --launch_file launch.yaml -l 0,2,5,6
+```
 
 ## Overview
 

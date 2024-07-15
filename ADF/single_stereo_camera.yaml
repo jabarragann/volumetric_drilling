@@ -37,6 +37,6 @@ stereoLR:
     {
       name: vr_plugin,
       path: "../build",
-      filename: "libcamera_hmd.so",
+      filename: "libsim_assisted_nav.so",
     }
   ]

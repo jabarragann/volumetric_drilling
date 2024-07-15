@@ -87,6 +87,11 @@ add_library(camera_hmd plugin/camera_hmd/hmd.cpp plugin/camera_hmd/hmd.h)
 target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
 set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
+add_library(sim_assisted_nav plugin/sim_assisted_nav/sim_assisted_nav.cpp plugin/sim_assisted_nav/sim_assisted_nav.h)
+target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES})
+set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+
 # Multiview plugin
 include_directories(plugin/multiview_panels)
 set(multiview_dir plugin/multiview_panels)
