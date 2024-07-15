@@ -43,6 +43,8 @@
 // To silence warnings on MacOS
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
+#include <sensor_msgs/Image.h>
+#include <cv_bridge/cv_bridge.h>
 
 using namespace std;
 using namespace ambf;
@@ -60,6 +62,12 @@ public:
     void updateHMDParams();
 
     void makeFullScreen();
+
+    //ROS callbacks
+    ros::NodeHandle* ros_node_handle;
+    ros::Subscriber left_sub, right_sub;
+    void left_img_callback(const sensor_msgs::ImageConstPtr& msg);
+    void right_img_callback(const sensor_msgs::ImageConstPtr& msg);
 
 protected:
     afCameraPtr m_camera;

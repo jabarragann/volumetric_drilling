@@ -44,6 +44,7 @@
 //==============================================================================
 
 #include "sim_assisted_nav.h"
+#include <ambf_server/RosComBase.h>
 
 using namespace std;
 
@@ -65,6 +66,10 @@ afCameraHMD::afCameraHMD()
 
 int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
+    ros_node_handle = afROSNode::getNode();
+    left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
+    right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
+
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
 
@@ -170,11 +175,11 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 void afCameraHMD::graphicsUpdate()
 {
     static bool first_time = true;
-    if (first_time)
-    {
-        makeFullScreen();
-        first_time = false;
-    }
+    // if (first_time)
+    // {
+    //     makeFullScreen();
+    //     first_time = false;
+    // }
     glfwMakeContextCurrent(m_camera->m_window);
     m_frameBuffer->renderView();
     updateHMDParams();
@@ -237,4 +242,66 @@ void afCameraHMD::makeFullScreen()
     m_camera->m_height = h;
     glfwSwapInterval(0);
     cerr << "\t Making " << m_camera->getName() << " fullscreen \n";
+}
+
+void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
+{
+    cout << "received left image" << endl;
+    // try
+    // {
+    //     cv_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
+    //     // frame = cv::imdecode(cv::Mat(msg->data), CV_LOAD_IMAGE_COLOR);
+    // }
+    // catch (cv_bridge::Exception &e)
+    // {
+    //     ROS_ERROR("Could not convert");
+    // }
+
+    // // cv::resize(cv_ptr->image,cv_ptr->image,cv::Size(cv_ptr->image.cols/2,cv_ptr->image.rows/2));
+
+    // cv::Rect sizeRect(0,0,cv_ptr->image.cols-cv_ptr->image.cols*clipsize,cv_ptr->image.rows);
+    // cv_ptr->image = cv_ptr->image(sizeRect);
+
+    // // cv::imshow("Image1", cv_ptr->image);
+    // // cv::waitKey(1);
+}
+
+void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
+{
+
+    // try
+    // {
+    //     cv_ptr2 = cv_bridge::toCvCopy(msg, msg->encoding);
+    //     // frame2 = cv::imdecode(cv::Mat(msg->data), CV_LOAD_IMAGE_COLOR);
+    // }
+    // catch (cv_bridge::Exception &e)
+    // {
+    //     ROS_ERROR("Could not convert");
+    // }
+
+    // cv::Rect sizeRect2(clipsize,0,cv_ptr2->image.cols-cv_ptr2->image.cols*clipsize,cv_ptr2->image.rows);
+    // cv_ptr2->image = cv_ptr2->image(sizeRect2);
+
+    // cv::hconcat(cv_ptr->image, cv_ptr2->image, cv_ptr->image);
+    // cv::flip(cv_ptr->image, cv_ptr->image, 0);
+    // cv::cvtColor(cv_ptr->image, cv_ptr->image, cv::COLOR_RGBA2BGRA);
+    // int ros_image_size = cv_ptr->image.cols * cv_ptr->image.rows * cv_ptr->image.elemSize();
+    // int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
+
+    // if (ros_image_size != texture_image_size)
+    // {
+    //     m_rosImageTexture->m_image->erase();
+    //     // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
+    //     m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE); // For ZED 2i
+    //     // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, GL_RGB, GL_UNSIGNED_BYTE);
+    // }
+
+    // //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
+    // m_rosImageTexture->m_image->setData(cv_ptr->image.data, ros_image_size);
+    // m_rosImageTexture->markForUpdate();
+    // // cv::imshow("Image1", cv_ptr->image);
+    // // cv::waitKey(1);
+    // // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
+    // // cv::imshow("Image2", cv_ptr2->image);
+    // // cv::waitKey(1);
 }
