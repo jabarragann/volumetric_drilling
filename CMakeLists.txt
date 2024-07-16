@@ -44,6 +44,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 find_package(AMBF)
 find_package(Boost COMPONENTS program_options filesystem)
+find_package(OpenCV REQUIRED)
 
 add_subdirectory(volumetric_drilling_msgs)
 find_package(catkin COMPONENTS volumetric_drilling_msgs)
@@ -56,6 +57,9 @@ link_directories(${AMBF_LIBRARY_DIRS})
 
 add_definitions(${AMBF_DEFINITIONS})
 
+message ("OPEN_CV FOUND: " ${OpenCV_FOUND})
+message ("OPEN_CV INCLUDES: " ${OpenCV_INCLUDE_DIRS})
+message ("OPEN_CV LIBRARIES: " ${OpenCV_LIBRARIES})
 message("---> LIBS " ${catkin_INCLUDE_DIRS})
 message("---> FOUND ? " ${catkin_vdrilling_msgs_FOUND})
 
@@ -88,7 +92,7 @@ target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
 set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 add_library(sim_assisted_nav plugin/sim_assisted_nav/sim_assisted_nav.cpp plugin/sim_assisted_nav/sim_assisted_nav.h)
-target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES})
+target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
 set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 

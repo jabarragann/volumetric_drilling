@@ -45,6 +45,7 @@
 
 #include "sim_assisted_nav.h"
 #include <ambf_server/RosComBase.h>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 
@@ -156,8 +157,23 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_quadMesh->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
     m_quadMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
 
+    // Variables related to ROS topics
+    concat_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+
+    // Textures
+    m_rosImageTexture = cTexture2d::create();
+
+    // TODO: Ask adnan why this would not work?
+    // m_rosImageTexture->setTextureId(2);
+    // m_rosImageTexture->setTextureUnit(GL_TEXTURE3);
+    // m_rosImageTexture->update();
+    // m_frameBuffer->m_imageBuffer->setTextureId(0);
+    // m_frameBuffer->m_imageBuffer->setTextureUnit(GL_TEXTURE0);
+
     m_quadMesh->computeAllNormals();
     m_quadMesh->m_texture = m_frameBuffer->m_imageBuffer;
+    // TODO this won't work yet
+    // m_quadMesh->m_texture = m_rosImageTexture;
     m_quadMesh->setUseTexture(true);
 
     m_quadMesh->setShaderProgram(m_shaderPgm);
@@ -180,6 +196,8 @@ void afCameraHMD::graphicsUpdate()
     //     makeFullScreen();
     //     first_time = false;
     // }
+
+    // updateHMDParams(); // Update HMD parameters before m_frameBuffer render creates problems.
     glfwMakeContextCurrent(m_camera->m_window);
     m_frameBuffer->renderView();
     updateHMDParams();
@@ -216,7 +234,8 @@ void afCameraHMD::updateHMDParams()
     GLint id = m_shaderPgm->getId();
     //    cerr << "INFO! Shader ID " << id << endl;
     glUseProgram(id);
-    glUniform1i(glGetUniformLocation(id, "warpTexture"), 2);
+    glUniform1i(glGetUniformLocation(id, "warpTexture1"), 2);
+    // glUniform1i(glGetUniformLocation(id, "warpTexture2"), 3);
     glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
     glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);
     glUniform1f(glGetUniformLocation(id, "WarpScale"), m_warp_scale * m_warp_adj);
@@ -246,62 +265,68 @@ void afCameraHMD::makeFullScreen()
 
 void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
 {
-    cout << "received left image" << endl;
-    // try
-    // {
-    //     cv_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
-    //     // frame = cv::imdecode(cv::Mat(msg->data), CV_LOAD_IMAGE_COLOR);
-    // }
-    // catch (cv_bridge::Exception &e)
-    // {
-    //     ROS_ERROR("Could not convert");
-    // }
+    try
+    {
+        left_img_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
+    }
+    catch (cv_bridge::Exception &e)
+    {
+        ROS_ERROR("Could not convert");
+    }
 
-    // // cv::resize(cv_ptr->image,cv_ptr->image,cv::Size(cv_ptr->image.cols/2,cv_ptr->image.rows/2));
+    // cv::resize(cv_ptr->image,cv_ptr->image,cv::Size(cv_ptr->image.cols/2,cv_ptr->image.rows/2));
 
-    // cv::Rect sizeRect(0,0,cv_ptr->image.cols-cv_ptr->image.cols*clipsize,cv_ptr->image.rows);
-    // cv_ptr->image = cv_ptr->image(sizeRect);
+    cv::Rect sizeRect(0, 0, left_img_ptr->image.cols - left_img_ptr->image.cols * clipsize, left_img_ptr->image.rows);
+    left_img_ptr->image = left_img_ptr->image(sizeRect);
 
-    // // cv::imshow("Image1", cv_ptr->image);
-    // // cv::waitKey(1);
+    // cv::imshow("Left img", left_img_ptr->image);
+    // cv::waitKey(1);
 }
 
 void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
 {
 
-    // try
-    // {
-    //     cv_ptr2 = cv_bridge::toCvCopy(msg, msg->encoding);
-    //     // frame2 = cv::imdecode(cv::Mat(msg->data), CV_LOAD_IMAGE_COLOR);
-    // }
-    // catch (cv_bridge::Exception &e)
-    // {
-    //     ROS_ERROR("Could not convert");
-    // }
+    try
+    {
+        right_img_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
+        // frame2 = cv::imdecode(cv::Mat(msg->data), CV_LOAD_IMAGE_COLOR);
+    }
+    catch (cv_bridge::Exception &e)
+    {
+        ROS_ERROR("Could not convert");
+    }
 
-    // cv::Rect sizeRect2(clipsize,0,cv_ptr2->image.cols-cv_ptr2->image.cols*clipsize,cv_ptr2->image.rows);
-    // cv_ptr2->image = cv_ptr2->image(sizeRect2);
+    cv::Rect sizeRect2(clipsize, 0, right_img_ptr->image.cols - right_img_ptr->image.cols * clipsize, right_img_ptr->image.rows);
+    right_img_ptr->image = right_img_ptr->image(sizeRect2);
 
-    // cv::hconcat(cv_ptr->image, cv_ptr2->image, cv_ptr->image);
-    // cv::flip(cv_ptr->image, cv_ptr->image, 0);
-    // cv::cvtColor(cv_ptr->image, cv_ptr->image, cv::COLOR_RGBA2BGRA);
-    // int ros_image_size = cv_ptr->image.cols * cv_ptr->image.rows * cv_ptr->image.elemSize();
-    // int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
+    // cv::imshow("Right img", right_img_ptr->image);
+    // cv::waitKey(1);
 
-    // if (ros_image_size != texture_image_size)
-    // {
-    //     m_rosImageTexture->m_image->erase();
-    //     // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
-    //     m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE); // For ZED 2i
-    //     // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, GL_RGB, GL_UNSIGNED_BYTE);
-    // }
+    if (left_img_ptr != nullptr && right_img_ptr != nullptr)
+    {
+        cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
+        cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
+        cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGBA2BGRA);
 
-    // //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
-    // m_rosImageTexture->m_image->setData(cv_ptr->image.data, ros_image_size);
-    // m_rosImageTexture->markForUpdate();
-    // // cv::imshow("Image1", cv_ptr->image);
-    // // cv::waitKey(1);
-    // // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
-    // // cv::imshow("Image2", cv_ptr2->image);
-    // // cv::waitKey(1);
+        int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
+        int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
+
+        if (ros_image_size != texture_image_size)
+        {
+            cout << "INITILIZE rosImageTexture" << endl;
+            m_rosImageTexture->m_image->erase();
+            // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
+
+            // For ZED 2i and AMBF rostopics
+            m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE);
+        }
+
+        //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
+        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
+        m_rosImageTexture->markForUpdate();
+
+        // cv::imshow("Concat image", concat_img_ptr->image);
+        // cv::waitKey(1);
+        // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
+    }
 }

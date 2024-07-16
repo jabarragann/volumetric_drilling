@@ -49,8 +49,8 @@
 using namespace std;
 using namespace ambf;
 
-
-class afCameraHMD: public afObjectPlugin{
+class afCameraHMD : public afObjectPlugin
+{
 public:
     afCameraHMD();
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
@@ -63,17 +63,23 @@ public:
 
     void makeFullScreen();
 
-    //ROS callbacks
-    ros::NodeHandle* ros_node_handle;
+    // ROS attributes and callbacks
+    ros::NodeHandle *ros_node_handle;
     ros::Subscriber left_sub, right_sub;
-    void left_img_callback(const sensor_msgs::ImageConstPtr& msg);
-    void right_img_callback(const sensor_msgs::ImageConstPtr& msg);
+    void left_img_callback(const sensor_msgs::ImageConstPtr &msg);
+    void right_img_callback(const sensor_msgs::ImageConstPtr &msg);
+    cv_bridge::CvImagePtr left_img_ptr = nullptr;
+    cv_bridge::CvImagePtr right_img_ptr = nullptr;
+    cv_bridge::CvImagePtr concat_img_ptr = nullptr;
+    int clipsize = 0.3;
+
+    cTexture2dPtr m_rosImageTexture;
 
 protected:
     afCameraPtr m_camera;
     cFrameBufferPtr m_frameBuffer;
-    cWorld* m_vrWorld;
-    cMesh* m_quadMesh;
+    cWorld *m_vrWorld;
+    cMesh *m_quadMesh;
     int m_width;
     int m_height;
     int m_alias_scaling;
@@ -90,6 +96,5 @@ protected:
     float m_warp_adj;
     float m_vpos;
 };
-
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraHMD)
