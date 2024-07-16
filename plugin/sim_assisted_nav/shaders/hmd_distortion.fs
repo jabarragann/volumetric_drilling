@@ -62,4 +62,4 @@ void main()
     //Black edges off the texture
     gl_FragColor = ((tc_g.x - offset < 0.0) || (tc_g.x - offset > 0.5) || (tc_g.y < 0.0) || (tc_g.y > 1.0)) ? vec4(0.0, 0.0, 0.0, 1.0) : vec4(red, green, blue, 1.0);
     // gl_FragColor = vec4(gl_TexCoord[0].xy, 0.0, 1.);
-};
+}
