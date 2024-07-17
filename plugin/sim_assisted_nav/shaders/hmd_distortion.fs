@@ -60,6 +60,11 @@ void main()
     float red = texture2D(warpTexture1, tc_r).r;
     float green = texture2D(warpTexture1, tc_g).g;
     float blue = texture2D(warpTexture1, tc_b).b;
+
+    // float red = texture2D(warpTexture2, tc_r).r;
+    // float green = texture2D(warpTexture2, tc_g).g;
+    // float blue = texture2D(warpTexture2, tc_b).b;
+
     //Black edges off the texture
     gl_FragColor = ((tc_g.x - offset < 0.0) || (tc_g.x - offset > 0.5) || (tc_g.y < 0.0) || (tc_g.y > 1.0)) ? vec4(0.0, 0.0, 0.0, 1.0) : vec4(red, green, blue, 1.0);
     // gl_FragColor = vec4(gl_TexCoord[0].xy, 0.0, 1.);

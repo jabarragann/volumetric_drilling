@@ -68,8 +68,13 @@ afCameraHMD::afCameraHMD()
 int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     ros_node_handle = afROSNode::getNode();
-    left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
-    right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
+
+    // Ambf camera
+    // left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
+    // right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
+    // Zed mini
+    left_sub = ros_node_handle->subscribe("/zedm/zed_node/left/image_rect_color", 2, &afCameraHMD::left_img_callback, this);
+    right_sub = ros_node_handle->subscribe("/zedm/zed_node/right/image_rect_color", 2, &afCameraHMD::right_img_callback, this);
 
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
@@ -164,16 +169,15 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_rosImageTexture = cTexture2d::create();
 
     // TODO: Ask adnan why this would not work?
-    // m_rosImageTexture->setTextureId(2);
+    // m_frameBuffer->m_imageBuffer->setTextureId(2);
+    // m_frameBuffer->m_imageBuffer->setTextureUnit(GL_TEXTURE2);
+    // m_rosImageTexture->setTextureId(3);
     // m_rosImageTexture->setTextureUnit(GL_TEXTURE3);
-    // m_rosImageTexture->update();
-    // m_frameBuffer->m_imageBuffer->setTextureId(0);
-    // m_frameBuffer->m_imageBuffer->setTextureUnit(GL_TEXTURE0);
 
     m_quadMesh->computeAllNormals();
-    m_quadMesh->m_texture = m_frameBuffer->m_imageBuffer;
+    // m_quadMesh->m_texture = m_frameBuffer->m_imageBuffer;
     // TODO this won't work yet
-    // m_quadMesh->m_texture = m_rosImageTexture;
+    m_quadMesh->m_texture = m_rosImageTexture;
     m_quadMesh->setUseTexture(true);
 
     m_quadMesh->setShaderProgram(m_shaderPgm);
@@ -234,8 +238,8 @@ void afCameraHMD::updateHMDParams()
     GLint id = m_shaderPgm->getId();
     //    cerr << "INFO! Shader ID " << id << endl;
     glUseProgram(id);
-    glUniform1i(glGetUniformLocation(id, "warpTexture1"), 2);
-    // glUniform1i(glGetUniformLocation(id, "warpTexture2"), 3);
+    glUniform1i(glGetUniformLocation(id, "warpTexture1"), 0);
+    glUniform1i(glGetUniformLocation(id, "warpTexture2"), 2);
     glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
     glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);
     glUniform1f(glGetUniformLocation(id, "WarpScale"), m_warp_scale * m_warp_adj);
@@ -319,10 +323,16 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
 
             // For ZED 2i and AMBF rostopics
             m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE);
+            m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
+
+            m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
+        }
+        else
+        {
+            m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
         }
 
         //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
-        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
         m_rosImageTexture->markForUpdate();
 
         // cv::imshow("Concat image", concat_img_ptr->image);
