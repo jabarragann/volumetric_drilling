@@ -168,16 +168,14 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     // Textures
     m_rosImageTexture = cTexture2d::create();
 
-    // TODO: Ask adnan why this would not work?
-    // m_frameBuffer->m_imageBuffer->setTextureId(2);
-    // m_frameBuffer->m_imageBuffer->setTextureUnit(GL_TEXTURE2);
-    // m_rosImageTexture->setTextureId(3);
-    // m_rosImageTexture->setTextureUnit(GL_TEXTURE3);
-
     m_quadMesh->computeAllNormals();
-    // m_quadMesh->m_texture = m_frameBuffer->m_imageBuffer;
-    // TODO this won't work yet
+
+    // Objects have multiple textures available in AMBF.
+    // To pass multiple textures to the shader, we can use this multiple default textures.
+    // For this case the rosImageTexture gets assigned to m_texture and 
+    // the texture from the m_imageBuffer to metallicTexture.
     m_quadMesh->m_texture = m_rosImageTexture;
+    m_quadMesh->m_metallicTexture = m_frameBuffer->m_imageBuffer;
     m_quadMesh->setUseTexture(true);
 
     m_quadMesh->setShaderProgram(m_shaderPgm);
@@ -238,7 +236,7 @@ void afCameraHMD::updateHMDParams()
     GLint id = m_shaderPgm->getId();
     //    cerr << "INFO! Shader ID " << id << endl;
     glUseProgram(id);
-    glUniform1i(glGetUniformLocation(id, "warpTexture1"), 0);
+    // glUniform1i(glGetUniformLocation(id, "warpTexture1"), 0);
     glUniform1i(glGetUniformLocation(id, "warpTexture2"), 2);
     glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
     glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);
