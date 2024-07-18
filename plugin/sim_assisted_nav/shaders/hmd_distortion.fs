@@ -3,8 +3,8 @@
 // in vec2 gl_TexCoord;
 
 //per eye texture to warp for lens distortion
-uniform sampler2D warpTexture1;
-uniform sampler2D warpTexture2;
+uniform sampler2D rosImageTexture;
+uniform sampler2D frameBufferTexture;
 
 //Position of lens center in m (usually eye_w/2, eye_h/2)
 uniform vec2 LensCenterLeft;
@@ -47,11 +47,11 @@ void main()
         output_loc.y >= rectMin.y && output_loc.y <= rectMax.y)
     {
         // gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green color
-        gl_FragColor = texture2D(warpTexture2, output_loc); 
+        gl_FragColor = texture2D(frameBufferTexture, output_loc); 
     }
     else
     {
-        gl_FragColor = texture2D(warpTexture1, output_loc); 
+        gl_FragColor = texture2D(rosImageTexture, output_loc); 
     }
 
    

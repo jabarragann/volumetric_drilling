@@ -34,9 +34,14 @@ stereoLR:
   #    fragment: shader.fs
   parent: main_camera
   plugins: [
+    # {
+    #     name: multiview_plugin,
+    #     path: "../../build",
+    #     filename: "libmultiview.so",
+    # },
     {
       name: vr_plugin,
       path: "../build",
       filename: "libsim_assisted_nav.so",
-    }
+    },
   ]

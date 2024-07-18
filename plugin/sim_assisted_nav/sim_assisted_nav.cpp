@@ -70,11 +70,11 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     ros_node_handle = afROSNode::getNode();
 
     // Ambf camera
-    // left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
-    // right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
+    left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
+    right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
     // Zed mini
-    left_sub = ros_node_handle->subscribe("/zedm/zed_node/left/image_rect_color", 2, &afCameraHMD::left_img_callback, this);
-    right_sub = ros_node_handle->subscribe("/zedm/zed_node/right/image_rect_color", 2, &afCameraHMD::right_img_callback, this);
+    // left_sub = ros_node_handle->subscribe("/zedm/zed_node/left/image_rect_color", 2, &afCameraHMD::left_img_callback, this);
+    // right_sub = ros_node_handle->subscribe("/zedm/zed_node/right/image_rect_color", 2, &afCameraHMD::right_img_callback, this);
 
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
@@ -236,8 +236,11 @@ void afCameraHMD::updateHMDParams()
     GLint id = m_shaderPgm->getId();
     //    cerr << "INFO! Shader ID " << id << endl;
     glUseProgram(id);
-    // glUniform1i(glGetUniformLocation(id, "warpTexture1"), 0);
-    glUniform1i(glGetUniformLocation(id, "warpTexture2"), 2);
+
+    // m_quadMesh->m_texture which points m_rosImageTexture gets automatically assigned to texture unit 0.
+    glUniform1i(glGetUniformLocation(id, "rosImageTexture"), 0);
+    // m_quadMesh->m_metallic which points frameBuffer gets assigned to texture unit 2.
+    glUniform1i(glGetUniformLocation(id, "frameBufferTexture"), 2);
     glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
     glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);
     glUniform1f(glGetUniformLocation(id, "WarpScale"), m_warp_scale * m_warp_adj);
