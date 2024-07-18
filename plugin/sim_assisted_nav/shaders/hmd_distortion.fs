@@ -21,6 +21,21 @@ uniform vec4 HmdWarpParam;
 uniform vec3 aberr;
 float offset;
 
+float remap(float t, float a, float b, float c, float d)
+{
+    return c + (t-a)/(b-a) * (d-c);
+}
+
+// Remap function 
+// https://math.stackexchange.com/questions/914823/shift-numbers-into-a-different-range
+vec2 remap_little_window(vec2 output_loc, vec2 rectMin, vec2 rectMax)
+{
+    float x2 = remap(output_loc.x, rectMin.x, rectMax.x, 0.0, 1.0);
+    float y2 = remap(output_loc.y, rectMin.y, rectMax.y, 0.0, 1.0);
+    vec2 remapped = vec2(x2, y2);
+    return remapped;
+}
+
 void main()
 {
     // output_loc is the fragment location on screen from [0,1]x[0,1]
@@ -47,7 +62,8 @@ void main()
         output_loc.y >= rectMin.y && output_loc.y <= rectMax.y)
     {
         // gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green color
-        gl_FragColor = texture2D(frameBufferTexture, output_loc); 
+        vec2 output_loc2 = remap_little_window(output_loc, rectMin, rectMax);
+        gl_FragColor = texture2D(frameBufferTexture, output_loc2); 
     }
     else
     {
