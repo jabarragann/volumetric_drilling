@@ -171,11 +171,19 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_quadMesh->computeAllNormals();
 
     // Objects have multiple textures available in AMBF.
-    // To pass multiple textures to the shader, we can use this multiple default textures.
-    // For this case the rosImageTexture gets assigned to m_texture and 
+    // To pass multiple textures to the shader, we can use these multiple default textures.
+    // For this case the rosImageTexture gets assigned to m_texture and
     // the texture from the m_imageBuffer to metallicTexture.
+
     m_quadMesh->m_texture = m_rosImageTexture;
-    m_quadMesh->m_metallicTexture = m_frameBuffer->m_imageBuffer;
+    // m_quadMesh->m_metallicTexture = m_frameBuffer->m_imageBuffer;
+
+    if (m_camera->m_frameBuffer->m_imageBuffer == nullptr)
+    {
+        throw runtime_error("Frame buffer of m_camera should be initilized in the multiview_panels plugin");
+    }
+    m_quadMesh->m_metallicTexture = m_camera->m_frameBuffer->m_imageBuffer;
+
     m_quadMesh->setUseTexture(true);
 
     m_quadMesh->setShaderProgram(m_shaderPgm);
@@ -185,7 +193,7 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_vrWorld->addChild(m_quadMesh);
 
     cerr << "INFO! LOADING VR PLUGIN \n";
-    cout << "JUAN!!\n\n\n\n";
+    cout << "JUAN!!!!\n\n\n\n";
 
     return 1;
 }
@@ -239,7 +247,7 @@ void afCameraHMD::updateHMDParams()
 
     // m_quadMesh->m_texture which points m_rosImageTexture gets automatically assigned to texture unit 0.
     glUniform1i(glGetUniformLocation(id, "rosImageTexture"), 0);
-    // m_quadMesh->m_metallic which points frameBuffer gets assigned to texture unit 2.
+    // m_quadMesh->m_metallic which points to a frameBuffer gets assigned to texture unit 2.
     glUniform1i(glGetUniformLocation(id, "frameBufferTexture"), 2);
     glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
     glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);

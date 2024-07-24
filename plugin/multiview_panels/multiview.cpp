@@ -164,6 +164,7 @@ void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_
 
     ct_slice3_window->update_window_size(halfW, halfH);
     ct_slice3_window->update_panel_location(halfW + offset, halfH + offset);
+    cout << new_width << " " << new_height << endl;
 }
 
 void afCameraMultiview::assignGLFWCallbacks()
@@ -255,6 +256,7 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     m_height = 1000;
     m_camera->m_width = m_width;
     m_camera->m_height = m_height;
+    glfwMakeContextCurrent(m_camera->m_window);
     glfwSetWindowSize(m_camera->m_window, m_width, m_height);
 
     // ADDITIONAL CHAI OBJECTS CONFIG
@@ -290,11 +292,16 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     main_cam->m_frontLayer->addChild(ct_slice2_window->get_panel());
     main_cam->m_frontLayer->addChild(ct_slice3_window->get_panel());
 
+    // Use publishing frame buffer of current camera to pass rendered image to sim_assisted_nav plugin
+    m_camera->m_frameBuffer = new cFrameBuffer();
+    m_camera->m_frameBuffer->setup(main_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
+
     // update display panel sizes and positions
     windowSizeCallback(m_camera->m_window, m_width, m_height);
     assignGLFWCallbacks();
 
     std::cout << "End of init" << "\n\n\n\n\n"
+              << m_alias_scaling
               << endl;
 
     // ROS subscriber config
@@ -389,8 +396,12 @@ void afCameraMultiview::graphicsUpdate()
     ct_slice1_window->render_view();
     ct_slice2_window->render_view();
     ct_slice3_window->render_view();
+    world_window->get_camera()->setStereoMode(C_STEREO_DISABLED);
     world_window->render_view();
+    world_window->get_camera()->setStereoMode(C_STEREO_PASSIVE_LEFT_RIGHT);
+
     main_cam->renderView(m_width, m_height);
+    // m_camera->m_frameBuffer->renderView();
 
     // swap buffers
     glfwSwapBuffers(m_camera->m_window);

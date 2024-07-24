@@ -164,6 +164,7 @@ public:
         panel->setSize(width, height);
     }
     void update_panel_location(int x, int y) { panel->setLocalPos(x, y); }
+    cCamera* get_camera() { return camera; }
 };
 class CtSliceSideWindow : public SideViewWindow
 {

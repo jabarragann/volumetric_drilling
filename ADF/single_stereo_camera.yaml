@@ -15,7 +15,7 @@ stereoLR:
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 2.0135309278350517, far: 1006.7654639175257}
   field view angle: 0.17951634837990105
-  monitor: 2
+  monitor: 0
   stereo: {mode: Passive, eye separation: 0.15, focal length: 200}
   # multipass: true
   # publish image: true
@@ -34,14 +34,16 @@ stereoLR:
   #    fragment: shader.fs
   parent: main_camera
   plugins: [
-    # {
-    #     name: multiview_plugin,
-    #     path: "../../build",
-    #     filename: "libmultiview.so",
-    # },
     {
-      name: vr_plugin,
-      path: "../build",
-      filename: "libsim_assisted_nav.so",
+        name: multiview_plugin,
+        path: "../build",
+        filename: "libmultiview.so",
+        layout: custom field to be parsed in the future by the plugin. 
     },
+    # {
+    #   name: vr_plugin,
+    #   path: "../build",
+    #   filename: "libsim_assisted_nav.so",
+    # },
   ]
+   

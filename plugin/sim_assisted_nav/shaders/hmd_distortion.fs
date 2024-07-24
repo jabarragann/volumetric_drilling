@@ -51,8 +51,8 @@ void main()
     }
 
     // Rectangle boundaries in normalized device coordinates
-    vec2 u_rectPos = vec2(0.1, 0.8);
-    vec2 u_rectSize = vec2(0.15, 0.15);
+    vec2 u_rectPos = vec2(0.1, 0.65);
+    vec2 u_rectSize = vec2(0.3, 0.3);
     vec2 rectMin = u_rectPos;
     vec2 rectMax = u_rectPos + u_rectSize;
     rectMin.x += offset;
