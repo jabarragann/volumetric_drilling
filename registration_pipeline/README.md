@@ -13,8 +13,7 @@ pip install -e .
 
 Export path with executables
 ```bash
-PATH=$PATH:~/research
-/discovery_grant/volumetric_drilling/registration_pipeline/pipelines
+PATH=$PATH:~/research/discovery_grant/volumetric_drilling/registration_pipeline/pipelines
 ```
 
 ## 1. Pivot calibration
