@@ -1,3 +1,13 @@
+usage() {
+    echo "Usage: $0 -p <path> -s <saveName> -t <topic>"
+    echo "  -p <path>       Path to the bag file without extension"
+    echo "  -s <saveName>   Name to save the output pivot calibration file"
+    echo "  -t <topic>      Ros topic with marker pose "
+    echo
+    echo "Example: $0 -p /path/to/file -s output_name -t /some_topic"
+    exit 1
+}
+
 while getopts p:s:t: flag
 do
     case "${flag}" in
@@ -6,6 +16,13 @@ do
         t) topic=${OPTARG};;
     esac
 done
+
+# Check if all required arguments are provided
+if [ -z "$path" ] || [ -z "$saveName" ] || [ -z "$topic" ]; then
+    echo "Error: Missing required parameters."
+    usage
+fi
+
 # # Data collection
 # ./recordAll.sh -p "$path";
 
