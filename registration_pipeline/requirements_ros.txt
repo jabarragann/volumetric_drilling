@@ -1,0 +1,7 @@
+--extra-index-url https://rospypi.github.io/simple/
+rospy
+tf2-ros
+PyKDL
+tf-conversions
+rosbag
+message-filters

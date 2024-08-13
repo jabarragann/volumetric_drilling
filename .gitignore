@@ -24,3 +24,6 @@ hdf5_files
 *.blend1
 *.log
 cisstLog.txt
+
+/data_files
+*.egg-info
