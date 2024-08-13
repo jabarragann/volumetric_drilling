@@ -22,3 +22,5 @@ hdf5_files
 *.autosave
 
 *.blend1
+*.log
+cisstLog.txt

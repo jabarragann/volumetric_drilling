@@ -2,12 +2,13 @@
     "tools":
     [
         {
-            "name": "Reference",
-            "json-file": "juan_three_marker_tool.json"
+            "name": "anatomy_marker",
+            "json-file": "anatomy_marker2.json"
         },
         {
-            "name": "juan_four_marker",
-            "json-file": "juan_four_marker_tool.json"
+            "name": "drill_marker",
+            "json-file": "drill_marker2.json",
+            "reference": "anatomy_marker"
         }
     ]
 }
