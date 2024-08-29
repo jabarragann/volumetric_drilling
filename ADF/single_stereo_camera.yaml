@@ -34,16 +34,18 @@ stereoLR:
   #    fragment: shader.fs
   parent: main_camera
   plugins: [
+    ## multiview_plugin renders to frame buffer.
+    ## sim_assisted_nav_plugin takes the image from frame buffer and adds it to the main camera image 
     {
         name: multiview_plugin,
         path: "../build",
         filename: "libmultiview.so",
         layout: custom field to be parsed in the future by the plugin. 
     },
-    # {
-    #   name: vr_plugin,
-    #   path: "../build",
-    #   filename: "libsim_assisted_nav.so",
-    # },
+    {
+      name: vr_plugin,
+      path: "../build",
+      filename: "libsim_assisted_nav.so",
+    },
   ]
    

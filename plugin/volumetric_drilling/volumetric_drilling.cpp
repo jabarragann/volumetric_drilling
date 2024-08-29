@@ -149,9 +149,9 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         m_mainCamera = m_worldPtr->getCameras()[0];
     }
 
-    if (m_stereoCamera){
-        makeVRWindowFullscreen(m_stereoCamera);
-    }
+    // if (m_stereoCamera){
+    //     makeVRWindowFullscreen(m_stereoCamera);
+    // }
 
     m_panelManager.addCamera(m_mainCamera);
     if (m_stereoCamera){

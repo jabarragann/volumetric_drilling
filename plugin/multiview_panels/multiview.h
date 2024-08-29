@@ -84,11 +84,11 @@ protected:
     afCameraPtr m_camera; // AMBF camera pointer
     cFrameBufferPtr m_frameBuffer;
 
-    cCamera *main_cam;  // Parent camera for the word and side cameras
-    cCamera *world_cam; // Camera rendering the volumen
+    cCamera *main_cam;  // Parent camera for the world and CT panels cameras
+    cCamera *world_cam; // Camera rendering the volume
 
     // Camera pointing to a empty world to display CT slices
-    cCamera *side_cam1;
+    cCamera *side_cam1; // Camera pointing to a empty world to display CT slices
     cCamera *side_cam2; // Camera pointing to a empty world to display CT slices
     cCamera *side_cam3; // Camera pointing to a empty world to display CT slices
 

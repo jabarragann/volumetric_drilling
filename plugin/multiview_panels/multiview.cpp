@@ -400,8 +400,11 @@ void afCameraMultiview::graphicsUpdate()
     world_window->render_view();
     world_window->get_camera()->setStereoMode(C_STEREO_PASSIVE_LEFT_RIGHT);
 
-    main_cam->renderView(m_width, m_height);
-    // m_camera->m_frameBuffer->renderView();
+    // IF ONLY USING MULTIVIEW PLUGIN RENDER THE MAIN CAMERA (OPT 1)
+    // ELSE RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING (OPT 2) 
+
+    // main_cam->renderView(m_width, m_height); // (OPT1)
+    m_camera->m_frameBuffer->renderView();      // (OPT2)
 
     // swap buffers
     glfwSwapBuffers(m_camera->m_window);
