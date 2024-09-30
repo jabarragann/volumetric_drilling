@@ -1,3 +1,8 @@
+
+
+# Syntax to define a reference marker
+
+```json
 {
     "tools":
     [
@@ -7,7 +12,10 @@
         },
         {
             "name": "drill_marker",
-            "json-file": "drill_marker2.json"
+            "json-file": "drill_marker2.json",
+            "reference": "anatomy_marker"
         }
-    ]
+    ],
 }
+```
+
