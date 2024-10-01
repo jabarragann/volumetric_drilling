@@ -400,11 +400,16 @@ void afCameraMultiview::graphicsUpdate()
     world_window->render_view();
     world_window->get_camera()->setStereoMode(C_STEREO_PASSIVE_LEFT_RIGHT);
 
-    // IF ONLY USING MULTIVIEW PLUGIN RENDER THE MAIN CAMERA (OPT 1)
-    // ELSE RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING (OPT 2) 
+    // (OPTION 1)
+    // USE MULTIVIEW PLUGIN ON THE MAIN CAMERA. 
+    // THIS REQUIRES RENDERING THE MAIN_CAM AND ADDING THE MULTIVE PLUGIN TO MAIN CAM.
 
-    // main_cam->renderView(m_width, m_height); // (OPT1)
-    m_camera->m_frameBuffer->renderView();      // (OPT2)
+    // (OPTION 2)
+    // RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.  
+    // THIS ENABLE THE IMAGE OVER IMAGE VIEW.
+
+    main_cam->renderView(m_width, m_height); // (OPT1)
+    // m_camera->m_frameBuffer->renderView();      // (OPT2)
 
     // swap buffers
     glfwSwapBuffers(m_camera->m_window);

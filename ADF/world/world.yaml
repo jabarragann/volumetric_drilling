@@ -52,7 +52,7 @@ main_camera:
   clipping plane: { near: 2.0135309278350517, far: 1006.7654639175257 }
   field view angle: 0.17951634837990105 # so that focal length is approximately 1000px and phantom is 250 mm away
   monitor: 0
-  stereo: {mode: Passive, eye separation: 0.15, focal length: 200}
+  # stereo: {mode: Passive, eye separation: 0.15, focal length: 200}
   # multipass: true
   visible: true
   # publish image: true
@@ -72,15 +72,15 @@ main_camera:
 
   # multipass: true
   
-  # plugins:
-  #   [
-  #     ## See graphics function in the multiview.cpp. The camera doesn't render by default.
-  #     {
-  #       name: multiview_plugin,
-  #       path: "../../build",
-  #       filename: "libmultiview.so",
-  #     },
-  #   ]
+  plugins:
+    [
+      ## See graphics function in the multiview.cpp. The camera doesn't render by default.
+      {
+        name: multiview_plugin,
+        path: "../../build",
+        filename: "libmultiview.so",
+      },
+    ]
 
 cameraL:
   namespace: cameras/
