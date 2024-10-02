@@ -183,11 +183,11 @@ void Slice2D::save_to_file(string filename)
 
 void Slice2D::annotate(int x, int y, cColorb marker_color)
 {
-    int drill_radius = 14;
-    int marker_size = 3;
+    // int drill_radius = 14;
+    int marker_size = 5;
 
     // Draw external circle
-    draw_circle(x, y, drill_radius, marker_color);
+    // draw_circle(x, y, drill_radius, marker_color);
     // Draw center
     draw_circle(x, y, marker_size, marker_color);
     draw_circle(x, y, marker_size - 1, marker_color);

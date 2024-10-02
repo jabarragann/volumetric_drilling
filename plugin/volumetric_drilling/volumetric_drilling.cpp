@@ -271,8 +271,18 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     m_drillManager.update(dt);
     
     // Calculate drill in volume coordinates
+
+    // Get drill tip location from drill cursor
+    // cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
+
+    // Get drill tip location from Atracsys - This requires TF plugin.
+    cVector3d drill_tip_in_worldcoord = m_worldPtr -> getRigidBody("drill_tip") -> getLocalPos();
+
+    // cVector3d drill_tip_in_marker(0.195032, -0.008330, 0.055822 ); // From pivot calibration
+    // cTransform world_T_drillmarker = m_drillManager.m_drillingPub->world_T_drillmarker;
+    // cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillingPub->world_T_drillmarker * drill_tip_in_marker;
+    
     cVector3d drill_coordinates;
-    cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
     m_volume_coord_utils->get_index_location_of_drill_tip(drill_tip_in_worldcoord, drill_coordinates);
     m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
 
