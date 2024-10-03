@@ -1,0 +1,23 @@
+# List of Transformations used in ambf_tf_plugin
+# Author: Hisashi Ishida (hishida3@jhu.edu)
+# Date: 09.09.2024
+
+transformations:
+  - TF Anspoch_drill
+  - TF marker_body-drill_tip
+
+TF Anspoch_drill:
+  parent: World
+  child: marker
+  type: ROS
+  rostopic name: /atracsys/drill_marker/measured_cp
+
+TF marker_body-drill_tip: #ADD HERE the pivot calibration transform.
+  parent: marker
+  child: drill_tip
+  type: FIXED
+  transformation:
+    position: {x: 0.195032, y:  -0.008330, z:  0.055822 }  # hand held drill
+    # position: {x: -0.256477, y: 0.00206882, z: -0.000521261} # brain lab pointer
+    orientation: { r: 0.0, p: 0.0, y: 0.0 }
+
