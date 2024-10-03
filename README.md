@@ -16,7 +16,10 @@ If you found this work helpful, please reference us using the following citation
 ## Run assisted navigation plugin
 
 ```
+# Test simulation with multiview
 ambf_simulator --launch_file launch.yaml -l 0,2,5,6
+# Test simulation registration pipeline
+ambf_simulator --launch_file launch.yaml -l 0,8,9 --tf_list /home/juan95/research/discovery_grant/registration_pipeline/ambf_tf_plugin/example/juan_tf_config.yaml
 ```
 
 ## Overview
