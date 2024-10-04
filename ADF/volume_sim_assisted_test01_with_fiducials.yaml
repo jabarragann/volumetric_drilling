@@ -1,0 +1,287 @@
+bodies:
+  - BODY volume_anatomical_origin
+  - BODY F01
+  - BODY F2
+  - BODY F3
+  - BODY F4
+  - BODY F5
+  - BODY F6
+  - BODY F7
+  - BODY F8
+  - BODY F9
+  - BODY F10
+  - BODY F11
+  - BODY F12
+  - BODY F13
+  - BODY F14
+  - BODY F15
+  - BODY F16
+  - BODY F17
+  - BODY F18
+  - BODY F19
+  - BODY F20
+  - BODY FCENTER
+
+joints: []
+volumes: [VOLUME volume]
+high resolution path: meshes/high_res/
+low resolution path: meshes/low_res/
+ignore inter-collision: true
+namespace: /ambf/env/
+
+VOLUME volume:
+  name: volume
+  parent: volume_anatomical_origin
+  location:
+    position:
+      { x: 0.010380499000000008, y: 0.0918596195205234, z: 0.10049249754246471 }
+    orientation: { r: 0.0, p: 0.0, y: 0.0 }
+  scale: 1.0
+  dimensions:
+    { x: 0.11430000000000001, y: 0.07694999999999998, z: 0.0886499972829495 }
+  images:
+    path: ../resources/volumes/volume_sim_assisted_test01/
+    prefix: plane000
+    format: png
+    count: 197
+
+BODY volume_anatomical_origin: # This is a dummy body that can be used to represent the anatomical origin for easy reference
+  name: volume_anatomical_origin
+  mass: 0.0
+  location:
+    # position:
+    #   x: 0.0
+    #   y: 0.0
+    #   z: 0.0
+    # orientation:
+    #   r: 0.0
+    #   p: 0.0
+    #   y: 0.0
+    # position: {x: 0.186677, y: -0.0731895, z: 1.3346}
+    # orientation: {r: 0.0955774, p: -0.190714, y: 3.11601}
+    # position: {x: 0.143648, y: -0.0907517, z: 1.21626}
+    # orientation: {r: -3.05519, p: -3.1185, y: 0.0298393}
+    # position: {x: 0.142479, y: -0.0907415, z: 1.21572}
+    # orientation: {r: -3.05383, p: -3.1008, y: 0.0200531}
+    # Experiment on 10/02/2024
+    # position: {x: -0.00994798, y: -0.0615268, z: 1.37477}
+    # orientation: {r: -2.98773, p: 2.6345, y: 0.0167835}
+    position: {x: -0.00141666, y: -0.0629417, z: 1.36103}
+    orientation: {r: -2.99514, p: 2.72672, y: 0.00363617}
+
+# fiducial_locations:
+#   F1_LOC: &F1_LOC_ANCHER { x: -0.016240286707845, y: 0.072239239255007, z: 0.080447365387631 }
+
+fiducial_locations:
+  F1_LOC:
+    &F1_LOC_ANCHER { x: -0.016240286707845, y: 0.072239239255007, z: 0.080447365387631}
+  F2_LOC:
+    &F2_LOC_ANCHER { x: -0.016041073230804, y: 0.072240072365765, z: 0.09060725268253}
+  F3_LOC:
+    &F3_LOC_ANCHOR { x: -0.016205179054361, y: 0.072432817617808, z: 0.101209934058058}
+  F4_LOC:
+    &F4_LOC_ANCHOR { x: -0.016165866278198, y: 0.072207852083749, z: 0.111059486572937}
+  F5_LOC:
+    &F5_LOC_ANCHOR { x: -0.016165866278198, y: 0.072402268108141, z: 0.121511653751726}
+  F6_LOC:
+    &F6_LOC_ANCHOR { x: -0.009246220588684, y: 0.072061309814453, z: 0.128635986328125}
+  F7_LOC:
+    &F7_LOC_ANCHOR { x: 0.001267212230064, y: 0.072373324224993, z: 0.12869474999952}
+  F8_LOC:
+    &F8_LOC_ANCHOR { x: 0.011438268661499, y: 0.072674934387207, z: 0.128624374389648}
+  F9_LOC:
+    &F9_LOC_ANCHOR { x: 0.021410171508789, y: 0.073064025878906, z: 0.128628997802734}
+  F10_LOC:
+    &F10_LOC_ANCHOR { x: 0.031603052139282, y: 0.073207374572754, z: 0.128740386962891}
+  F11_LOC:
+    &F11_LOC_ANCHOR { x: 0.038674076080322, y: 0.073826843261719, z: 0.120537040710449}
+  F12_LOC:
+    &F12_LOC_ANCHOR { x: 0.038742632955288, y: 0.073826071565469, z: 0.111126110834735}
+  F13_LOC:
+    &F13_LOC_ANCHOR { x: 0.038781032562256, y: 0.073793518066406, z: 0.100737663269043}
+  F14_LOC:
+    &F14_LOC_ANCHOR { x: 0.038633667755127, y: 0.073826251843498, z: 0.09015994695448}
+  F15_LOC:
+    &F15_LOC_ANCHOR { x: 0.038633667755127, y: 0.073825474123656, z: 0.080675558630767}
+  F16_LOC:
+    &F16_LOC_ANCHOR { x: 0.031192930221558, y: 0.073663154602051, z: 0.073014549255371}
+  F17_LOC:
+    &F17_LOC_ANCHOR { x: 0.021373319625855, y: 0.073231315612793, z: 0.073052215576172}
+  F18_LOC:
+    &F18_LOC_ANCHOR { x: 0.011243328094483, y: 0.073199165344238, z: 0.073151641845703}
+  F19_LOC:
+    &F19_LOC_ANCHOR { x: 0.001178831338882, y: 0.072347053527832, z: 0.072948196411133}
+  F20_LOC:
+    &F20_LOC_ANCHOR { x: -0.008713401794434, y: 0.072414360046387, z: 0.073102638244629}
+
+BODY F01:
+  name: F01
+  mesh: Sphere.obj # Generate sphere in Blender or use any mesh.
+  collision mesh type: CONCAVE_MESH
+  mass: 0.0
+  # collision margin:
+  scale: 0.01
+  location:
+    position: *F1_LOC_ANCHER
+    orientation: { r: 0.0, p: -0.0, y: 0.0 }
+  passive: true
+  visible: true
+  collision groups: []
+  color components: # You can change the color here
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 0.8
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+
+BODY F5:
+  name: F5
+  mesh: Sphere.obj # Generate sphere in Blender or use any mesh.
+  collision mesh type: CONCAVE_MESH
+  mass: 0.0
+  # collision margin:
+  scale: 0.01
+  location:
+    position: *F5_LOC_ANCHOR
+    orientation: { r: 0.0, p: -0.0, y: 0.0 }
+  passive: true
+  visible: true
+  collision groups: []
+  color components: # You can change the color here
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 0.8
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+
+BODY F10:
+  name: F10
+  mesh: Sphere.obj # Generate sphere in Blender or use any mesh.
+  collision mesh type: CONCAVE_MESH
+  mass: 0.0
+  # collision margin:
+  scale: 0.01
+  location:
+    position: *F10_LOC_ANCHOR
+    orientation: { r: 0.0, p: -0.0, y: 0.0 }
+  passive: true
+  visible: true
+  collision groups: []
+  color components: # You can change the color here
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 0.8
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+
+BODY F13:
+  name: F13
+  mesh: Sphere.obj # Generate sphere in Blender or use any mesh.
+  collision mesh type: CONCAVE_MESH
+  mass: 0.0
+  # collision margin:
+  scale: 0.01
+  location:
+    position: *F13_LOC_ANCHOR
+    orientation: { r: 0.0, p: -0.0, y: 0.0 }
+  passive: true
+  visible: true
+  collision groups: []
+  color components: # You can change the color here
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 0.8
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+
+BODY F17:
+  name: F17
+  mesh: Sphere.obj # Generate sphere in Blender or use any mesh.
+  collision mesh type: CONCAVE_MESH
+  mass: 0.0
+  # collision margin:
+  scale: 0.01
+  location:
+    position: *F17_LOC_ANCHOR
+    orientation: { r: 0.0, p: -0.0, y: 0.0 }
+  passive: true
+  visible: true
+  collision groups: []
+  color components: # You can change the color here
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 0.8
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+
+BODY FCENTER:
+  name: FCENTER
+  mesh: Sphere.obj # Generate sphere in Blender or use any mesh.
+  collision mesh type: CONCAVE_MESH
+  mass: 0.0
+  # collision margin:
+  scale: 0.08
+  location:
+    position: 
+    # {
+    #   x: -0.020,
+    #   y: 0.08,
+    #   z: 0.1,
+    # }
+    {
+        x: 0.01127,
+        y: 0.08294,
+        z: 0.10083,
+    }
+    # {
+    #   x: -0.016240286707845,
+    #   y: 0.072239239255007,
+    #   z: 0.080447365387631,
+    # }
+
+    orientation: { r: 0.0, p: -0.0, y: 0.0 }
+  passive: true
+  visible: true
+  collision groups: []
+  color components: # You can change the color here
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 1.0
+      r: 0.8
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0

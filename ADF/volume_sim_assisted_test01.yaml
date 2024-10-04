@@ -1,0 +1,41 @@
+# AMBF Version: (0.1)
+bodies:
+- BODY volume_anatomical_origin
+joints: []
+volumes: [VOLUME mastoidectomy_volume]
+high resolution path: meshes/high_res/
+low resolution path: meshes/low_res/
+ignore inter-collision: true
+namespace: /ambf/env/
+
+VOLUME mastoidectomy_volume:
+  name: mastoidectomy_volume
+  parent: volume_anatomical_origin
+  location:
+    position: {x: 0.010380499000000008 , y: 0.0918596195205234, z: 0.10049249754246471}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  scale: 1.0
+  dimensions: {x: 0.11430000000000001, y: 0.07694999999999998, z: 0.0886499972829495}
+  # dimensions: {x: 1.0, y: 1.0, z: 1.0} # From volumetric drilling
+  images:
+    path: ../resources/volumes/sim_assisted_test01
+    prefix: plane000
+    format: png
+    count: 197
+
+BODY volume_anatomical_origin: # This is a dummy body that can be used to represent the anatomical origin for easy reference
+  name: volume_anatomical_origin
+  mass: 0.0
+  location:
+      # position:    {x: 0.0, y: 0.0, z: 0.0}
+      # orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+      ### Recorded registration experiment - with handheld drill
+      position: {x: 0.142479, y: -0.0907415, z: 1.21572}
+      orientation: {r: -3.05383, p: -3.1008, y: 0.0200531}
+      
+      #Experiment on 10/02/2024 - with brainlab pointer
+      position: {x: -0.00141666, y: -0.0629417, z: 1.36103}
+      orientation: {r: -2.99514, p: 2.72672, y: 0.00363617}
+
+

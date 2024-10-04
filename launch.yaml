@@ -26,4 +26,5 @@ multibody configs:
   - "ADF/gaze_marker.yaml" #7
   - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/ambf_data/volume.yaml" #8
   - "/home/juan95/research/discovery_grant/registration_pipeline/sdf_virtual_fixture/ADF/drill/20240925_calibrated_drill.yaml" #9
+  - "ADF/volume_sim_assisted_test01.yaml" #10
 
