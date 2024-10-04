@@ -1,0 +1,12 @@
+# Blender MTL File: '20240924_Glaen_calibrated_drill.blend'
+# Material Count: 1
+
+newmtl drill_tipmat
+Ns 323.999994
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
