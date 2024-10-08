@@ -55,6 +55,121 @@ using namespace std;
 
 string g_current_filepath;
 
+int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
+{
+    // AMBF OBJECTS CONFIG
+    m_camera = (afCameraPtr)a_afObjectPtr;
+    m_camera->setOverrideRendering(true);
+
+    // Assistance window config
+    m_width = 1000;
+    m_height = 1000;
+    m_camera->m_width = m_width;
+    m_camera->m_height = m_height;
+    glfwMakeContextCurrent(m_camera->m_window);
+    glfwSetWindowSize(m_camera->m_window, m_width, m_height);
+
+    // ADDITIONAL CHAI OBJECTS CONFIG
+    world_cam = m_camera->getInternalCamera();
+
+    init_side_windows();
+
+    // Use publishing frame buffer of current camera to pass rendered image to sim_assisted_nav plugin
+    m_camera->m_frameBuffer = new cFrameBuffer();
+    m_camera->m_frameBuffer->setup(main_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
+
+    // update display panel sizes and positions
+    windowSizeCallback(m_camera->m_window, m_width, m_height);
+    assignGLFWCallbacks();
+
+    std::cout << "End of init" << "\n\n\n\n\n"
+              << m_alias_scaling
+              << endl;
+
+    // ROS subscriber config
+    ros_node_handle = afROSNode::getNode();
+    drill_loc_subscriber = ros_node_handle->subscribe(drill_loc_topic, 300, &afCameraMultiview::drill_location_callback, this);
+
+    return 1;
+}
+
+void afCameraMultiview::graphicsUpdate()
+{
+    if (!volume_initialized)
+    {
+        // Volume pointer needs to be initialized in first graphics update.
+        // Volume might not be available when calling the init function
+        init_volume_pointer();
+        init_volume_slicer();
+        volume_initialized = true;
+
+        set_slice_in_side_view(ct_slice_idx);
+        total_slices = volume_slices_ptr->getImageCount();
+        slice_annotator->print_volume_information();
+
+        ct_slice_update_time = glfwGetTime();
+
+        volume_slices_ptr->selectImage(0);
+        set_slice_in_side_view(ct_slice_idx);
+
+        // bool success = ct_slice1->loadFromImage(out_of_volume_img);
+        // ct_slice1->setSize(500, 500);
+        bool success = ct_slice1_window->update_ct_slice(out_of_volume_img);
+        ct_slice1_window->update_ct_slice_size(500, 500);
+    }
+
+    if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
+    {
+        update_ct_slices_with_drill_location();
+    }
+
+    glfwMakeContextCurrent(m_camera->m_window);
+
+    // SIMPLE RENDER
+    // afRenderOptions ro;
+    // ro.m_updateLabels = true;
+    // m_camera->render(ro);
+
+    // MANUAL RENDER
+    glfwMakeContextCurrent(m_camera->m_window);
+    // get width and height of window
+    glfwGetFramebufferSize(m_camera->m_window, &m_width, &m_height);
+    // render world
+
+    ct_slice1_window->render_view();
+    ct_slice2_window->render_view();
+    ct_slice3_window->render_view();
+    render_virtual_camera();
+
+    // (OPTION 1)
+    // USE MULTIVIEW PLUGIN ON THE MAIN CAMERA.
+    // THIS REQUIRES RENDERING THE MAIN_CAM AND ADDING THE MULTIVE PLUGIN TO MAIN CAM.
+
+    // (OPTION 2)
+    // RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.
+    // THIS ENABLE THE IMAGE OVER IMAGE VIEW.
+
+    // main_cam->renderView(m_width, m_height); // (OPT1)
+    m_camera->m_frameBuffer->renderView(); // (OPT2)
+
+    // swap buffers
+    glfwSwapBuffers(m_camera->m_window);
+}
+
+void afCameraMultiview::physicsUpdate(double dt)
+{
+}
+
+void afCameraMultiview::reset()
+{
+}
+
+bool afCameraMultiview::close()
+{
+    // cout << "Closing " << m_camera->getName() << endl;
+    return true;
+}
+
 SliceAnnotator::SliceAnnotator(cMultiImagePtr volume_slices_ptr)
 {
     this->volume_slices_ptr = volume_slices_ptr;
@@ -147,6 +262,61 @@ void afCameraMultiview::drill_location_callback(const geometry_msgs::PointStampe
     drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
 }
 
+void afCameraMultiview::render_virtual_camera()
+{
+    world_window->get_camera()->setStereoMode(C_STEREO_DISABLED);
+    static cWorld *empty_fl = new cWorld();
+
+    cWorld *fl = m_camera->getInternalCamera()->m_frontLayer;
+    world_window->get_camera()->m_frontLayer = empty_fl;
+    world_window->render_view();
+    world_window->get_camera()->m_frontLayer = fl;
+    world_window->get_camera()->setStereoMode(C_STEREO_PASSIVE_LEFT_RIGHT);
+}
+
+void afCameraMultiview::update_ct_slices_with_drill_location()
+{
+    if (drill_location.x() > 0 && drill_location.y() > 0 && drill_location.z() > 0)
+    {
+        bool success;
+        // 1) CREATE SLICES
+        // 2) ANNOTATED SLICES WITH DRILL LOCATION
+        // 3) DISPLAY SLICE
+        unique_ptr<Slice2D> xy_slice = volume_slicer->create_2d_slice("xy", drill_location.z());
+        xy_slice->annotate(drill_location.x(), drill_location.y());
+        success = ct_slice1_window->update_ct_slice(xy_slice->volume_slice);
+        ct_slice1_window->update_ct_slice_size(500, 500);
+
+        unique_ptr<Slice2D> xz_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
+        xz_slice->annotate(drill_location.x(), drill_location.z());
+        success = ct_slice2_window->update_ct_slice(xz_slice->volume_slice);
+        ct_slice2_window->update_ct_slice_size(500, 500);
+
+        unique_ptr<Slice2D> yz_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
+        yz_slice->annotate(drill_location.y(), drill_location.z());
+        success = ct_slice3_window->update_ct_slice(yz_slice->volume_slice);
+        ct_slice3_window->update_ct_slice_size(500, 500);
+
+        // slice_annotator->restore_slice(); // Removed red marker from previous location
+        // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
+        // // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
+        // set_slice_in_side_view(ct_slice_idx);
+    }
+    else
+    {
+        bool success;
+        success = ct_slice1_window->update_ct_slice(out_of_volume_img);
+        ct_slice1_window->update_ct_slice_size(500, 500);
+
+        success = ct_slice2_window->update_ct_slice(out_of_volume_img);
+        ct_slice2_window->update_ct_slice_size(500, 500);
+
+        success = ct_slice3_window->update_ct_slice(out_of_volume_img);
+        ct_slice3_window->update_ct_slice_size(500, 500);
+    }
+    ct_slice_update_time = glfwGetTime();
+}
+
 void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_height)
 {
     // update display panel sizes and positions based on window size
@@ -210,6 +380,62 @@ void afCameraMultiview::init_volume_pointer()
     slice_annotator = unique_ptr<SliceAnnotator>(new SliceAnnotator(volume_slices_ptr));
 }
 
+cImagePtr create_c_image_from_file(string path)
+{
+
+    cImagePtr image = cImage::create();
+    bool success = image->loadFromFile(path);
+
+    if (!success)
+    {
+        std::cerr << "ERROR! FAILED TO LOAD OUT OF VOLUME IMAGE " << path << endl;
+        exit(1);
+    }
+
+    return image;
+}
+
+void afCameraMultiview::init_side_windows()
+{
+    main_cam = new cCamera(NULL);
+    side_view_world = new cWorld();
+    side_cam1 = new cCamera(side_view_world);
+    side_cam2 = new cCamera(side_view_world);
+    side_cam3 = new cCamera(side_view_world);
+
+    m_frameBuffer = cFrameBuffer::create();
+    m_frameBuffer->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
+
+    out_of_volume_img = create_c_image_from_file(out_of_volume_img_path);
+    white_background_img = create_c_image_from_file(white_background_img_path);
+
+    int halfW = m_width / 2;
+    int halfH = m_height / 2;
+    int offset = 1;
+
+    world_window = new SideViewWindow("world_window", world_cam, m_width, m_height, 0, 0, m_alias_scaling);
+
+    ct_slice1_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice1_window", side_cam1,
+                                                                                m_width / 2, m_height / 2,
+                                                                                halfW + offset, 0, m_alias_scaling,
+                                                                                white_background_img, out_of_volume_img));
+
+    ct_slice2_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice2_window", side_cam2,
+                                                                                m_width / 2, m_height / 2,
+                                                                                0, halfH + offset, m_alias_scaling,
+                                                                                white_background_img, out_of_volume_img));
+
+    ct_slice3_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice3_window", side_cam3,
+                                                                                m_width / 2, m_height / 2,
+                                                                                halfW + offset, halfH + offset, m_alias_scaling,
+                                                                                white_background_img, out_of_volume_img));
+
+    main_cam->m_frontLayer->addChild(world_window->get_panel());
+    main_cam->m_frontLayer->addChild(ct_slice1_window->get_panel());
+    main_cam->m_frontLayer->addChild(ct_slice2_window->get_panel());
+    main_cam->m_frontLayer->addChild(ct_slice3_window->get_panel());
+}
+
 void afCameraMultiview::init_volume_slicer()
 {
     array<int, 4> volume_shape;
@@ -230,218 +456,6 @@ void afCameraMultiview::set_slice_in_side_view(int slice_idx)
 
     // bool success = ct_slice1_window->update_ct_slice(out_of_volume_img);
     // ct_slice1_window->update_ct_slice_size(500, 500);
-}
-
-cImagePtr create_c_image_from_file(string path)
-{
-
-    cImagePtr image = cImage::create();
-    bool success = image->loadFromFile(path);
-
-    if (!success)
-    {
-        std::cerr << "ERROR! FAILED TO LOAD OUT OF VOLUME IMAGE " << path << endl;
-        exit(1);
-    }
-
-    return image;
-}
-
-int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
-{
-    // AMBF OBJECTS CONFIG
-    m_camera = (afCameraPtr)a_afObjectPtr;
-    m_camera->setOverrideRendering(true);
-
-    // Assistance window config
-    m_width = 1000;
-    m_height = 1000;
-    m_camera->m_width = m_width;
-    m_camera->m_height = m_height;
-    glfwMakeContextCurrent(m_camera->m_window);
-    glfwSetWindowSize(m_camera->m_window, m_width, m_height);
-
-    // ADDITIONAL CHAI OBJECTS CONFIG
-    main_cam = new cCamera(NULL);
-    side_view_world = new cWorld();
-    world_cam = m_camera->getInternalCamera();
-    side_cam1 = new cCamera(side_view_world);
-    side_cam2 = new cCamera(side_view_world);
-    side_cam3 = new cCamera(side_view_world);
-
-    m_frameBuffer = cFrameBuffer::create();
-    m_frameBuffer->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
-
-    out_of_volume_img = create_c_image_from_file(out_of_volume_img_path);
-    white_background_img = create_c_image_from_file(white_background_img_path);
-
-    int halfW = m_width / 2;
-    int halfH = m_height / 2;
-    int offset = 1;
-
-    world_window = new SideViewWindow("world_window", world_cam, m_width, m_height,0,0, m_alias_scaling);
-
-
-    ct_slice1_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice1_window", side_cam1, 
-                                                                                m_width / 2, m_height / 2, 
-                                                                                halfW+offset,0,m_alias_scaling,
-                                                                                white_background_img, out_of_volume_img));
-
-    ct_slice2_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice2_window", side_cam2, 
-                                                                                m_width / 2, m_height / 2,
-                                                                                0, halfH+offset, m_alias_scaling,
-                                                                                white_background_img, out_of_volume_img));
-
-    ct_slice3_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice3_window", side_cam3, 
-                                                                                m_width / 2, m_height / 2, 
-                                                                                halfW + offset, halfH + offset, m_alias_scaling,
-                                                                                white_background_img, out_of_volume_img));
-
-    main_cam->m_frontLayer->addChild(world_window->get_panel());
-    main_cam->m_frontLayer->addChild(ct_slice1_window->get_panel());
-    main_cam->m_frontLayer->addChild(ct_slice2_window->get_panel());
-    main_cam->m_frontLayer->addChild(ct_slice3_window->get_panel());
-
-    // Use publishing frame buffer of current camera to pass rendered image to sim_assisted_nav plugin
-    m_camera->m_frameBuffer = new cFrameBuffer();
-    m_camera->m_frameBuffer->setup(main_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
-
-    // update display panel sizes and positions
-    windowSizeCallback(m_camera->m_window, m_width, m_height);
-    assignGLFWCallbacks();
-
-    std::cout << "End of init" << "\n\n\n\n\n"
-              << m_alias_scaling
-              << endl;
-
-    // ROS subscriber config
-    ros_node_handle = afROSNode::getNode();
-    drill_loc_subscriber = ros_node_handle->subscribe(drill_loc_topic, 300, &afCameraMultiview::drill_location_callback, this);
-
-    return 1;
-}
-
-void afCameraMultiview::graphicsUpdate()
-{
-    if (!volume_initialized)
-    {
-        // Volume pointer needs to be initialized in first graphics update.
-        // Volume might not be available when calling the init function
-        init_volume_pointer();
-        init_volume_slicer();
-        volume_initialized = true;
-
-        set_slice_in_side_view(ct_slice_idx);
-        total_slices = volume_slices_ptr->getImageCount();
-        slice_annotator->print_volume_information();
-
-        ct_slice_update_time = glfwGetTime();
-
-        volume_slices_ptr->selectImage(0);
-        set_slice_in_side_view(ct_slice_idx);
-
-        // bool success = ct_slice1->loadFromImage(out_of_volume_img);
-        // ct_slice1->setSize(500, 500);
-        bool success = ct_slice1_window->update_ct_slice(out_of_volume_img);
-        ct_slice1_window->update_ct_slice_size(500, 500);
-    }
-
-    if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
-    {
-        // ct_slice_idx = (ct_slice_idx + 1) % total_slices;
-        if (drill_location.x() > 0 && drill_location.y() > 0 && drill_location.z() > 0)
-        {
-            bool success;
-            // 1) CREATE SLICES
-            // 2) ANNOTATED SLICES WITH DRILL LOCATION
-            // 3) DISPLAY SLICE
-            unique_ptr<Slice2D> xy_slice = volume_slicer->create_2d_slice("xy", drill_location.z());
-            xy_slice->annotate(drill_location.x(), drill_location.y());
-            success = ct_slice1_window->update_ct_slice(xy_slice->volume_slice);
-            ct_slice1_window->update_ct_slice_size(500, 500);
-
-            unique_ptr<Slice2D> xz_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
-            xz_slice->annotate(drill_location.x(), drill_location.z());
-            success = ct_slice2_window->update_ct_slice(xz_slice->volume_slice);
-            ct_slice2_window->update_ct_slice_size(500, 500);
-
-            unique_ptr<Slice2D> yz_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
-            yz_slice->annotate(drill_location.y(), drill_location.z());
-            success = ct_slice3_window->update_ct_slice(yz_slice->volume_slice);
-            ct_slice3_window->update_ct_slice_size(500, 500);
-
-            // slice_annotator->restore_slice(); // Removed red marker from previous location
-            // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
-            // // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
-            // set_slice_in_side_view(ct_slice_idx);
-        }
-        else
-        {
-            bool success;
-            success = ct_slice1_window->update_ct_slice(out_of_volume_img);
-            ct_slice1_window->update_ct_slice_size(500, 500);
-
-            success = ct_slice2_window->update_ct_slice(out_of_volume_img);
-            ct_slice2_window->update_ct_slice_size(500, 500);
-
-            success = ct_slice3_window->update_ct_slice(out_of_volume_img);
-            ct_slice3_window->update_ct_slice_size(500, 500);
-        }
-        ct_slice_update_time = glfwGetTime();
-    }
-
-    glfwMakeContextCurrent(m_camera->m_window);
-
-    // SIMPLE RENDER
-    // afRenderOptions ro;
-    // ro.m_updateLabels = true;
-    // m_camera->render(ro);
-
-    // MANUAL RENDER
-    glfwMakeContextCurrent(m_camera->m_window);
-    // get width and height of window
-    glfwGetFramebufferSize(m_camera->m_window, &m_width, &m_height);
-    // render world
-
-    ct_slice1_window->render_view();
-    ct_slice2_window->render_view();
-    ct_slice3_window->render_view();
-    world_window->get_camera()->setStereoMode(C_STEREO_DISABLED);
-
-    static cWorld* empty_fl = new cWorld();
-    cWorld* fl = m_camera->getInternalCamera()->m_frontLayer;
-    world_window->get_camera()->m_frontLayer = empty_fl;
-    world_window->render_view();
-    world_window->get_camera()->m_frontLayer = fl;
-    world_window->get_camera()->setStereoMode(C_STEREO_PASSIVE_LEFT_RIGHT);
-
-    // (OPTION 1)
-    // USE MULTIVIEW PLUGIN ON THE MAIN CAMERA. 
-    // THIS REQUIRES RENDERING THE MAIN_CAM AND ADDING THE MULTIVE PLUGIN TO MAIN CAM.
-
-    // (OPTION 2)
-    // RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.  
-    // THIS ENABLE THE IMAGE OVER IMAGE VIEW.
-
-    // main_cam->renderView(m_width, m_height); // (OPT1)
-    m_camera->m_frameBuffer->renderView();      // (OPT2)
-
-    // swap buffers
-    glfwSwapBuffers(m_camera->m_window);
-}
-
-void afCameraMultiview::physicsUpdate(double dt)
-{
-}
-
-void afCameraMultiview::reset()
-{
-}
-
-bool afCameraMultiview::close()
-{
-    // cout << "Closing " << m_camera->getName() << endl;
-    return true;
 }
 
 void afCameraMultiview::updateHMDParams()

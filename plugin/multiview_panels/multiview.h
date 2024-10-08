@@ -74,12 +74,20 @@ public:
     void windowSizeCallback(GLFWwindow *w, int width, int height);
     void assignGLFWCallbacks();
 
+    void init_side_windows();
     void init_volume_pointer();
     void init_volume_slicer();
     void set_slice_in_side_view(int slice);
 
+    // Get location of drill tip from volumetric drilling to display it in side windows. 
     void drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
 
+    // Render virtual camera in the multi-window view.
+    void render_virtual_camera();
+
+    // Update CT slices based on drill location.
+    void update_ct_slices_with_drill_location();
+    
 protected:
     afCameraPtr m_camera; // AMBF camera pointer
     cFrameBufferPtr m_frameBuffer;
