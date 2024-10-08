@@ -324,7 +324,8 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
             m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE);
             m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
 
-            m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
+            // Only for debuggin purposes
+            // m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
         }
         else
         {
