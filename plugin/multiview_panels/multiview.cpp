@@ -407,7 +407,12 @@ void afCameraMultiview::graphicsUpdate()
     ct_slice2_window->render_view();
     ct_slice3_window->render_view();
     world_window->get_camera()->setStereoMode(C_STEREO_DISABLED);
+
+    static cWorld* empty_fl = new cWorld();
+    cWorld* fl = m_camera->getInternalCamera()->m_frontLayer;
+    world_window->get_camera()->m_frontLayer = empty_fl;
     world_window->render_view();
+    world_window->get_camera()->m_frontLayer = fl;
     world_window->get_camera()->setStereoMode(C_STEREO_PASSIVE_LEFT_RIGHT);
 
     // (OPTION 1)
