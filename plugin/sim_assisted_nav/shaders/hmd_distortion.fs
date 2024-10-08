@@ -1,3 +1,23 @@
+// Manipulate fragments to have a picture over picture view.
+//
+// IMPORTANT parameters:
+// * small_window_disparity: defines the top left corner of the left and right small windows.
+// * rect_size: size of the small window.
+//
+// +-----------------------+-------------------------+
+// |  left_small_window    |  right_small_window     |
+// |    +----------+       |       +----------+      |
+// |    |          |       |       |          |      |
+// |    |          |       |       |          |      |
+// |    |          |<--+-->|<----->|          |      |
+// |    |          |   |   |       |          |      |
+// |    +----------+   |   |       +----------+      |
+// |                   |   |                         |
+// +-------------------+---+-------------------------+
+//                     |                              
+//                     v                              
+//                  small_window_disparity                                        
+
 #version 120
 
 // in vec2 gl_TexCoord;
@@ -21,6 +41,15 @@ uniform vec4 HmdWarpParam;
 uniform vec3 aberr;
 float offset;
 
+// distance of small window from the center. Value between [0.0, 0.2]
+                                                         
+float small_window_disparity = 0.1;
+
+vec2 small_window_pos;
+vec2 rect_size = vec2(0.3, 0.3);
+vec2 left_small_window_pos = vec2(0.5 - rect_size.x - small_window_disparity, 0.65);
+vec2 right_small_window_pos = vec2(small_window_disparity, 0.65);
+
 float remap(float t, float a, float b, float c, float d)
 {
     return c + (t-a)/(b-a) * (d-c);
@@ -36,6 +65,7 @@ vec2 remap_little_window(vec2 output_loc, vec2 rectMin, vec2 rectMax)
     return remapped;
 }
 
+
 void main()
 {
     // output_loc is the fragment location on screen from [0,1]x[0,1]
@@ -44,17 +74,17 @@ void main()
     if (output_loc[0] <= 0.5)
     {
         offset = 0.0;
+        small_window_pos = left_small_window_pos;
     }
     else
     {
         offset = 0.5;
+        small_window_pos = right_small_window_pos;
     }
 
     // Rectangle boundaries in normalized device coordinates
-    vec2 u_rectPos = vec2(0.1, 0.65);
-    vec2 u_rectSize = vec2(0.3, 0.3);
-    vec2 rectMin = u_rectPos;
-    vec2 rectMax = u_rectPos + u_rectSize;
+    vec2 rectMin = small_window_pos;
+    vec2 rectMax = small_window_pos + rect_size;
     rectMin.x += offset;
     rectMax.x += offset;
 
