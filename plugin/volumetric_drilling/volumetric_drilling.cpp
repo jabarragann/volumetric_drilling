@@ -270,23 +270,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
 
     m_drillManager.update(dt);
     
-    // Calculate drill in volume coordinates
-
-    // Get drill tip location from drill cursor - for testings with keyboard.
-    // cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
-
-    // Get drill tip location from Atracsys - This requires TF plugin.
-    cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillReferenceBody -> getLocalPos();
-
-    // Manually calculate drill tip location from marker measurement.
-    // This functionality was moved to the TF plugin.
-    // cVector3d drill_tip_in_marker(0.195032, -0.008330, 0.055822 ); // From pivot calibration
-    // cTransform world_T_drillmarker = m_drillManager.m_drillingPub->world_T_drillmarker;
-    // cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillingPub->world_T_drillmarker * drill_tip_in_marker;
-    
-    cVector3d drill_coordinates;
-    m_volume_coord_utils->get_index_location_of_drill_tip(drill_tip_in_worldcoord, drill_coordinates);
-    m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
+    publishDrillTipLocationInsideVolume();
 
     if (m_drillManager.m_toolCursorList[0]->isInContact(m_voxelObj) && m_drillManager.m_targetToolCursorIdx == 0 /*&& (userSwitches == 2)*/)
     {
@@ -495,6 +479,27 @@ afCameraPtr afVolmetricDrillingPlugin::findAndAppendCamera(string cam_name){
         cerr << "WARNING! CAMERA NOT FOUND " << cam_name << endl;
     }
     return cam;
+}
+
+void afVolmetricDrillingPlugin::publishDrillTipLocationInsideVolume()
+{
+
+    // Get drill tip location from drill cursor - for testing with keyboard.
+    // cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
+
+    // Get drill tip location from Atracsys - This requires TF plugin.
+    cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillReferenceBody -> getLocalPos();
+
+    // Manually calculate drill tip location from marker measurement.
+    // This functionality was moved to the TF plugin.
+    // cVector3d drill_tip_in_marker(0.195032, -0.008330, 0.055822 ); // From pivot calibration
+    // cTransform world_T_drillmarker = m_drillManager.m_drillingPub->world_T_drillmarker;
+    // cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillingPub->world_T_drillmarker * drill_tip_in_marker;
+    
+    // Calculate drill in volume coordinates
+    cVector3d drill_coordinates;
+    m_volume_coord_utils->get_index_location_of_drill_tip(drill_tip_in_worldcoord, drill_coordinates);
+    m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
 }
 
 void afVolmetricDrillingPlugin::initializeLabels()

@@ -22,6 +22,19 @@ ambf_simulator --launch_file launch.yaml -l 0,2,5,6
 ambf_simulator --launch_file launch.yaml -l 0,8,9 --tf_list /home/juan95/research/discovery_grant/registration_pipeline/ambf_tf_plugin/example/juan_tf_config.yaml
 ```
 
+Running code with drilling functionality
+```
+ambf_simulator --launch_file launch.yaml -l 8,10 --tf_list share/plugin_config/tf_config.yaml --nt 1
+```
+
+Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard shortcuts `<C-c>` to toggle visibility of the collision spheres and `<C-o>` to enable control with the haptic device.
+
+### TODO for paper:
+
+- [ ] Get drill body in the correct orientation. 
+- [ ] Figure out the drill's burr size.
+- [ ] Create swapping functionality to change between assistance view and real camera view.
+
 ## Overview
 
 The virtual reality drilling simulator is able to actively modify anatomy with a virtual drill. The simulator has both VR and haptics integration as well as the ability to generate data for use in downstream algorithm development. Volumetric_drilling is a plugin built on top of Asynchronous Multibody Framework ([AMBF](https://github.com/WPI-AIM/ambf)) developed by Munawar et al. We show the use of the plugin in lateral skull base surgery. 

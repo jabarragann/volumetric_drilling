@@ -202,6 +202,8 @@ void DrillManager::update(double dt)
     cTransform T_c_w = m_mainCamera->getLocalTransform();
 
     // If a valid haptic device is found, then it should be available
+
+    // Use override control mode to control the drill with the tf_plugin.
     if (getOverrideControl()){
         m_T_d = m_drillReferenceBody->getLocalTransform();
     }
@@ -229,7 +231,7 @@ void DrillManager::update(double dt)
 
 //    if (getOverrideControl() == false){
         // updates position of drill mesh
-        // updatePoseFromCursors(); // JUAN commented this
+        // updatePoseFromCursors(); // NO need to update position of the drill anymore. TF plugin takes care of this.
 //    }
 
     m_burrMesh->setLocalTransform(m_activeDrill->m_rigidBody->getLocalTransform());

@@ -79,6 +79,8 @@ protected:
 
     afCameraPtr findAndAppendCamera(string cam_name);
 
+    void publishDrillTipLocationInsideVolume();
+
 private:
 
     cVoxelObject* m_voxelObj;
