@@ -25,6 +25,5 @@ multibody configs:
   - "ADF/single_stereo_camera.yaml" #6
   - "ADF/gaze_marker.yaml" #7
   - "ADF/volume_sim_assisted_test01.yaml" #8
-  - "ADF/drills/20240925_calibrated_drill.yaml" #9
-  - "/home/juan95/research/discovery_grant/BlenderAssets/CalibratedDrill2/calibrated_drill2.yaml" #10
+  - "ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #9 
 
