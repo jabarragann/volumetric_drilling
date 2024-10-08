@@ -154,7 +154,7 @@ protected:
     int m_alias_scaling;
 
 public:
-    SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int m_alias_scaling);
+    SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling);
     ~SideViewWindow();
     cViewPanel *get_panel() { return panel; }
     void render_view() { buffer->renderView(); }
@@ -175,7 +175,7 @@ class CtSliceSideWindow : public SideViewWindow
     cImagePtr white_background_img;
 
 public:
-    CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int m_alias_scaling,
+    CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling,
                       cImagePtr white_brackground_img, cImagePtr out_of_volume_img);
     ~CtSliceSideWindow();
     bool update_ct_slice(cImagePtr ct_slice_img) { return ct_slice->loadFromImage(ct_slice_img); };

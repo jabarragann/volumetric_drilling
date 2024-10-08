@@ -149,22 +149,23 @@ void afCameraMultiview::drill_location_callback(const geometry_msgs::PointStampe
 
 void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_height)
 {
-    // update display panel sizes and positions
-    int halfW = new_width / 2;
-    int halfH = new_height / 2;
-    int offset = 1;
-    world_window->update_window_size(halfW, halfH);
-    world_window->update_panel_location(0, 0);
+    // update display panel sizes and positions based on window size
 
-    ct_slice1_window->update_window_size(halfW, halfH);
-    ct_slice1_window->update_panel_location(halfW + offset, 0);
+    // int halfW = new_width / 2;
+    // int halfH = new_height / 2;
+    // int offset = 1;
+    // world_window->update_window_size(halfW, halfH);
+    // world_window->update_panel_location(0, 0);
 
-    ct_slice2_window->update_window_size(halfW, halfH);
-    ct_slice2_window->update_panel_location(0, halfH + offset);
+    // ct_slice1_window->update_window_size(halfW, halfH);
+    // ct_slice1_window->update_panel_location(halfW + offset, 0);
 
-    ct_slice3_window->update_window_size(halfW, halfH);
-    ct_slice3_window->update_panel_location(halfW + offset, halfH + offset);
-    cout << new_width << " " << new_height << endl;
+    // ct_slice2_window->update_window_size(halfW, halfH);
+    // ct_slice2_window->update_panel_location(0, halfH + offset);
+
+    // ct_slice3_window->update_window_size(halfW, halfH);
+    // ct_slice3_window->update_panel_location(halfW + offset, halfH + offset);
+    // cout << new_width << " " << new_height << endl;
 }
 
 void afCameraMultiview::assignGLFWCallbacks()
@@ -252,6 +253,7 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
 
+    // Assistance window config
     m_width = 1000;
     m_height = 1000;
     m_camera->m_width = m_width;
@@ -273,18 +275,26 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     out_of_volume_img = create_c_image_from_file(out_of_volume_img_path);
     white_background_img = create_c_image_from_file(white_background_img_path);
 
-    world_window = new SideViewWindow("world_window", world_cam, m_width, m_height, m_alias_scaling);
+    int halfW = m_width / 2;
+    int halfH = m_height / 2;
+    int offset = 1;
 
-    ct_slice1_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice1_window", side_cam1, m_width / 2,
-                                                                                m_height / 2, m_alias_scaling,
+    world_window = new SideViewWindow("world_window", world_cam, m_width, m_height,0,0, m_alias_scaling);
+
+
+    ct_slice1_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice1_window", side_cam1, 
+                                                                                m_width / 2, m_height / 2, 
+                                                                                halfW+offset,0,m_alias_scaling,
                                                                                 white_background_img, out_of_volume_img));
 
-    ct_slice2_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice2_window", side_cam2, m_width / 2,
-                                                                                m_height / 2, m_alias_scaling,
+    ct_slice2_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice2_window", side_cam2, 
+                                                                                m_width / 2, m_height / 2,
+                                                                                0, halfH+offset, m_alias_scaling,
                                                                                 white_background_img, out_of_volume_img));
 
-    ct_slice3_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice3_window", side_cam3, m_width / 2,
-                                                                                m_height / 2, m_alias_scaling,
+    ct_slice3_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("ct_slice3_window", side_cam3, 
+                                                                                m_width / 2, m_height / 2, 
+                                                                                halfW + offset, halfH + offset, m_alias_scaling,
                                                                                 white_background_img, out_of_volume_img));
 
     main_cam->m_frontLayer->addChild(world_window->get_panel());
@@ -408,8 +418,8 @@ void afCameraMultiview::graphicsUpdate()
     // RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.  
     // THIS ENABLE THE IMAGE OVER IMAGE VIEW.
 
-    main_cam->renderView(m_width, m_height); // (OPT1)
-    // m_camera->m_frameBuffer->renderView();      // (OPT2)
+    // main_cam->renderView(m_width, m_height); // (OPT1)
+    m_camera->m_frameBuffer->renderView();      // (OPT2)
 
     // swap buffers
     glfwSwapBuffers(m_camera->m_window);
@@ -452,7 +462,7 @@ void afCameraMultiview::makeFullScreen()
     // cerr << "\t Making " << m_camera->getName() << " fullscreen \n";
 }
 
-SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height,
+SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int x_pos, int y_pos,
                                int m_alias_scaling) : window_name(window_name), camera(camera), m_width(m_width),
                                                       m_height(m_height), m_alias_scaling(m_alias_scaling)
 {
@@ -460,6 +470,7 @@ SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width,
     buffer->setup(camera, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
     panel = new cViewPanel(buffer);
     update_window_size(m_width, m_height);
+    update_panel_location(x_pos, y_pos);
 }
 
 SideViewWindow::~SideViewWindow()
@@ -472,9 +483,9 @@ SideViewWindow::~SideViewWindow()
     // delete camera;
 }
 
-CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height,
+CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y,
                                      int m_alias_scaling, cImagePtr white_brackground_img,
-                                     cImagePtr out_of_volume_img) : SideViewWindow(window_name, camera, m_width, m_height, m_alias_scaling),
+                                     cImagePtr out_of_volume_img) : SideViewWindow(window_name, camera, m_width, m_height, pos_x, pos_y, m_alias_scaling),
                                                                     white_background_img(white_brackground_img), out_of_volume_img(out_of_volume_img)
 {
     // Set background

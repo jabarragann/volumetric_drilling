@@ -81,15 +81,15 @@ main_camera:
 
   # multipass: true
   
-  plugins:
-    [
-      ## See graphics function in the multiview.cpp. The camera doesn't render by default.
-      {
-        name: multiview_plugin,
-        path: "../../build",
-        filename: "libmultiview.so",
-      }
-    ]
+  # plugins:
+  #   [
+  #     ## See graphics function in the multiview.cpp. The camera doesn't render by default.
+  #     {
+  #       name: multiview_plugin,
+  #       path: "../../build",
+  #       filename: "libmultiview.so",
+  #     }
+  #   ]
 
 cameraL:
   namespace: cameras/
