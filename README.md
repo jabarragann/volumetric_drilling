@@ -24,7 +24,7 @@ ambf_simulator --launch_file launch.yaml -l 0,8,9 --tf_list /home/juan95/researc
 
 Running code with drilling functionality
 ```
-ambf_simulator --launch_file launch.yaml -l 8,10 --tf_list share/plugin_config/tf_config.yaml --nt 1
+ambf_simulator --launch_file launch.yaml -l 6,8,9 --tf_list share/plugin_config/tf_config.yaml --nt 1
 ```
 
 Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard shortcuts `<C-c>` to toggle visibility of the collision spheres and `<C-o>` to enable control with the haptic device.
@@ -34,6 +34,7 @@ Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard
 - [ ] Get drill body in the correct orientation. 
 - [ ] Figure out the drill's burr size.
 - [ ] Create swapping functionality to change between assistance view and real camera view.
+- [ ] Change small window location with keyboard shortcuts.
 
 ## Overview
 
