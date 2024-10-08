@@ -132,6 +132,8 @@ public:
     // rate of drill movement
     double m_drillRate = 0.020f;
 
+    // Reference body that tracks the drill's tip location.
+    // The position of this body is updated with the tf_transform plugin.
     afRigidBodyPtr m_drillReferenceBody;
 
     // A map of drill burr names and their sizes in simulatio

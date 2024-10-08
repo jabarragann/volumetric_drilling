@@ -3,18 +3,18 @@
 # Date: 09.09.2024
 
 transformations:
-  - TF Anspoch_drill
-  - TF marker_body-drill_tip
+  - TF world-atracsys_drill_marker
+  - TF marker_body-sim_assisted_tip_reference
 
-TF Anspoch_drill:
+TF world-atracsys_drill_marker: # Move drill with atracsys measurements
   parent: World
   child: marker
   type: ROS
   rostopic name: /atracsys/drill_marker/measured_cp
 
-TF marker_body-drill_tip: #ADD HERE the pivot calibration transform.
+TF marker_body-sim_assisted_tip_reference: #ADD HERE the pivot calibration transform.
   parent: marker
-  child: drill_tip
+  child: drill_empty_reference # sim_assisted_drill_tip_reference
   type: FIXED
   transformation:
     position: {x: 0.195032, y:  -0.008330, z:  0.055822 }  # hand held drill

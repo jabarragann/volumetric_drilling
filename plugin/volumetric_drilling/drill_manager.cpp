@@ -44,7 +44,8 @@
 #include <boost/program_options.hpp>
 
 DrillManager::DrillManager(){
-    m_units_mmToSim = 0.01007;
+    // m_units_mmToSim = 0.01007;
+    m_units_mmToSim = 0.001;
 }
 
 void DrillManager::cleanup()
@@ -84,7 +85,7 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager
         return -1;
     }
 
-    m_drillReferenceBody = a_worldPtr->getRigidBody("mastoidectomy_drill");
+    m_drillReferenceBody = a_worldPtr->getRigidBody("drill_empty_reference");
 
     if (!m_drillReferenceBody){
         cerr << "ERROR! FAILED TO FIND REFERENCE DRILL RIGID BODY " << "mastoidectomy_drill" << endl;
@@ -228,7 +229,7 @@ void DrillManager::update(double dt)
 
 //    if (getOverrideControl() == false){
         // updates position of drill mesh
-        updatePoseFromCursors();
+        // updatePoseFromCursors(); // JUAN commented this
 //    }
 
     m_burrMesh->setLocalTransform(m_activeDrill->m_rigidBody->getLocalTransform());

@@ -272,12 +272,14 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt){
     
     // Calculate drill in volume coordinates
 
-    // Get drill tip location from drill cursor
+    // Get drill tip location from drill cursor - for testings with keyboard.
     // cVector3d drill_tip_in_worldcoord = m_drillManager.m_toolCursorList[0] -> getDeviceGlobalPos();
 
     // Get drill tip location from Atracsys - This requires TF plugin.
-    cVector3d drill_tip_in_worldcoord = m_worldPtr -> getRigidBody("drill_tip") -> getLocalPos();
+    cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillReferenceBody -> getLocalPos();
 
+    // Manually calculate drill tip location from marker measurement.
+    // This functionality was moved to the TF plugin.
     // cVector3d drill_tip_in_marker(0.195032, -0.008330, 0.055822 ); // From pivot calibration
     // cTransform world_T_drillmarker = m_drillManager.m_drillingPub->world_T_drillmarker;
     // cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillingPub->world_T_drillmarker * drill_tip_in_marker;
