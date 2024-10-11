@@ -54,7 +54,10 @@ main_camera:
   # field view angle: 0.17951634837990105 # so that focal length is approximately 1000px and phantom is 250 mm away
   
   ## NEW PHANTOM LOCATION
-  location: { x: 0.113903047668, y: 0.587309004439, z: 1.0767302997}
+  # location: { x: 0.113903047668, y: 0.587309004439, z: 1.0767302997} # phantom 1
+  # location: {x: -0.0216465, y: -0.0155717, z: 0.0383901} # phantom 2
+  location: {x: -0.039965769222441466, y: 0.8391517936765613, z: -0.5174289211457522}
+
   look at: {x: 0.142479, y: -0.0907415, z: 1.21572}
   up: { x: 0.0, y: 0.0, z: 1.0 }
   clipping plane: { near: 0.2, far: 1006.7654639175257 }

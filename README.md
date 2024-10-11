@@ -22,6 +22,11 @@ ambf_simulator --launch_file launch.yaml -l 0,2,5,6
 ambf_simulator --launch_file launch.yaml -l 0,8,9 --tf_list /home/juan95/research/discovery_grant/registration_pipeline/ambf_tf_plugin/example/juan_tf_config.yaml
 ```
 
+Running registration pipeline
+```
+ambf_simulator --launch_file launch.yaml -l 4,5 --registration_config /home/juan95/research/discovery_grant/volumetric_drilling/share/plugin_config/registration_config.yaml  --tf_list /home/juan95/research/discovery_grant/volumetric_drilling/share/plugin_config/tf_config.yaml
+```
+
 Running code with drilling functionality
 ```
 ambf_simulator --launch_file launch.yaml -l 6,8,9 --tf_list share/plugin_config/tf_config.yaml --nt 1
@@ -35,6 +40,11 @@ Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard
 - [ ] Figure out the drill's burr size.
 - [ ] Create swapping functionality to change between assistance view and real camera view.
 - [ ] Change small window location with keyboard shortcuts.
+
+## TODO for wednesday mock or
+- [ ] Test whole set up in MOCK OR. 
+- [ ] Mount goovis and zed mini into microscope.
+- [ ] Check out to calculate hand-eye calibration.
 
 ## Overview
 
