@@ -1,4 +1,6 @@
 // Manipulate fragments to have a picture over picture view.
+// Left screen will show the left camera image and right screen will show the right camera image.
+// This shader is useful to use with Goovis VR devices.
 //
 // IMPORTANT parameters:
 // * small_window_disparity: defines the top left corner of the left and right small windows.
@@ -26,23 +28,10 @@
 uniform sampler2D rosImageTexture;
 uniform sampler2D frameBufferTexture;
 
-//Position of lens center in m (usually eye_w/2, eye_h/2)
-uniform vec2 LensCenterLeft;
-//Position of lens center in m (usually eye_w/2, eye_h/2)
-uniform vec2 LensCenterRight;
-//Scale from texture co-ords to m (usually eye_w, eye_h)
-uniform vec2 ViewportScale;
-//Distortion overall scale in m (usually ~eye_w/2)
-uniform float WarpScale;
-//Distoriton coefficients (PanoTools model) [a,b,c,d]
-uniform vec4 HmdWarpParam;
 
-//chromatic distortion post scaling
-uniform vec3 aberr;
 float offset;
 
 // distance of small window from the center. Value between [0.0, 0.2]
-                                                         
 uniform float small_window_disparity = 0.1;
 
 vec2 small_window_pos;

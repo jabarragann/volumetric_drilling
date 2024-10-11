@@ -35,11 +35,8 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <amunawar@wpi.edu>
-    \author    Adnan Munawar
-
-    \author    <pkunjam1@jhu.edu>
-    \author    Punit Kunjam
+    \author    <jbarrag3@jh.edu>
+    \author    Juan Antonio Barragan 
 */
 //==============================================================================
 
@@ -49,11 +46,6 @@
 
 using namespace std;
 
-//------------------------------------------------------------------------------
-// DECLARED FUNCTIONS
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
 
 string g_current_filepath;
 
@@ -91,40 +83,15 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 
     afShaderAttributes shaderAttribs;
     shaderAttribs.m_shaderDefined = true;
-    shaderAttribs.m_vtxFilepath = g_current_filepath + "/shaders/hmd_distortion.vs";
-    shaderAttribs.m_fragFilepath = g_current_filepath + "/shaders/hmd_distortion.fs";
+    shaderAttribs.m_vtxFilepath = g_current_filepath + "/shaders/sim_assisted_shader.vs";
+    shaderAttribs.m_fragFilepath = g_current_filepath + "/shaders/sim_assisted_shader.fs";
 
-    m_shaderPgm = afShaderUtils::createFromAttribs(&shaderAttribs, "TEST", "VR_CAM");
+    m_shaderPgm = afShaderUtils::createFromAttribs(&shaderAttribs, m_camera->getName(), "SIM_ASSISTED_CAM");
     if (!m_shaderPgm)
     {
         cerr << "ERROR! FAILED TO LOAD SHADER PGM \n";
         return -1;
     }
-
-    m_viewport_scale[0] = 0.122822f;
-    m_viewport_scale[0] /= 2.0;
-    m_viewport_scale[1] = 0.068234f;
-
-    m_distortion_coeffs[0] = 0.098;
-    m_distortion_coeffs[1] = 0.324;
-    m_distortion_coeffs[2] = -0.241;
-    m_distortion_coeffs[3] = 0.89;
-
-    m_aberr_scale[0] = 1.0;
-    m_aberr_scale[1] = 1.0;
-    m_aberr_scale[2] = 1.0;
-
-    m_sep = 0.057863;
-    m_vpos = 0.033896;
-
-    m_left_lens_center[0] = m_viewport_scale[0] - m_sep / 2.0;
-    m_left_lens_center[1] = m_vpos;
-
-    m_right_lens_center[0] = m_sep / 2.0;
-    m_right_lens_center[1] = m_vpos;
-
-    m_warp_scale = (m_left_lens_center[0] > m_right_lens_center[0]) ? m_left_lens_center[0] : m_right_lens_center[0];
-    m_warp_adj = 1.0;
 
     m_quadMesh = new cMesh();
     // clang-format off
@@ -242,14 +209,8 @@ void afCameraHMD::updateHMDParams()
     // m_quadMesh->m_metallic which points to a frameBuffer gets assigned to texture unit 2.
     glUniform1i(glGetUniformLocation(id, "frameBufferTexture"), 2);
 
+    // Additional parameters
     glUniform1f(glGetUniformLocation(id, "small_window_disparity"), window_disparity);
-
-    // glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
-    // glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);
-    // glUniform1f(glGetUniformLocation(id, "WarpScale"), m_warp_scale * m_warp_adj);
-    // glUniform4fv(glGetUniformLocation(id, "HmdWarpParam"), 1, m_distortion_coeffs);
-    // glUniform2fv(glGetUniformLocation(id, "LensCenterLeft"), 1, m_left_lens_center);
-    // glUniform2fv(glGetUniformLocation(id, "LensCenterRight"), 1, m_right_lens_center);
 }
 
 void afCameraHMD::makeFullScreen()
