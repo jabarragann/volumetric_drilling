@@ -49,6 +49,7 @@
 #include "gaze_marker_controller.h"
 #include "drill_manager.h"
 #include "memory"
+#include "ros_interface.h"
 
 using namespace std;
 using namespace ambf;
@@ -142,6 +143,8 @@ private:
     CameraPanelManager m_panelManager;
 
     std::unique_ptr<Transform2VolumeCoordinates> m_volume_coord_utils;
+
+    SimulationAssistedNavRosInterface m_simAssistedNavRosInterface;
 };
 
 class Transform2VolumeCoordinates

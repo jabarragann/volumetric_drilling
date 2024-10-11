@@ -66,14 +66,20 @@ public:
     // ROS attributes and callbacks
     ros::NodeHandle *ros_node_handle;
     ros::Subscriber left_sub, right_sub;
+    ros::Subscriber window_disparity_sub;
+
     void left_img_callback(const sensor_msgs::ImageConstPtr &msg);
     void right_img_callback(const sensor_msgs::ImageConstPtr &msg);
+    void window_disparity_callback(const std_msgs::Float32 &msg);
     cv_bridge::CvImagePtr left_img_ptr = nullptr;
     cv_bridge::CvImagePtr right_img_ptr = nullptr;
     cv_bridge::CvImagePtr concat_img_ptr = nullptr;
     int clipsize = 0.3;
 
     cTexture2dPtr m_rosImageTexture;
+
+    // Shader uniform variables
+    float window_disparity = 0.1;
 
 protected:
     afCameraPtr m_camera;

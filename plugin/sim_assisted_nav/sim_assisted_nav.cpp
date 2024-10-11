@@ -76,6 +76,8 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     left_sub = ros_node_handle->subscribe("/zedm/zed_node/left/image_rect_color", 2, &afCameraHMD::left_img_callback, this);
     right_sub = ros_node_handle->subscribe("/zedm/zed_node/right/image_rect_color", 2, &afCameraHMD::right_img_callback, this);
 
+    window_disparity_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_disparity",  2, &afCameraHMD::window_disparity_callback, this);
+
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
 
@@ -239,12 +241,15 @@ void afCameraHMD::updateHMDParams()
     glUniform1i(glGetUniformLocation(id, "rosImageTexture"), 0);
     // m_quadMesh->m_metallic which points to a frameBuffer gets assigned to texture unit 2.
     glUniform1i(glGetUniformLocation(id, "frameBufferTexture"), 2);
-    glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
-    glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);
-    glUniform1f(glGetUniformLocation(id, "WarpScale"), m_warp_scale * m_warp_adj);
-    glUniform4fv(glGetUniformLocation(id, "HmdWarpParam"), 1, m_distortion_coeffs);
-    glUniform2fv(glGetUniformLocation(id, "LensCenterLeft"), 1, m_left_lens_center);
-    glUniform2fv(glGetUniformLocation(id, "LensCenterRight"), 1, m_right_lens_center);
+
+    glUniform1f(glGetUniformLocation(id, "small_window_disparity"), window_disparity);
+
+    // glUniform2fv(glGetUniformLocation(id, "ViewportScale"), 1, m_viewport_scale);
+    // glUniform3fv(glGetUniformLocation(id, "aberr"), 1, m_aberr_scale);
+    // glUniform1f(glGetUniformLocation(id, "WarpScale"), m_warp_scale * m_warp_adj);
+    // glUniform4fv(glGetUniformLocation(id, "HmdWarpParam"), 1, m_distortion_coeffs);
+    // glUniform2fv(glGetUniformLocation(id, "LensCenterLeft"), 1, m_left_lens_center);
+    // glUniform2fv(glGetUniformLocation(id, "LensCenterRight"), 1, m_right_lens_center);
 }
 
 void afCameraHMD::makeFullScreen()
@@ -339,4 +344,9 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
         // cv::waitKey(1);
         // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
     }
+}
+
+void afCameraHMD::window_disparity_callback(const std_msgs::Float32 &msg)
+{
+    window_disparity = msg.data;
 }

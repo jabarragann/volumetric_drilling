@@ -160,3 +160,10 @@ void DrillingPublisher::publishDrillLocationInVolume(cVector3d &location, double
 
     m_drillLocationInVolumePub.publish(loc);
 }
+
+SimulationAssistedNavRosInterface::SimulationAssistedNavRosInterface(std::string a_namespace)
+{
+
+    m_rosNode = afROSNode::getNode();
+    small_window_disparity_pub = m_rosNode->advertise<std_msgs::Float32>(a_namespace + "/small_window_disparity", 5, true);
+}

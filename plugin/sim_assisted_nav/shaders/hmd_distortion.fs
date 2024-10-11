@@ -43,7 +43,7 @@ float offset;
 
 // distance of small window from the center. Value between [0.0, 0.2]
                                                          
-float small_window_disparity = 0.1;
+uniform float small_window_disparity = 0.1;
 
 vec2 small_window_pos;
 vec2 rect_size = vec2(0.3, 0.3);

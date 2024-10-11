@@ -91,8 +91,14 @@ private:
     geometry_msgs::WrenchStamped m_force_feedback_msg;
 };
 
-class SimulationAssistedNavPublisher
+class SimulationAssistedNavRosInterface
 {
+public:
+    SimulationAssistedNavRosInterface(std::string a_namespace = "sim_assisted_nav");
+    ros::NodeHandle *m_rosNode;
+
+    float window_disparity = 0.1;
+    ros::Publisher small_window_disparity_pub;
 };
 
 #endif // VOLUMETRIC_PLUGIN_COLLISION_PUBLISHER_H

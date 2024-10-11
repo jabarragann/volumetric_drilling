@@ -95,6 +95,7 @@ bool Transform2VolumeCoordinates::get_index_location_of_drill_tip(cVector3d &dri
 
 afVolmetricDrillingPlugin::afVolmetricDrillingPlugin()
 {
+    m_simAssistedNavRosInterface = SimulationAssistedNavRosInterface();
 }
 
 int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_afWorld)
@@ -718,9 +719,29 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
     }
     else
     {
+        // SIM-ASSISTED keyboard shortcuts
+        //********************************/
+
+        // Increase disparity of small window
+        if (a_key == GLFW_KEY_LEFT_BRACKET) // [
+        {
+            m_simAssistedNavRosInterface.window_disparity += 0.0025;
+            std_msgs::Float32 msg;
+            msg.data = m_simAssistedNavRosInterface.window_disparity;
+            m_simAssistedNavRosInterface.small_window_disparity_pub.publish(msg);
+        }
+        // Decrease disparity of small window
+        else if (a_key == GLFW_KEY_RIGHT_BRACKET) // ]
+        {
+            m_simAssistedNavRosInterface.window_disparity -= 0.0025;
+            std_msgs::Float32 msg;
+            msg.data = m_simAssistedNavRosInterface.window_disparity;
+            m_simAssistedNavRosInterface.small_window_disparity_pub.publish(msg);
+        }
+        //********************************/
 
         // option - reduce size along X axis
-        if (a_key == GLFW_KEY_4)
+        else if (a_key == GLFW_KEY_4)
         {
             sliceVolume(0, -0.005);
         }
