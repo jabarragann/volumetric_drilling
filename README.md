@@ -1,19 +1,4 @@
-# Drilling Simulator
-### [News Coverage](https://techxplore.com/news/2021-12-virtual-reality-simulator-surgeons-skull-base.html) | [Paper](https://arxiv.org/abs/2111.08097) | [Video](https://youtu.be/36pYIt1KGs4)
-This repo provides a realistic virtual drilling simulator presented in our Best Paper at AE-CAI MICCAI 2021, [Virtual reality for synergistic surgical training and data generation](https://arxiv.org/abs/2111.08097).
-
-If you found this work helpful, please reference us using the following citation:
-```
-@article{munawar2021virtual,
-  title={Virtual reality for synergistic surgical training and data generation},
-  author={Munawar, Adnan and Li, Zhaoshuo and Kunjam, Punit and Nagururu, Nimesh and Ding, Andy S and Kazanzides, Peter and Looi, Thomas and Creighton, Francis X and Taylor, Russell H and Unberath, Mathias},
-  journal={Computer Methods in Biomechanics and Biomedical Engineering: Imaging \& Visualization},
-  pages={1--9},
-  year={2021},
-  publisher={Taylor \& Francis}
-}
-```
-## Run assisted navigation plugin
+# Simulation assisted navigation 
 
 ```
 # Test simulation with multiview
@@ -34,6 +19,12 @@ ambf_simulator --launch_file launch.yaml -l 6,8,9 --tf_list share/plugin_config/
 
 Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard shortcuts `<C-c>` to toggle visibility of the collision spheres and `<C-o>` to enable control with the haptic device.
 
+## Keyboard shortcuts
+| # | Linear Motion of Tool | Description                        |
+|---|-----------------------|------------------------------------|
+| 1 | `]`                   | Increase disparity of small window |
+| 2 | `[`                   | Decrease disparity of small window |
+
 ### TODO for paper:
 
 - [ ] Get drill body in the correct orientation. 
@@ -45,6 +36,24 @@ Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard
 - [ ] Test whole set up in MOCK OR. 
 - [ ] Mount goovis and zed mini into microscope.
 - [ ] Check out to calculate hand-eye calibration.
+
+
+# Drilling simulator
+
+### [News Coverage](https://techxplore.com/news/2021-12-virtual-reality-simulator-surgeons-skull-base.html) | [Paper](https://arxiv.org/abs/2111.08097) | [Video](https://youtu.be/36pYIt1KGs4)
+This repo provides a realistic virtual drilling simulator presented in our Best Paper at AE-CAI MICCAI 2021, [Virtual reality for synergistic surgical training and data generation](https://arxiv.org/abs/2111.08097).
+
+If you found this work helpful, please reference us using the following citation:
+```
+@article{munawar2021virtual,
+  title={Virtual reality for synergistic surgical training and data generation},
+  author={Munawar, Adnan and Li, Zhaoshuo and Kunjam, Punit and Nagururu, Nimesh and Ding, Andy S and Kazanzides, Peter and Looi, Thomas and Creighton, Francis X and Taylor, Russell H and Unberath, Mathias},
+  journal={Computer Methods in Biomechanics and Biomedical Engineering: Imaging \& Visualization},
+  pages={1--9},
+  year={2021},
+  publisher={Taylor \& Francis}
+}
+```
 
 ## Overview
 
