@@ -55,27 +55,28 @@
 
 using namespace chai3d;
 
-class DrillingPublisher{
+class DrillingPublisher
+{
 public:
     DrillingPublisher(std::string a_namespace, std::string a_plugin);
     ~DrillingPublisher();
     void init(std::string a_namespace, std::string a_plugin);
-    ros::NodeHandle* m_rosNode;
+    ros::NodeHandle *m_rosNode;
     void publishDrillSize(int burrSize, double time);
 
-    void setVolumeInfo(cTransform& pose, cVector3d& dimensions, cVector3d& voxel_count);
+    void setVolumeInfo(cTransform &pose, cVector3d &dimensions, cVector3d &voxel_count);
 
     void publishVolumeInfo(double time);
 
-    void appendToVoxelMsg(cVector3d& index, cColorf& color);
+    void appendToVoxelMsg(cVector3d &index, cColorf &color);
 
     void clearVoxelMsg();
 
     void publishVoxelMsg(double time);
 
-    void publishForceFeedback(cVector3d& force, cVector3d& moment, double time);
+    void publishForceFeedback(cVector3d &force, cVector3d &moment, double time);
 
-    void publishDrillLocationInVolume(cVector3d& location, double time);
+    void publishDrillLocationInVolume(cVector3d &location, double time);
 
 private:
     ros::Publisher m_voxelsRemovalPub;
@@ -88,7 +89,10 @@ private:
     volumetric_drilling_msgs::DrillSize m_drill_size_msg;
     volumetric_drilling_msgs::VolumeInfo m_volume_info_msg;
     geometry_msgs::WrenchStamped m_force_feedback_msg;
-
 };
 
-#endif //VOLUMETRIC_PLUGIN_COLLISION_PUBLISHER_H
+class SimulationAssistedNavPublisher
+{
+};
+
+#endif // VOLUMETRIC_PLUGIN_COLLISION_PUBLISHER_H

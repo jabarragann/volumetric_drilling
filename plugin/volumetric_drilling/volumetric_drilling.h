@@ -55,14 +55,15 @@ using namespace ambf;
 
 class Transform2VolumeCoordinates;
 
-class afVolmetricDrillingPlugin: public afSimulatorPlugin{
+class afVolmetricDrillingPlugin : public afSimulatorPlugin
+{
 public:
     afVolmetricDrillingPlugin();
-    virtual int init(int argc, char** argv, const afWorldPtr a_afWorld) override;
-    virtual void keyboardUpdate(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods) override;
-    virtual void mouseBtnsUpdate(GLFWwindow* a_window, int a_button, int a_action, int a_modes) override;
-    virtual void mousePosUpdate(GLFWwindow* a_window, double x_pos, double y_pos) override {}
-    virtual void mouseScrollUpdate(GLFWwindow* a_window, double x_pos, double y_pos) override;
+    virtual int init(int argc, char **argv, const afWorldPtr a_afWorld) override;
+    virtual void keyboardUpdate(GLFWwindow *a_window, int a_key, int a_scancode, int a_action, int a_mods) override;
+    virtual void mouseBtnsUpdate(GLFWwindow *a_window, int a_button, int a_action, int a_modes) override;
+    virtual void mousePosUpdate(GLFWwindow *a_window, double x_pos, double y_pos) override {}
+    virtual void mouseScrollUpdate(GLFWwindow *a_window, double x_pos, double y_pos) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double dt) override;
     virtual void reset() override;
@@ -71,7 +72,7 @@ public:
 protected:
     void sliceVolume(int axisIdx, double delta);
 
-    void makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number=-1);
+    void makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number = -1);
 
     void updateButtons();
 
@@ -82,8 +83,7 @@ protected:
     void publishDrillTipLocationInsideVolume();
 
 private:
-
-    cVoxelObject* m_voxelObj;
+    cVoxelObject *m_voxelObj;
 
     int m_renderingMode = 0;
 
@@ -99,7 +99,7 @@ private:
 
     int m_counter = 0;
 
-    cGenericObject* m_selectedObject = NULL;
+    cGenericObject *m_selectedObject = NULL;
 
     bool m_flagMarkVolumeForUpdate = false;
 
@@ -111,7 +111,7 @@ private:
     map<string, afCameraPtr> m_cameras;
 
     // warning pop-up label
-    cLabel* m_warningLabel;
+    cLabel *m_warningLabel;
 
     // color property of bone
     cColorb m_boneColor;
@@ -123,7 +123,7 @@ private:
 
     int m_volumeSmoothingLevel = 2;
 
-    cLabel* m_volumeSmoothingLabel;
+    cLabel *m_volumeSmoothingLabel;
 
     cVector3d m_maxVolCorner, m_minVolCorner;
 
@@ -149,15 +149,15 @@ class Transform2VolumeCoordinates
     /*
     Transformations in this class should be read from right to left.
     For instance T_world_volume is the transform from volume coordinates to world coordinates.
-    */ 
+    */
     afVolumePtr m_volume_object;
     cTransform T_world_volume;
     cTransform T_volume_world;
     bool initialized = false;
 
-    public:
-        void init(afVolumePtr m_volume_object); 
-        bool get_index_location_of_drill_tip(cVector3d& drill_tip_in_worldcoord, cVector3d& result_vec);
+public:
+    void init(afVolumePtr m_volume_object);
+    bool get_index_location_of_drill_tip(cVector3d &drill_tip_in_worldcoord, cVector3d &result_vec);
 };
 
 AF_REGISTER_SIMULATOR_PLUGIN(afVolmetricDrillingPlugin)

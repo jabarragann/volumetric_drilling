@@ -45,17 +45,20 @@
 
 using namespace std;
 
-DrillingPublisher::DrillingPublisher(string a_namespace, string a_plugin){
+DrillingPublisher::DrillingPublisher(string a_namespace, string a_plugin)
+{
     init(a_namespace, a_plugin);
 }
 
-DrillingPublisher::~DrillingPublisher(){
+DrillingPublisher::~DrillingPublisher()
+{
     m_voxelsRemovalPub.shutdown();
     m_drillSizePub.shutdown();
     m_volumeInfoPub.shutdown();
 }
 
-void DrillingPublisher::init(string a_namespace, string a_plugin){
+void DrillingPublisher::init(string a_namespace, string a_plugin)
+{
     m_rosNode = afROSNode::getNode();
 
     m_voxelsRemovalPub = m_rosNode->advertise<volumetric_drilling_msgs::Voxels>(a_namespace + "/" + a_plugin + "/voxels_removed", 1);
@@ -65,14 +68,15 @@ void DrillingPublisher::init(string a_namespace, string a_plugin){
     m_drillLocationInVolumePub = m_rosNode->advertise<geometry_msgs::PointStamped>(a_namespace + "/" + a_plugin + "/drill_location_in_volume", 1, true);
 }
 
-void DrillingPublisher::publishDrillSize(int burrSize, double time){
+void DrillingPublisher::publishDrillSize(int burrSize, double time)
+{
     m_drill_size_msg.header.stamp.fromSec(time);
     m_drill_size_msg.size.data = burrSize;
 
     m_drillSizePub.publish(m_drill_size_msg);
 }
 
-void DrillingPublisher::setVolumeInfo(cTransform &pose, cVector3d& dimensions, cVector3d& voxel_count)
+void DrillingPublisher::setVolumeInfo(cTransform &pose, cVector3d &dimensions, cVector3d &voxel_count)
 {
 
     cQuaternion quat;
@@ -107,10 +111,15 @@ void DrillingPublisher::publishVolumeInfo(double time)
 void DrillingPublisher::appendToVoxelMsg(cVector3d &index, cColorf &color)
 {
     volumetric_drilling_msgs::Index idx;
-    idx.x = index.x(); idx.y = index.y(); idx.z = index.z();
+    idx.x = index.x();
+    idx.y = index.y();
+    idx.z = index.z();
     m_voxel_msg.indices.push_back(idx);
     std_msgs::ColorRGBA col;
-    col.r = color.getR(); col.g = color.getG(); col.b = color.getB(); col.a = color.getA();
+    col.r = color.getR();
+    col.g = color.getG();
+    col.b = color.getB();
+    col.a = color.getA();
     m_voxel_msg.colors.push_back(col);
 }
 
@@ -127,7 +136,7 @@ void DrillingPublisher::publishVoxelMsg(double time)
     m_voxelsRemovalPub.publish(m_voxel_msg);
 }
 
-void DrillingPublisher::publishForceFeedback(cVector3d& force, cVector3d& moment, double time)
+void DrillingPublisher::publishForceFeedback(cVector3d &force, cVector3d &moment, double time)
 {
     m_force_feedback_msg.header.stamp.fromSec(time);
     m_force_feedback_msg.wrench.force.x = force.x();
