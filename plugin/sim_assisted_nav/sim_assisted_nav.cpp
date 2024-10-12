@@ -36,7 +36,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 
     \author    <jbarrag3@jh.edu>
-    \author    Juan Antonio Barragan 
+    \author    Juan Antonio Barragan
 */
 //==============================================================================
 
@@ -45,7 +45,6 @@
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
-
 
 string g_current_filepath;
 
@@ -62,13 +61,18 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     ros_node_handle = afROSNode::getNode();
 
     // Ambf camera
-    // left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
-    // right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
-    // Zed mini
-    left_sub = ros_node_handle->subscribe("/zedm/zed_node/left/image_rect_color", 2, &afCameraHMD::left_img_callback, this);
-    right_sub = ros_node_handle->subscribe("/zedm/zed_node/right/image_rect_color", 2, &afCameraHMD::right_img_callback, this);
+    left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
+    right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
 
-    window_disparity_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_disparity",  2, &afCameraHMD::window_disparity_callback, this);
+    // Zed mini
+    // left_sub = ros_node_handle->subscribe("/zedm/zed_node/left/image_rect_color", 2, &afCameraHMD::left_img_callback, this);
+    // right_sub = ros_node_handle->subscribe("/zedm/zed_node/right/image_rect_color", 2, &afCameraHMD::right_img_callback, this);
+
+    // Mock OR microscope
+    // left_sub = ros_node_handle->subscribe("/decklink_left/camera/image_raw", 2, &afCameraHMD::left_img_callback, this);
+    // right_sub = ros_node_handle->subscribe("/decklink_right/camera/image_raw", 2, &afCameraHMD::right_img_callback, this);
+
+    window_disparity_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_disparity", 2, &afCameraHMD::window_disparity_callback, this);
 
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
@@ -254,7 +258,6 @@ void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
 
 void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
 {
-
     try
     {
         right_img_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
@@ -271,11 +274,19 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
     // cv::imshow("Right img", right_img_ptr->image);
     // cv::waitKey(1);
 
+    update_ros_textures_for_headset();
+}
+
+void afCameraHMD::update_ros_textures_for_headset()
+{
+
     if (left_img_ptr != nullptr && right_img_ptr != nullptr)
     {
         cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
         cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
-        cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGBA2BGRA);
+
+        // This is required for zed mini.
+        // cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGBA2BGRA);
 
         int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
         int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
@@ -286,8 +297,9 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
             m_rosImageTexture->m_image->erase();
             // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
 
-            // For ZED 2i and AMBF rostopics
-            m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE);
+            m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGB, GL_UNSIGNED_BYTE); // AMBF rostopics
+            // m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE); // For ZED 2i
+
             m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
 
             // Only for debuggin purposes

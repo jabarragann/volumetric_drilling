@@ -71,6 +71,7 @@ public:
     void left_img_callback(const sensor_msgs::ImageConstPtr &msg);
     void right_img_callback(const sensor_msgs::ImageConstPtr &msg);
     void window_disparity_callback(const std_msgs::Float32 &msg);
+    void update_ros_textures_for_headset();
     cv_bridge::CvImagePtr left_img_ptr = nullptr;
     cv_bridge::CvImagePtr right_img_ptr = nullptr;
     cv_bridge::CvImagePtr concat_img_ptr = nullptr;
@@ -90,7 +91,6 @@ protected:
     int m_height;
     int m_alias_scaling;
     cShaderProgramPtr m_shaderPgm;
-
 };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraHMD)
