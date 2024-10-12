@@ -23,6 +23,7 @@ VOLUME mastoidectomy_volume:
     format: png
     count: 197
 
+## This anatomy was registered with respect to the atracsys not the reference
 BODY volume_anatomical_origin: # This is a dummy body that can be used to represent the anatomical origin for easy reference
   name: volume_anatomical_origin
   mass: 0.0
@@ -30,9 +31,9 @@ BODY volume_anatomical_origin: # This is a dummy body that can be used to repres
       # position:    {x: 0.0, y: 0.0, z: 0.0}
       # orientation: {r: 0.0, p: 0.0, y: 0.0}
 
-      ### Recorded registration experiment - with handheld drill
-      position: {x: 0.142479, y: -0.0907415, z: 1.21572}
-      orientation: {r: -3.05383, p: -3.1008, y: 0.0200531}
+      # ### Recorded registration experiment - with handheld drill
+      # position: {x: 0.142479, y: -0.0907415, z: 1.21572}
+      # orientation: {r: -3.05383, p: -3.1008, y: 0.0200531}
       
       #Experiment on 10/02/2024 - with brainlab pointer
       position: {x: -0.00141666, y: -0.0629417, z: 1.36103}

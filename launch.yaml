@@ -26,5 +26,5 @@ multibody configs:
   - "ADF/gaze_marker.yaml" #7
   - "ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #8 
   - "ADF/volume_sim_assisted_test01.yaml" #9
-  - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/anatomy2/ambf_data/volume.yaml" #10
+  - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/anatomy2/ambf_data/volume.yaml" #10 - Not included in repo
 
