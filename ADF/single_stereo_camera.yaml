@@ -49,17 +49,17 @@ stereoLR:
     },
   ]
 
-  # stereo_cam_config: # AMBF stereo camera 
-  #   left_rostopic: /ambf/env/cameras/stereoL/ImageData
-  #   right_rostopic: /ambf/env/cameras/stereoR/ImageData
-  #   format: RGB # RGB or RGBA
-  #   color_conversion: false 
+  stereo_cam_config: # AMBF stereo camera - this requires `stereo_cameras.yaml`
+    left_rostopic: /ambf/env/cameras/stereoL/ImageData
+    right_rostopic: /ambf/env/cameras/stereoR/ImageData
+    format: RGB # RGB or RGBA
+    color_conversion: false 
 
-  stereo_cam_config: # ZED mini 
-    left_rostopic: /zedm/zed_node/left/image_rect_color
-    right_rostopic: /zedm/zed_node/right/image_rect_color
-    format: RGB
-    color_conversion: true 
+  # stereo_cam_config: # ZED mini 
+  #   left_rostopic: /zedm/zed_node/left/image_rect_color
+  #   right_rostopic: /zedm/zed_node/right/image_rect_color
+  #   format: RGB
+  #   color_conversion: true 
 
   # stereo_cam_config: # Mock OR microscope 
   #   left_rostopic: /stereo/left/image_raw
