@@ -43,6 +43,7 @@
 #include "sim_assisted_nav.h"
 #include <ambf_server/RosComBase.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <yaml-cpp/yaml.h>
 
 using namespace std;
 
@@ -58,23 +59,16 @@ afCameraHMD::afCameraHMD()
 
 int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
+
+    m_camera = (afCameraPtr)a_afObjectPtr; // Get pointer to camera
     ros_node_handle = afROSNode::getNode();
 
-    // Ambf camera
-    left_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoL/ImageData", 2, &afCameraHMD::left_img_callback, this);
-    right_sub = ros_node_handle->subscribe("/ambf/env/cameras/stereoR/ImageData", 2, &afCameraHMD::right_img_callback, this);
-
-    // Zed mini
-    // left_sub = ros_node_handle->subscribe("/zedm/zed_node/left/image_rect_color", 2, &afCameraHMD::left_img_callback, this);
-    // right_sub = ros_node_handle->subscribe("/zedm/zed_node/right/image_rect_color", 2, &afCameraHMD::right_img_callback, this);
-
-    // Mock OR microscope
-    // left_sub = ros_node_handle->subscribe("/decklink_left/camera/image_raw", 2, &afCameraHMD::left_img_callback, this);
-    // right_sub = ros_node_handle->subscribe("/decklink_right/camera/image_raw", 2, &afCameraHMD::right_img_callback, this);
-
+    create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
+    // Ros subscribers
+    left_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_img_callback, this);
+    right_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_img_callback, this);
     window_disparity_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_disparity", 2, &afCameraHMD::window_disparity_callback, this);
 
-    m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
 
     m_camera->getInternalCamera()->m_stereoOffsetW = 0.1;
@@ -236,6 +230,50 @@ void afCameraHMD::makeFullScreen()
     cerr << "\t Making " << m_camera->getName() << " fullscreen \n";
 }
 
+void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBaseObjectAttribsPtr a_objectAttribs)
+{
+    YAML::Node specificationDataNode;
+
+    //cerr << "INFO! SPECIFICATION DATA " << a_objectAttribs->getSpecificationData().m_rawData << endl;
+    specificationDataNode = YAML::Load(a_objectAttribs->getSpecificationData().m_rawData);
+    YAML::Node plugin_config = specificationDataNode["stereo_cam_config"];
+
+    if (plugin_config.IsDefined())
+    {
+        // Example yaml config
+        // left_rostopic: /stereo/left/image_raw
+        // right_rostopic: /stereo/right/image_raw
+        // format: RGB
+        // color_conversion: false 
+
+        try    
+        {
+            string left_rostopic = plugin_config["left_rostopic"].as<string>();
+            string right_rostopic = plugin_config["right_rostopic"].as<string>();
+            string format = plugin_config["format"].as<string>();   
+            bool color_conversion = plugin_config["color_conversion"].as<bool>();
+
+            stereo_cam_info = new StereoRosCameraWrapper(left_rostopic, right_rostopic, cam_name, format, color_conversion);
+        }
+        catch (YAML::Exception &e)
+        {
+            cerr << "stereo_cam_config expects the following config fields " << endl;
+            cerr << "left_rostopic" << endl;
+            cerr << "right_rostopic" << endl;
+            cerr << "format" << endl;
+            cerr << "color_conversion" << endl;
+
+            throw runtime_error("Error in stereo_cam_config");
+        }
+    }
+    else
+    {
+        throw runtime_error("stereo_cam_config not defined in the yaml file");
+    }
+
+
+}
+
 void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
 {
     try
@@ -285,8 +323,11 @@ void afCameraHMD::update_ros_textures_for_headset()
         cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
         cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
 
-        // This is required for zed mini.
-        // cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGBA2BGRA);
+        if (stereo_cam_info->convert_from_RGB2BGR)
+        {
+            // This is required for zed mini.
+            cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGB2BGR);
+        }
 
         int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
         int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
@@ -295,11 +336,11 @@ void afCameraHMD::update_ros_textures_for_headset()
         {
             cout << "INITILIZE rosImageTexture" << endl;
             m_rosImageTexture->m_image->erase();
+
+            // Original implementation in Xinhao's plugin
             // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
 
-            m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGB, GL_UNSIGNED_BYTE); // AMBF rostopics
-            // m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, GL_RGBA, GL_UNSIGNED_BYTE); // For ZED 2i
-
+            m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
             m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
 
             // Only for debuggin purposes

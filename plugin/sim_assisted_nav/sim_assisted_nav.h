@@ -49,6 +49,8 @@
 using namespace std;
 using namespace ambf;
 
+class StereoRosCameraWrapper; // Forward declaration
+
 class afCameraHMD : public afObjectPlugin
 {
 public:
@@ -63,7 +65,10 @@ public:
 
     void makeFullScreen();
 
+    void create_stereo_cam_info_from_yaml(string cam_name, const afBaseObjectAttribsPtr a_objectAttribs);
+
     // ROS attributes and callbacks
+    StereoRosCameraWrapper *stereo_cam_info;
     ros::NodeHandle *ros_node_handle;
     ros::Subscriber left_sub, right_sub;
     ros::Subscriber window_disparity_sub;
@@ -91,6 +96,38 @@ protected:
     int m_height;
     int m_alias_scaling;
     cShaderProgramPtr m_shaderPgm;
+};
+
+struct StereoRosCameraWrapper
+{
+    string rostopic_left;
+    string rostopic_right;
+    string camera_name;
+
+    // Either RGB or RGBA
+    string pixel_format;
+    int pixel_format_gl;
+    bool convert_from_RGB2BGR;
+
+    StereoRosCameraWrapper(string rostopic_left, string rostopic_right, string a_camera_name, string a_pixel_format,
+                           bool a_convert_from_RGB2BGR) : rostopic_left(rostopic_left), rostopic_right(rostopic_right),
+                                                          camera_name(a_camera_name), pixel_format(a_pixel_format),
+                                                          convert_from_RGB2BGR(a_convert_from_RGB2BGR)
+    {
+        if (pixel_format == "RGB")
+        {
+            pixel_format_gl = GL_RGB;
+        }
+        else if (pixel_format == "RGBA")
+        {
+            pixel_format_gl = GL_RGBA;
+        }
+        else
+        {
+            cerr << "ERROR! Pixel format " << pixel_format <<  " not supported. Check plugin config." << endl;
+            throw runtime_error("Pixel format not supported");
+        }
+    }
 };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraHMD)
