@@ -74,12 +74,12 @@ public:
     void windowSizeCallback(GLFWwindow *w, int width, int height);
     void assignGLFWCallbacks();
 
-    void init_side_windows();
+    void init_multi_view_panels();
     void init_volume_pointer();
     void init_volume_slicer();
     void set_slice_in_side_view(int slice);
 
-    // Get location of drill tip from volumetric drilling to display it in side windows. 
+    // Get location of drill tip from volumetric drilling to display it in side windows.
     void drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
 
     // Render virtual camera in the multi-window view.
@@ -87,7 +87,7 @@ public:
 
     // Update CT slices based on drill location.
     void update_ct_slices_with_drill_location();
-    
+
 protected:
     afCameraPtr m_camera; // AMBF camera pointer
     cFrameBufferPtr m_frameBuffer;
@@ -100,10 +100,10 @@ protected:
     cCamera *side_cam2; // Camera pointing to a empty world to display CT slices
     cCamera *side_cam3; // Camera pointing to a empty world to display CT slices
 
-    SideViewWindow *world_window;
-    std::unique_ptr<CtSliceSideWindow> ct_slice1_window;
-    std::unique_ptr<CtSliceSideWindow> ct_slice2_window;
-    std::unique_ptr<CtSliceSideWindow> ct_slice3_window;
+    SideViewWindow *model_3d_window;
+    std::unique_ptr<CtSliceSideWindow> ct_axial_window;
+    std::unique_ptr<CtSliceSideWindow> ct_coronal_window;
+    std::unique_ptr<CtSliceSideWindow> ct_sagittal_window;
 
     cWorld *side_view_world;
     cMesh *m_quadMesh;
@@ -172,7 +172,7 @@ public:
         panel->setSize(width, height);
     }
     void update_panel_location(int x, int y) { panel->setLocalPos(x, y); }
-    cCamera* get_camera() { return camera; }
+    cCamera *get_camera() { return camera; }
 };
 class CtSliceSideWindow : public SideViewWindow
 {
