@@ -7,7 +7,7 @@
         },
         {
             "name": "drill_marker",
-            "json-file": "geometry-BrainLabPointer.json",
+            "json-file": "drill_marker2.json",
             "reference": "anatomy_marker"
         }
     ]

@@ -54,15 +54,15 @@ main_camera:
   # field view angle: 0.17951634837990105 # so that focal length is approximately 1000px and phantom is 250 mm away
 
   ## SIM ASSISTED PHANTOM
-  # Sim assisted phantom 1
-  location: {x: 0.06570638070827492, y: 0.6129113042119473, z: 1.1157380366288392} 
-  look at: {x: -0.00141666, y: -0.0629417, z: 1.36103}
-  up: { x: 0.0, y: 1.0, z: 0.0 }
-
-  ## Sim assisted phantom 2
-  # location: {x: -0.9512750384905934, y: 0.5801295735405693, z: -0.021577704456636454 }
-  # look at: { x: -0.0216465, y: -0.0155717, z: 0.0383901 }
+  # Sim assisted phantom 1 - registered with respect to atracsys
+  # location: {x: 0.06570638070827492, y: 0.6129113042119473, z: 1.1157380366288392} 
+  # look at: {x: -0.00141666, y: -0.0629417, z: 1.36103}
   # up: { x: 0.0, y: 1.0, z: 0.0 }
+
+  ## Sim assisted phantom 2 - registered with respect to base marker
+  location: {x: -0.9512750384905934, y: 0.5801295735405693, z: -0.021577704456636454 }
+  look at: { x: -0.0216465, y: -0.0155717, z: 0.0383901 }
+  up: { x: 0.0, y: 1.0, z: 0.0 }
 
   clipping plane: { near: 0.2, far: 1006.7654639175257 }
   field view angle: 0.17951634837990105
