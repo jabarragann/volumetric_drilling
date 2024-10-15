@@ -47,21 +47,24 @@
 #include "ros_interface.h"
 #include "common.h"
 
-enum class AudioState{
+enum class AudioState
+{
     STOPPED = 0,
     PLAYING = 1
 };
 
-
-struct Drill{
+struct Drill
+{
 public:
     afRigidBodyPtr m_rigidBody;
     string m_name;
-    double m_size;
+    double m_burr_diameter;
 
-    inline int getVoxelRemovalThreshold(){return m_voxelRemovalThreshold;}
-    bool setVoxelRemvalThreshold(int val){
-        if (val > 0){
+    inline int getVoxelRemovalThreshold() { return m_voxelRemovalThreshold; }
+    bool setVoxelRemvalThreshold(int val)
+    {
+        if (val > 0)
+        {
             m_voxelRemovalThreshold = val;
             return true;
         }
@@ -72,15 +75,14 @@ protected:
     int m_voxelRemovalThreshold;
 };
 
-
-class DrillManager{
+class DrillManager
+{
 public:
-
     DrillManager();
 
     void cleanup();
 
-    int init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager, p_opt::variables_map& opts);
+    int init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager, p_opt::variables_map &opts);
 
     void update(double dt);
 
@@ -106,7 +108,7 @@ public:
 
     void showOnlyActive();
 
-    bool getOverrideControl(){return m_overrideControl;}
+    bool getOverrideControl() { return m_overrideControl; }
 
     void setOverrideControl(bool val);
 
@@ -116,16 +118,16 @@ public:
     void reset();
 
     // a haptic device handler
-    cHapticDeviceHandler* m_deviceHandler;
+    cHapticDeviceHandler *m_deviceHandler;
 
     // a pointer to the current haptic device
     cGenericHapticDevicePtr m_hapticDevice;
 
-    DrillingPublisher* m_drillingPub;
+    DrillingPublisher *m_drillingPub;
 
-    std::vector<Drill*> m_drills;
+    std::vector<Drill *> m_drills;
 
-    Drill* m_activeDrill = nullptr;
+    Drill *m_activeDrill = nullptr;
 
     bool m_overrideControl = false;
 
@@ -139,7 +141,7 @@ public:
     // A map of drill burr names and their sizes in simulatio
     double m_units_mmToSim;
 
-    cShapeSphere* m_burrMesh;
+    cShapeSphere *m_burrMesh;
 
     bool m_show = true;
 
@@ -158,15 +160,15 @@ public:
 
     bool m_deviceClutch = false;
 
-    cLabel* m_sizeLabel;
+    cLabel *m_sizeLabel;
 
-    cLabel* m_controlModeLabel;
+    cLabel *m_controlModeLabel;
 
-    cAudioSource* m_audioSource = nullptr;
+    cAudioSource *m_audioSource = nullptr;
 
-    cAudioBuffer* m_audioBuffer = nullptr;
+    cAudioBuffer *m_audioBuffer = nullptr;
 
-    cAudioDevice* m_audioDevice = nullptr;
+    cAudioDevice *m_audioDevice = nullptr;
 
     AudioState m_audioState;
 
@@ -184,7 +186,7 @@ public:
     bool m_showGoalProxySpheres = false;
 
     // list of tool cursors
-    vector<cToolCursor*> m_toolCursorList;
+    vector<cToolCursor *> m_toolCursorList;
 
     // radius of tool cursors
     vector<double> m_toolCursorRadius{0.02, 0.013, 0.015, 0.017, 0.019, 0.021, 0.023, 0.025};
@@ -195,11 +197,11 @@ public:
     // for storing index of follow sphere
     int m_targetToolCursorIdx = 0;
 
-    cToolCursor* m_targetToolCursor;
+    cToolCursor *m_targetToolCursor;
 
     afCameraPtr m_mainCamera;
 
-    CameraPanelManager* m_panelManager;
+    CameraPanelManager *m_panelManager;
 };
 
 #endif

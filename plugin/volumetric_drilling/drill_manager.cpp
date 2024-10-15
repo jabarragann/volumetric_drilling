@@ -43,32 +43,37 @@
 #include "drill_manager.h"
 #include <boost/program_options.hpp>
 
-DrillManager::DrillManager(){
+DrillManager::DrillManager()
+{
     // m_units_mmToSim = 0.01007;
     m_units_mmToSim = 0.001;
 }
 
 void DrillManager::cleanup()
 {
-    for(auto tool : m_toolCursorList)
-        {
-            tool->stop();
-        }
+    for (auto tool : m_toolCursorList)
+    {
+        tool->stop();
+    }
 
-        if (m_audioSource){
-            delete m_audioSource;
-        }
-        if (m_audioBuffer){
-            delete m_audioBuffer;
-        }
-        if (m_audioDevice){
-            m_mainCamera->getInternalCamera()->detachAudioDevice();
-            delete m_audioDevice;
-        }
-        delete m_deviceHandler;
+    if (m_audioSource)
+    {
+        delete m_audioSource;
+    }
+    if (m_audioBuffer)
+    {
+        delete m_audioBuffer;
+    }
+    if (m_audioDevice)
+    {
+        m_mainCamera->getInternalCamera()->detachAudioDevice();
+        delete m_audioDevice;
+    }
+    delete m_deviceHandler;
 }
 
-int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager, p_opt::variables_map& var_map){
+int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager, p_opt::variables_map &var_map)
+{
     // importing drill model
 
     int nt = var_map["nt"].as<int>();
@@ -77,17 +82,20 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager
     m_mainCamera = a_worldPtr->getCamera("main_camera");
     m_panelManager = a_panelManager;
 
-    if (nt > 0 && nt <= 8){
+    if (nt > 0 && nt <= 8)
+    {
         m_toolCursorList.resize(nt);
     }
-    else{
+    else
+    {
         cerr << "ERROR! VALID NUMBER OF TOOL CURSORS ARE BETWEEN 1 - 8. Specified value = " << nt << endl;
         return -1;
     }
 
     m_drillReferenceBody = a_worldPtr->getRigidBody("drill_empty_reference");
 
-    if (!m_drillReferenceBody){
+    if (!m_drillReferenceBody)
+    {
         cerr << "ERROR! FAILED TO FIND REFERENCE DRILL RIGID BODY " << "mastoidectomy_drill" << endl;
         return -1;
     }
@@ -95,20 +103,23 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager
     vector<int> drillTypes = {1, 2, 4, 6};
     vector<int> voxelRemovalThresholds = {1, 3, 6, 10};
 
-    for (int i = 0 ; i < drillTypes.size() ; i++){
+    for (int i = 0; i < drillTypes.size(); i++)
+    {
         string drillName = to_string(drillTypes[i]) + "mm";
         afRigidBodyPtr drillRB = a_worldPtr->getRigidBody(drillName);
-        if (drillRB){
-            Drill* drill = new Drill();
+        if (drillRB)
+        {
+            Drill *drill = new Drill();
             drill->m_name = drillName;
             drill->m_rigidBody = drillRB;
-            drill->m_size = drillTypes[i] * m_units_mmToSim;
+            drill->m_burr_diameter = drillTypes[i] * m_units_mmToSim;
             drill->setVoxelRemvalThreshold(voxelRemovalThresholds[i]);
             m_drills.push_back(drill);
         }
     }
 
-    if (m_drills.size() == 0){
+    if (m_drills.size() == 0)
+    {
         cerr << "ERROR! FAILED TO FIND DRILLS WITH PREFIX " << "mastoidectomy_drill" << endl;
         return -1;
     }
@@ -121,8 +132,8 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager
 
     string drill_matcap = var_map["dm"].as<string>();
 
-    m_burrMesh = new cShapeSphere(m_activeDrill->m_size);
-    m_burrMesh->setRadius(m_activeDrill->m_size);
+    m_burrMesh = new cShapeSphere(m_activeDrill->m_burr_diameter / 2.0);
+    m_burrMesh->setRadius(m_activeDrill->m_burr_diameter / 2.0);
     m_burrMesh->m_material->setBlack();
     m_burrMesh->m_material->setShininess(0);
     m_burrMesh->m_material->m_specular.set(0, 0, 0);
@@ -145,11 +156,15 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager
 
     cTexture2dPtr drillMatCap = cTexture2d::create();
     string drillMatcapFilepath = current_filepath + "/../../resources/matcap/" + drill_matcap;
-    if(drillMatCap->loadFromFile(drillMatcapFilepath)){
+    if (drillMatCap->loadFromFile(drillMatcapFilepath))
+    {
         cerr << "SUCCESFULLY LOADED DRILL'S MATCAP TEXTURE" << endl;
-        for (int di = 0 ; di < m_drills.size() ; di++){
-            if (m_drills[di]->m_rigidBody->getShaderProgram()){
-                for (int mi = 0 ; mi < m_drills[di]->m_rigidBody->getVisualObject()->getNumMeshes(); mi++){
+        for (int di = 0; di < m_drills.size(); di++)
+        {
+            if (m_drills[di]->m_rigidBody->getShaderProgram())
+            {
+                for (int mi = 0; mi < m_drills[di]->m_rigidBody->getVisualObject()->getNumMeshes(); mi++)
+                {
                     m_drills[di]->m_rigidBody->getVisualObject()->getMesh(mi)->m_metallicTexture = drillMatCap;
                     m_drills[di]->m_rigidBody->getVisualObject()->getMesh(mi)->m_metallicTexture->setTextureUnit(GL_TEXTURE3);
                 }
@@ -157,17 +172,20 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager
             }
         }
     }
-    else{
+    else
+    {
         cerr << "FAILED TO LOAD DRILL'S MATCAP TEXTURE" << endl;
     }
 
-    if (!mute){
+    if (!mute)
+    {
         m_audioDevice = new cAudioDevice();
         m_mainCamera->getInternalCamera()->attachAudioDevice(m_audioDevice);
 
         m_audioBuffer = new cAudioBuffer();
         string drillAudioFilepath = current_filepath + "/../../resources/sounds/drill.wav";
-        if (m_audioBuffer->loadFromFile(drillAudioFilepath)){
+        if (m_audioBuffer->loadFromFile(drillAudioFilepath))
+        {
             m_audioSource = new cAudioSource();
             //        m_drillAudioBuffer->convertToMono();
             m_audioSource->setAudioBuffer(m_audioBuffer);
@@ -175,7 +193,8 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager* a_panelManager
             m_audioSource->setGain(5.0);
             m_audioState = AudioState::STOPPED;
         }
-        else{
+        else
+        {
             delete m_audioSource;
             delete m_audioBuffer;
             m_audioSource = nullptr;
@@ -204,10 +223,12 @@ void DrillManager::update(double dt)
     // If a valid haptic device is found, then it should be available
 
     // Use override control mode to control the drill with the tf_plugin.
-    if (getOverrideControl()){
+    if (getOverrideControl())
+    {
         m_T_d = m_drillReferenceBody->getLocalTransform();
     }
-    else if(m_hapticDevice->isDeviceAvailable()){
+    else if (m_hapticDevice->isDeviceAvailable())
+    {
         m_hapticDevice->getTransform(m_T_i);
         m_hapticDevice->getLinearVelocity(m_V_i);
         m_V_i = T_c_w.getLocalRot() * (m_V_i / m_toolCursorList[0]->getWorkspaceScaleFactor());
@@ -215,8 +236,10 @@ void DrillManager::update(double dt)
         m_T_d.setLocalRot(T_c_w.getLocalRot() * m_T_i.getLocalRot());
 
         // set zero forces when manipulating objects
-        if (m_deviceClutch || m_camClutch){
-            if (m_camClutch){
+        if (m_deviceClutch || m_camClutch)
+        {
+            if (m_camClutch)
+            {
                 m_mainCamera->setView(T_c_w.getLocalPos() + m_V_i * !m_deviceClutch, m_mainCamera->getTargetPosLocal(), m_mainCamera->getUpVector());
             }
             m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
@@ -229,28 +252,33 @@ void DrillManager::update(double dt)
     // check for shaft collision
     checkShaftCollision();
 
-//    if (getOverrideControl() == false){
-        // updates position of drill mesh
-        // updatePoseFromCursors(); // NO need to update position of the drill anymore. TF plugin takes care of this.
-//    }
+    //    if (getOverrideControl() == false){
+    // updates position of drill mesh
+    // updatePoseFromCursors(); // NO need to update position of the drill anymore. TF plugin takes care of this.
+    //    }
 
     m_burrMesh->setLocalTransform(m_activeDrill->m_rigidBody->getLocalTransform());
 
-    if (m_isOn && m_audioSource){
-        if (m_audioState == AudioState::STOPPED){
+    if (m_isOn && m_audioSource)
+    {
+        if (m_audioState == AudioState::STOPPED)
+        {
             m_audioSource->play();
             m_audioState = AudioState::PLAYING;
         }
     }
-    else{
-        if (m_audioState == AudioState::PLAYING){
+    else
+    {
+        if (m_audioState == AudioState::PLAYING)
+        {
             m_audioSource->stop();
             m_audioState = AudioState::STOPPED;
         }
     }
 }
 
-void DrillManager::initializeLabels(){
+void DrillManager::initializeLabels()
+{
     // create a font
     cFontPtr font = NEW_CFONTCALIBRI32();
 
@@ -264,7 +292,7 @@ void DrillManager::initializeLabels(){
     m_sizeLabel->setShowPanel(true);
 
     m_panelManager->addPanel(m_sizeLabel, 15, 60, PanelReferenceOrigin::LOWER_LEFT, PanelReferenceType::PIXEL);
-//    m_panelManager->setVisible(m_sizePanel, true);
+    //    m_panelManager->setVisible(m_sizePanel, true);
 
     m_controlModeLabel = new cLabel(font);
     m_controlModeLabel->m_fontColor.setGreen();
@@ -273,15 +301,18 @@ void DrillManager::initializeLabels(){
     m_panelManager->addPanel(m_controlModeLabel, 20, 35, PanelReferenceOrigin::LOWER_LEFT, PanelReferenceType::PIXEL);
 }
 
-void DrillManager::setOverrideControl(bool val){
+void DrillManager::setOverrideControl(bool val)
+{
     m_overrideControl = val;
     cColorf color;
-    if (getOverrideControl()){
+    if (getOverrideControl())
+    {
         color.setRed();
         m_panelManager->setText(m_controlModeLabel, "[CTRL+O] Drill Control Mode = External afComm");
         m_panelManager->setFontColor(m_controlModeLabel, color);
     }
-    else{
+    else
+    {
         color.setGreen();
         m_panelManager->setText(m_controlModeLabel, "[CTRL+O] Drill Control Mode = Haptic Device / Keyboard");
         m_panelManager->setFontColor(m_controlModeLabel, color);
@@ -290,7 +321,8 @@ void DrillManager::setOverrideControl(bool val){
 
 void DrillManager::setAudioPitch(double pitch)
 {
-    if (m_audioSource){
+    if (m_audioSource)
+    {
         m_audioSource->setPitch(pitch);
     }
 }
@@ -300,15 +332,16 @@ void DrillManager::setAudioPitch(double pitch)
 /// \param a_afWorld    A world that contains all objects of the virtual environment
 /// \return
 ///
-void DrillManager::toolCursorInit(const afWorldPtr a_afWorld){
+void DrillManager::toolCursorInit(const afWorldPtr a_afWorld)
+{
 
-    for(int i=0; i < m_toolCursorList.size(); i++)
+    for (int i = 0; i < m_toolCursorList.size(); i++)
     {
         m_toolCursorList[i] = new cToolCursor(a_afWorld->getChaiWorld());
 
         a_afWorld->addSceneObjectToWorld(m_toolCursorList[i]);
 
-        if(i == 0)
+        if (i == 0)
         {
             m_toolCursorList[i]->setHapticDevice(m_hapticDevice);
 
@@ -326,7 +359,7 @@ void DrillManager::toolCursorInit(const afWorldPtr a_afWorld){
 
             // if the haptic device has a gripper, enable it as a user switch
             m_hapticDevice->setEnableGripperUserSwitch(true);
-            m_toolCursorList[i]->setRadius(m_activeDrill->m_size); // Set the correct radius for the tip which is not from the list of cursor radii
+            m_toolCursorList[i]->setRadius(m_activeDrill->m_burr_diameter / 2.0); // Set the correct radius for the tip which is not from the list of cursor radii
         }
         else
         {
@@ -335,28 +368,28 @@ void DrillManager::toolCursorInit(const afWorldPtr a_afWorld){
             m_toolCursorList[i]->m_hapticPoint->m_sphereGoal->m_material->setOrangeCoral();
             m_toolCursorList[i]->setRadius(m_toolCursorRadius[i]);
         }
-     }
+    }
 
     // Initialize the start pose of the tool cursors
     toolCursorsPosUpdate(m_T_d);
     toolCursorsInitialize();
 }
 
-
 ///
 /// \brief incrementDevicePos
 /// \param a_vel
 ///
-void DrillManager::incrementDevicePos(cVector3d a_vel){
+void DrillManager::incrementDevicePos(cVector3d a_vel)
+{
     m_T_d.setLocalPos(m_T_d.getLocalPos() + a_vel);
 }
-
 
 ///
 /// \brief incrementDeviceRot
 /// \param a_rot
 ///
-void DrillManager::incrementDeviceRot(cVector3d a_rot){
+void DrillManager::incrementDeviceRot(cVector3d a_rot)
+{
     cMatrix3d R_cmd;
     R_cmd.setExtrinsicEulerRotationDeg(a_rot(0), a_rot(1), a_rot(2), C_EULER_ORDER_XYZ);
     R_cmd = m_T_d.getLocalRot() * R_cmd;
@@ -366,8 +399,10 @@ void DrillManager::incrementDeviceRot(cVector3d a_rot){
 ///
 /// \brief afVolmetricDrillingPlugin::toolCursorsInitialize
 ///
-void DrillManager::toolCursorsInitialize(){
-    for (int i = 0 ;  i < m_toolCursorList.size() ; i++){
+void DrillManager::toolCursorsInitialize()
+{
+    for (int i = 0; i < m_toolCursorList.size(); i++)
+    {
         m_toolCursorList[i]->initialize();
     }
 }
@@ -376,16 +411,19 @@ void DrillManager::toolCursorsInitialize(){
 /// \brief This method updates the position of the shaft tool cursors
 /// which eventually updates the position of the whole tool.
 ///
-void DrillManager::toolCursorsPosUpdate(cTransform a_targetPose){
+void DrillManager::toolCursorsPosUpdate(cTransform a_targetPose)
+{
     cVector3d n_x = a_targetPose.getLocalRot().getCol0() * m_dX;
-    for (int i = 0 ; i < m_toolCursorList.size() ; i++){
+    for (int i = 0; i < m_toolCursorList.size(); i++)
+    {
         cVector3d P = a_targetPose.getLocalPos() + n_x * i;
         m_toolCursorList[i]->setDeviceLocalPos(P);
         m_toolCursorList[i]->setDeviceLocalRot(a_targetPose.getLocalRot());
     }
 }
 
-void DrillManager::reset(){
+void DrillManager::reset()
+{
     m_hapticDevice->setForce(cVector3d(0., 0., 0.));
     m_T_d = m_T_d_init;
     toolCursorsPosUpdate(m_T_d);
@@ -401,17 +439,18 @@ void DrillManager::reset(){
 /// If there's no collision, the drill mesh follows the proxy position of the shaft tool cursor which is
 /// closest to the tip tool cursor.
 ///
-void DrillManager::checkShaftCollision(){
+void DrillManager::checkShaftCollision()
+{
 
     m_maxError = 0;
     m_targetToolCursor = m_toolCursorList[0];
     m_targetToolCursorIdx = 0;
-    for(int i=0; i<m_toolCursorList.size(); i++)
+    for (int i = 0; i < m_toolCursorList.size(); i++)
     {
 
         m_currError = cDistance(m_toolCursorList[i]->m_hapticPoint->getLocalPosProxy(), m_toolCursorList[i]->m_hapticPoint->getLocalPosGoal());
 
-        if(abs(m_currError) > abs(m_maxError + 0.00001))
+        if (abs(m_currError) > abs(m_maxError + 0.00001))
         {
             m_maxError = m_currError;
             m_targetToolCursor = m_toolCursorList[i];
@@ -420,24 +459,25 @@ void DrillManager::checkShaftCollision(){
     }
 }
 
-
 ///
 /// \brief This method updates the position of the drill mesh.
 /// After obtaining g_targetToolCursor, the drill mesh adjust it's position and rotation
 /// such that it follows the proxy position of the g_targetToolCursor.
 ///
-void DrillManager::updatePoseFromCursors(){
+void DrillManager::updatePoseFromCursors()
+{
     cMatrix3d newDrillRot;
     newDrillRot = m_toolCursorList[0]->getDeviceLocalRot();
-//    cerr << newDrillRot.str(2) << endl;
+    //    cerr << newDrillRot.str(2) << endl;
 
-    if(m_targetToolCursorIdx == 0){
+    if (m_targetToolCursorIdx == 0)
+    {
         cTransform T_tip;
         T_tip.setLocalPos(m_toolCursorList[0]->m_hapticPoint->getLocalPosProxy());
         T_tip.setLocalRot(newDrillRot);
         m_activeDrill->m_rigidBody->setLocalTransform(T_tip);
     }
-    else if(cDistance(m_targetToolCursor->m_hapticPoint->getLocalPosProxy(), m_targetToolCursor->m_hapticPoint->getLocalPosGoal()) <= 0.001)
+    else if (cDistance(m_targetToolCursor->m_hapticPoint->getLocalPosProxy(), m_targetToolCursor->m_hapticPoint->getLocalPosGoal()) <= 0.001)
     {
         // direction of positive x-axis of drill mesh
         cVector3d xDir = m_activeDrill->m_rigidBody->getLocalRot().getCol0();
@@ -445,7 +485,7 @@ void DrillManager::updatePoseFromCursors(){
         cVector3d newDrillPos;
 
         // drill mesh will make a sudden jump towards the followSphere
-        if(!m_suddenJump)
+        if (!m_suddenJump)
         {
             newDrillPos = (m_targetToolCursor->m_hapticPoint->getLocalPosProxy() - xDir * m_dX * m_targetToolCursorIdx);
         }
@@ -456,33 +496,35 @@ void DrillManager::updatePoseFromCursors(){
             newDrillPos = m_activeDrill->m_rigidBody->getLocalPos() + ((m_targetToolCursor->m_hapticPoint->getLocalPosProxy() - xDir * m_dX * m_targetToolCursorIdx) - m_activeDrill->m_rigidBody->getLocalPos()) * 0.04;
         }
 
-//        cVector3d L = g_targetToolCursor->m_hapticPoint->getLocalPosProxy() - g_toolCursorList[0]->getDeviceLocalPos();
+        //        cVector3d L = g_targetToolCursor->m_hapticPoint->getLocalPosProxy() - g_toolCursorList[0]->getDeviceLocalPos();
 
-//        cerr << "Colliding Cursor " << g_targetToolCursorIdx << " Error " << L.str(2) << endl;
-//        if ( L.length() < 0.01){
-//            newDrillRot = g_toolCursorList[0]->getDeviceLocalRot();
-//        }
-//        else{
-//            newDrillRot = afUtils::getRotBetweenVectors<cMatrix3d>(L, cVector3d(1, 0, 0));
-//        }
+        //        cerr << "Colliding Cursor " << g_targetToolCursorIdx << " Error " << L.str(2) << endl;
+        //        if ( L.length() < 0.01){
+        //            newDrillRot = g_toolCursorList[0]->getDeviceLocalRot();
+        //        }
+        //        else{
+        //            newDrillRot = afUtils::getRotBetweenVectors<cMatrix3d>(L, cVector3d(1, 0, 0));
+        //        }
 
         cTransform trans;
         trans.setLocalPos(newDrillPos);
         trans.setLocalRot(newDrillRot);
 
-//        g_drillRigidBody->setLocalPos(g_drillRigidBody->getLocalPos() + newDrillPos);
+        //        g_drillRigidBody->setLocalPos(g_drillRigidBody->getLocalPos() + newDrillPos);
         m_activeDrill->m_rigidBody->setLocalTransform(trans);
-        if (m_audioSource){
+        if (m_audioSource)
+        {
             m_audioSource->setSourcePos(newDrillPos);
         }
     }
 }
 
-void DrillManager::cycleDrillTypes(){
+void DrillManager::cycleDrillTypes()
+{
     m_activeDrillIdx = (m_activeDrillIdx - 1) % m_drills.size();
     m_activeDrill = m_drills[m_activeDrillIdx];
-    m_toolCursorList[0]->setRadius(m_activeDrill->m_size);
-    m_burrMesh->setRadius(m_activeDrill->m_size);
+    m_toolCursorList[0]->setRadius(m_activeDrill->m_burr_diameter / 2.0);
+    m_burrMesh->setRadius(m_activeDrill->m_burr_diameter / 2.0);
     cout << "Drill Type changed to " << m_activeDrill->m_name << endl;
     m_panelManager->setText(m_sizeLabel, "Drill Type: " + m_activeDrill->m_name);
 
@@ -490,13 +532,16 @@ void DrillManager::cycleDrillTypes(){
     showOnlyActive();
 
     double sim_time = m_activeDrill->m_rigidBody->getCurrentTimeStamp();
-    m_drillingPub->publishDrillSize((int)(m_activeDrill->m_size / m_units_mmToSim), sim_time);
+    m_drillingPub->publishDrillSize((int)(m_activeDrill->m_burr_diameter / m_units_mmToSim), sim_time);
 }
 
-void DrillManager::showOnlyActive(){
-    for (int di = 0 ; di < m_drills.size() ; di++){
+void DrillManager::showOnlyActive()
+{
+    for (int di = 0; di < m_drills.size(); di++)
+    {
         bool show = false;
-        if (di == m_activeDrillIdx){
+        if (di == m_activeDrillIdx)
+        {
             show = true;
         }
         m_drills[di]->m_rigidBody->getVisualObject()->setShowEnabled(show);
