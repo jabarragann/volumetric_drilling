@@ -5,6 +5,7 @@
 transformations:
   - TF world-atracsys_drill_marker
   - TF marker_body-sim_assisted_tip_reference
+  - TF drill_empty_reference-drill_body
 
 TF world-atracsys_drill_marker: # Move drill with atracsys measurements
   parent: World
@@ -16,8 +17,18 @@ TF marker_body-sim_assisted_tip_reference: #ADD HERE the pivot calibration trans
   parent: marker
   child: drill_empty_reference # sim_assisted_drill_tip_reference
   type: FIXED
-  transformation:
-    # position: {x: 0.195032, y:  -0.008330, z:  0.055822 }  # hand held drill
-    position: {x: -0.256477, y: 0.00206882, z: -0.000521261} # brain lab pointer
+  transformation: # from pivot calibration
+    position: { x: 0.20661, y: -0.00815277, z: 0.0549378 } # hand held drill
+    # position: {x: -0.256477, y: 0.00206882, z: -0.000521261} # brain lab pointer
     orientation: { r: 0.0, p: 0.0, y: 0.0 }
 
+## This sets the drill body orientation with respect to the drill reference body.
+# This value came from doing two pivot calibrations with shafts of different lenghts
+# This enables you to calculate the drill's body angle with respect to the ref body.
+TF drill_empty_reference-drill_body:
+  parent: drill_empty_reference
+  child: 4mm_drill_body
+  type: FIXED
+  transformation:
+    position: { x: 0.0, y: 0.0, z: 0.0 } 
+    orientation: { r: 0.0, p: 0.0, y: 2.84 } # For handheld drill. This should be around 117.4 degrees acording to ADF file
