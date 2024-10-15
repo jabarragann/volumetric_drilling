@@ -18,6 +18,12 @@ ambf_simulator --launch_file launch.yaml -l 6,8,9 --tf_list share/plugin_config/
 ```
 
 Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard shortcuts `<C-c>` to toggle visibility of the collision spheres and `<C-o>` to enable control with the haptic device.
+## Important configurations
+Three files contain configure AMBF to mimick the real world setup: `world.yaml`, `single_stereo_camera.yaml` and `tf_config.yaml`.
+
+* `tf_config.yaml`: specifies transformation between the drill marker and the tip of the drill (pivot calibration). This file needs to be changed everytime the drill changes.
+* `single_stereo_camera.yaml.yaml`: specifies the rostopic for the left and right real cameras.
+* `world.yaml`: specifies the location of the main camera. This has to change depending on which phantom is used.
 
 ## Keyboard shortcuts
 | # | Linear Motion of Tool | Description                        |
@@ -28,7 +34,7 @@ Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard
 ### TODO for paper:
 
 - [ ] Get drill body in the correct orientation. 
-- [ ] Figure out the drill's burr size.
+- [x] Figure out the drill's burr size.
 - [ ] Create swapping functionality to change between assistance view and real camera view.
 - [ ] Change small window location with keyboard shortcuts.
 
