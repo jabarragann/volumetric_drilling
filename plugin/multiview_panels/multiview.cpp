@@ -282,20 +282,20 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         // 1) CREATE SLICES
         // 2) ANNOTATED SLICES WITH DRILL LOCATION
         // 3) DISPLAY SLICE
-        unique_ptr<Slice2D> xy_slice = volume_slicer->create_2d_slice("xy", drill_location.z());
-        xy_slice->volume_slice->flipHorizontal();
-        xy_slice->annotate(drill_location.x(), drill_location.y());
-        success = ct_axial_window->update_ct_slice(xy_slice->volume_slice);
+        unique_ptr<Slice2D> axial_slice = volume_slicer->create_2d_slice("xy", drill_location.z());
+        // axial_slice->volume_slice->flipHorizontal();
+        axial_slice->annotate(drill_location.x(), drill_location.y());
+        success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
         ct_axial_window->update_ct_slice_size(500, 500);
 
-        unique_ptr<Slice2D> xz_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
-        xz_slice->annotate(drill_location.x(), drill_location.z());
-        success = ct_coronal_window->update_ct_slice(xz_slice->volume_slice);
+        unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
+        coronal_slice->annotate(drill_location.x(), drill_location.z());
+        success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
         ct_coronal_window->update_ct_slice_size(500, 500);
 
-        unique_ptr<Slice2D> yz_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
-        yz_slice->annotate(drill_location.y(), drill_location.z());
-        success = ct_sagittal_window->update_ct_slice(yz_slice->volume_slice);
+        unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
+        sagittal_slice->annotate(drill_location.y(), drill_location.z());
+        success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
         ct_sagittal_window->update_ct_slice_size(500, 500);
 
         // slice_annotator->restore_slice(); // Removed red marker from previous location
