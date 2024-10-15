@@ -136,7 +136,7 @@ protected:
     // Config strings
     string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";
     string out_of_volume_img_path = "plugin/multiview_panels/sample_imgs/out_of_volume.jpg";
-    string white_background_img_path = "plugin/multiview_panels/sample_imgs/white_background.jpg";
+    string background_img_path = "plugin/multiview_panels/sample_imgs/black_background.jpg";
 
 protected:
     float m_viewport_scale[2];

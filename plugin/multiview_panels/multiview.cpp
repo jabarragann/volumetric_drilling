@@ -407,7 +407,7 @@ void afCameraMultiview::init_multi_view_panels()
     m_frameBuffer->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
 
     out_of_volume_img = create_c_image_from_file(out_of_volume_img_path);
-    white_background_img = create_c_image_from_file(white_background_img_path);
+    white_background_img = create_c_image_from_file(background_img_path);
 
     int halfW = m_width / 2;
     int halfH = m_height / 2;
