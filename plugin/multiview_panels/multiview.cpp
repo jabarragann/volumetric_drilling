@@ -282,8 +282,7 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         // 1) CREATE SLICES
         // 2) ANNOTATED SLICES WITH DRILL LOCATION
         // 3) DISPLAY SLICE
-        unique_ptr<Slice2D> axial_slice = volume_slicer->create_2d_slice("xy", drill_location.z());
-        // axial_slice->volume_slice->flipHorizontal();
+        unique_ptr<Slice2D> axial_slice = volume_slicer->create_2d_slice_reverse_y("xy", drill_location.z());
         axial_slice->annotate(drill_location.x(), drill_location.y());
         success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
         ct_axial_window->update_ct_slice_size(500, 500);

@@ -91,6 +91,55 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, int slice_i
     return volume_slice_ptr;
 }
 
+
+// QUICK an ugly patch to revert the XY slice
+unique_ptr<Slice2D> VolumeSlicer::create_2d_slice_reverse_y(string slice_name, int slice_idx)
+{
+    if (strides_map.find(slice_name) == strides_map.end())
+    {
+        throw std::invalid_argument("Slice name not found");
+    }
+
+    array<int, NUM_OF_DIM> slice_strides = strides_map[slice_name];
+    array<int, NUM_OF_DIM> slice_limits = limits_map[slice_name];
+
+    cImagePtr volume_slice = cImage::create();
+    volume_slice->allocate(slice_limits[1], slice_limits[2], GL_RGBA, GL_UNSIGNED_BYTE);
+
+    int z = slice_idx;
+    int W = slice_limits[1];
+    int H = slice_limits[2];
+
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    unsigned char a;
+
+    /*
+     * In this for loop, x is the fastest changing dimension, y is the second fastest and z is the slowest.
+     * They do not correspond to the actual xyz dimension of the volume.
+     */
+    for (int y = 0; y < slice_limits[2]; y++)
+    {
+        for (int x = 0; x < slice_limits[1]; x++)
+        {
+            // PIX INDEX calculation changes in this method
+            int pix_index = x * slice_strides[1] + (slice_limits[2]-1-y) * slice_strides[2] + z * slice_strides[3];
+            cColorb colorz;
+            r = raw_data[pix_index];
+            g = raw_data[pix_index + 1];
+            b = raw_data[pix_index + 2];
+            a = raw_data[pix_index + 3];
+            colorz.set(r, g, b, a);
+            volume_slice->setPixelColor(x, y, colorz);
+        }
+    }
+
+    unique_ptr<Slice2D> volume_slice_ptr(new Slice2D(volume_slice, slice_idx, slice_name));
+
+    return volume_slice_ptr;
+}
+
 void VolumeSlicer::permute_array(const std::array<int, NUM_OF_DIM> &arr, const std::vector<int> &indexes, std::array<int, NUM_OF_DIM> &out_arr)
 {
     if (indexes.size() != NUM_OF_DIM)
