@@ -192,6 +192,13 @@ public:
         ct_slice->setSize(width, height);
         white_background->setSize(width, height);
     }
+    void update_ct_slice_size()
+    {
+        int w = ct_slice->getWidth();
+        int h = ct_slice->getHeight();
+        ct_slice->setSize(w, h);
+        // white_background->setSize(width, height);
+    }
 };
 
 struct AnnotationLocation

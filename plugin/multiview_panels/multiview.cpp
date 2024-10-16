@@ -149,8 +149,8 @@ void afCameraMultiview::graphicsUpdate()
     // RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.
     // THIS ENABLE THE IMAGE OVER IMAGE VIEW.
 
-    main_cam->renderView(m_width, m_height); // (OPT1)
-    // m_camera->m_frameBuffer->renderView(); // (OPT2)
+    // main_cam->renderView(m_width, m_height); // (OPT1)
+    m_camera->m_frameBuffer->renderView(); // (OPT2)
 
     // swap buffers
     glfwSwapBuffers(m_camera->m_window);
@@ -285,17 +285,17 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         unique_ptr<Slice2D> axial_slice = volume_slicer->create_2d_slice_reverse_y("xy", drill_location.z());
         axial_slice->annotate(drill_location.x(), drill_location.y());
         success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
-        ct_axial_window->update_ct_slice_size(500, 500);
+        ct_axial_window->update_ct_slice_size();
 
         unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
         coronal_slice->annotate(drill_location.x(), drill_location.z());
         success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
-        ct_coronal_window->update_ct_slice_size(500, 500);
+        ct_coronal_window->update_ct_slice_size();
 
         unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
         sagittal_slice->annotate(drill_location.y(), drill_location.z());
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
-        ct_sagittal_window->update_ct_slice_size(500, 500);
+        ct_sagittal_window->update_ct_slice_size();
 
         // slice_annotator->restore_slice(); // Removed red marker from previous location
         // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
