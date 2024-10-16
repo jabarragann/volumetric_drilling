@@ -82,7 +82,8 @@ void main()
     {
         // gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green color
         vec2 output_loc2 = remap_little_window(output_loc, rectMin, rectMax);
-        gl_FragColor = texture2D(frameBufferTexture, output_loc2); 
+        // gl_FragColor = texture2D(frameBufferTexture, output_loc2); 
+        gl_FragColor = mix(texture2D(frameBufferTexture, output_loc2), texture2D(rosImageTexture, output_loc), 0.3);
     }
     else
     {
