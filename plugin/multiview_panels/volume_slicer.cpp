@@ -91,7 +91,6 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, int slice_i
     return volume_slice_ptr;
 }
 
-
 // QUICK an ugly patch to revert the XY slice
 unique_ptr<Slice2D> VolumeSlicer::create_2d_slice_reverse_y(string slice_name, int slice_idx)
 {
@@ -124,7 +123,7 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice_reverse_y(string slice_name, i
         for (int x = 0; x < slice_limits[1]; x++)
         {
             // PIX INDEX calculation changes in this method
-            int pix_index = x * slice_strides[1] + (slice_limits[2]-1-y) * slice_strides[2] + z * slice_strides[3];
+            int pix_index = x * slice_strides[1] + (slice_limits[2] - 1 - y) * slice_strides[2] + z * slice_strides[3];
             cColorb colorz;
             r = raw_data[pix_index];
             g = raw_data[pix_index + 1];
@@ -238,8 +237,13 @@ void Slice2D::annotate(int x, int y, cColorb marker_color)
     // Draw external circle
     // draw_circle(x, y, drill_radius, marker_color);
     // Draw center
-    draw_circle(x, y, marker_size, marker_color);
-    draw_circle(x, y, marker_size - 1, marker_color);
+    for (int i = marker_size; i > 0; i--)
+    {
+        draw_circle(x, y, i, marker_color);
+    }
+    // draw_circle(x, y, marker_size, marker_color);
+    // draw_circle(x, y, marker_size - 1, marker_color);
+    // draw_circle(x, y, marker_size - 2, marker_color);
 }
 
 /*
