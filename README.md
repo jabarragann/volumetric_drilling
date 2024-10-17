@@ -31,18 +31,6 @@ Three files contain configure AMBF to mimick the real world setup: `world.yaml`,
 | 1 | `]`                   | Increase disparity of small window |
 | 2 | `[`                   | Decrease disparity of small window |
 
-### TODO for paper:
-
-- [ ] Get drill body in the correct orientation. 
-- [x] Figure out the drill's burr size.
-- [ ] Create swapping functionality to change between assistance view and real camera view.
-- [ ] Change small window location with keyboard shortcuts.
-
-## TODO for wednesday mock or
-- [ ] Test whole set up in MOCK OR. 
-- [ ] Mount goovis and zed mini into microscope.
-- [ ] Check out to calculate hand-eye calibration.
-
 
 # Drilling simulator
 
