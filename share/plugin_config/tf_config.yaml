@@ -18,8 +18,8 @@ TF marker_body-sim_assisted_tip_reference: #ADD HERE the pivot calibration trans
   child: drill_empty_reference # sim_assisted_drill_tip_reference
   type: FIXED
   transformation: # from pivot calibration
-    position: { x: 0.20661, y: -0.00815277, z: 0.0549378 } # hand held drill
-    # position: {x: -0.256477, y: 0.00206882, z: -0.000521261} # brain lab pointer
+    # position: {x: 0.194592, y: -0.00732661, z: 0.0566331} # hand held drill
+    position: {x: -0.257054, y: 0.00250705, z: -0.000840788} # brain lab pointer
     orientation: { r: 0.0, p: 0.0, y: 0.0 }
 
 ## This sets the drill body orientation with respect to the drill reference body.
@@ -27,7 +27,7 @@ TF marker_body-sim_assisted_tip_reference: #ADD HERE the pivot calibration trans
 # This enables you to calculate the drill's body angle with respect to the ref body.
 TF drill_empty_reference-drill_body:
   parent: drill_empty_reference
-  child: 4mm_drill_body
+  child: 6mm_drill_body
   type: FIXED
   transformation:
     position: { x: 0.0, y: 0.0, z: 0.0 } 

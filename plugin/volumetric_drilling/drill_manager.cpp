@@ -100,8 +100,8 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager
         return -1;
     }
 
-    vector<int> drillTypes = {1, 2, 4, 6};
-    vector<int> voxelRemovalThresholds = {1, 3, 6, 10};
+    vector<int> drillTypes = {1, 2, 6};
+    vector<int> voxelRemovalThresholds = {1, 3, 6};
 
     for (int i = 0; i < drillTypes.size(); i++)
     {

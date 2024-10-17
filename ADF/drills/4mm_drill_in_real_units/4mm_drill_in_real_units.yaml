@@ -3,7 +3,7 @@
 # Link: https://github.com/WPI-AIM/ambf_addon
 # Generated on: 2024-10-15 12:33:17
 bodies:
-  - BODY 4mm_drill_body
+  - BODY 6mm_drill_body
   - BODY drill_empty_reference
   - BODY drill_tip
   - BODY marker
@@ -18,8 +18,8 @@ gravity:
 
 namespace: /ambf/env/
 
-BODY 4mm_drill_body:
-  name: 4mm_drill_body
+BODY 6mm_drill_body:
+  name: 6mm_drill_body
   mesh: 4mm_drill_body.OBJ
   collision mesh type: CONCAVE_MESH
   mass: 1.0
