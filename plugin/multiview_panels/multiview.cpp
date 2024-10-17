@@ -286,17 +286,17 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         int reverse_y_loc = axial_slice->slice_height - 1 - drill_location.y();
         axial_slice->annotate(drill_location.x(), reverse_y_loc);
         success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
-        ct_axial_window->update_ct_slice_size();
+        ct_axial_window->maximize_slice(500);
 
         unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
         coronal_slice->annotate(drill_location.x(), drill_location.z());
         success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
-        ct_coronal_window->update_ct_slice_size();
+        ct_coronal_window->maximize_slice(500);
 
         unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
         sagittal_slice->annotate(drill_location.y(), drill_location.z());
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
-        ct_sagittal_window->update_ct_slice_size();
+        ct_sagittal_window->maximize_slice(500);
 
         // slice_annotator->restore_slice(); // Removed red marker from previous location
         // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());

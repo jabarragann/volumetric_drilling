@@ -187,17 +187,29 @@ public:
                       cImagePtr white_brackground_img, cImagePtr out_of_volume_img);
     ~CtSliceSideWindow();
     bool update_ct_slice(cImagePtr ct_slice_img) { return ct_slice->loadFromImage(ct_slice_img); };
+
+    // Maximize slice while maitaining aspect ratio
+    void maximize_slice(int new_max_dim)
+    {
+
+        int w = ct_slice->getWidth();
+        int h = ct_slice->getHeight();
+
+        if (w >= h)
+        {
+            float aspect = (float)h / (float)w;
+            ct_slice->setSize(new_max_dim, new_max_dim*aspect);
+        }
+        else
+        {
+            float aspect = (float)w / (float)h;
+            ct_slice->setSize(new_max_dim*aspect, new_max_dim);
+        }
+    }
     void update_ct_slice_size(int width, int height)
     {
         ct_slice->setSize(width, height);
         white_background->setSize(width, height);
-    }
-    void update_ct_slice_size()
-    {
-        int w = ct_slice->getWidth();
-        int h = ct_slice->getHeight();
-        ct_slice->setSize(w, h);
-        // white_background->setSize(width, height);
     }
 };
 
