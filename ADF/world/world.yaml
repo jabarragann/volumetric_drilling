@@ -71,6 +71,7 @@ main_camera:
   # stereo: {mode: Passive, eye separation: 0.15, focal length: 200}
   # multipass: true
   visible: true
+  mouse control multipliers: {pan: 0.1, rotate: 0.1, scroll: 0.1, arcball: 0.1}
   # publish image: true
   # preprocessing shaders:
   #    path: ../shaders/preprocessing/
