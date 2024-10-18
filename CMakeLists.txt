@@ -44,7 +44,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 find_package(AMBF)
 find_package(Boost COMPONENTS program_options filesystem)
-find_package(OpenCV REQUIRED)
+# find_package(OpenCV REQUIRED)
 
 add_subdirectory(volumetric_drilling_msgs)
 find_package(catkin COMPONENTS volumetric_drilling_msgs)

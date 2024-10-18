@@ -56,14 +56,26 @@ stereoLR:
   #   color_conversion: false 
 
   # stereo_cam_config: # ZED mini 
+  #   left_rostopic: /zedm/zed_node/left/image_rect_color/compressed
+  #   right_rostopic: /zedm/zed_node/right/image_rect_color/compressed
+  #   format: RGB
+  #   color_conversion: true 
+
+  # stereo_cam_config: # ZED mini 
   #   left_rostopic: /zedm/zed_node/left/image_rect_color
   #   right_rostopic: /zedm/zed_node/right/image_rect_color
   #   format: RGB
   #   color_conversion: true 
 
   stereo_cam_config: # Mock OR microscope 
-    left_rostopic: /decklink_left/camera/image_raw
-    right_rostopic: /decklink_right/camera/image_raw
+    left_rostopic: /decklink_left/camera/image_raw/compressed
+    right_rostopic: /decklink_right/camera/image_raw/compressed
     format: RGB
-    color_conversion: false 
+    color_conversion: true 
+
+  # stereo_cam_config: # Mock OR microscope 
+  #   left_rostopic: /decklink_left/camera/image_raw
+  #   right_rostopic: /decklink_right/camera/image_raw
+  #   format: RGB
+  #   color_conversion: false 
    
