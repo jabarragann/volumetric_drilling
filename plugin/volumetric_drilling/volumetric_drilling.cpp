@@ -123,6 +123,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     m_boneColor = cColorb(255, 249, 219, 255);
 
+    m_nonDrillColor = cColorb(177, 122, 101, 255);
+
     m_storedColor = cColorb(0x00, 0x00, 0x00, 0x00);
 
     m_worldPtr = a_afWorld;
@@ -237,6 +239,10 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_volume_coord_utils = unique_ptr<Transform2VolumeCoordinates>(new Transform2VolumeCoordinates());
     m_volume_coord_utils->init(m_volumeObject);
 
+    // Drill related pointers
+    m_drillTipPtr = m_worldPtr->getRigidBody("drill_tip");
+    m_drillReferencePtr = m_worldPtr->getRigidBody("drill_empty_reference");
+
     return 1;
 }
 
@@ -272,6 +278,9 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     m_worldPtr->getChaiWorld()->computeGlobalPositions(true);
 
+    if (m_isUsingDrillForCursor){
+        m_drillReferencePtr->setLocalTransform(m_drillTipPtr->getLocalTransform());
+    }
     m_drillManager.update(dt);
 
     publishDrillTipLocationInsideVolume();
@@ -287,7 +296,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
         m_voxelObj->m_texture->m_image->getVoxelColor(uint(orig.x()), uint(orig.y()), uint(orig.z()), m_storedColor);
 
-        if (m_storedColor != m_zeroColor)
+        if (m_storedColor != m_zeroColor && m_storedColor != m_nonDrillColor)
         {
             if (m_drillManager.m_isOn)
             {
@@ -983,6 +992,11 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
                 double stereo_sep = m_stereoCamera->getInternalCamera()->getStereoEyeSeparation();
                 m_stereoCamera->getInternalCamera()->setStereoEyeSeparation(stereo_sep - 0.002);
             }
+        }
+
+        else if (a_key == GLFW_KEY_T){
+            m_isUsingDrillForCursor = !m_isUsingDrillForCursor;
+            cerr << "isUsingDrillForCursor: " << m_isUsingDrillForCursor << endl;
         }
     }
 }

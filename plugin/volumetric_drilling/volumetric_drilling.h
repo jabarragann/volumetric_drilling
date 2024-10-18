@@ -117,6 +117,9 @@ private:
     // color property of bone
     cColorb m_boneColor;
 
+    // color property for non drill object
+    cColorb m_nonDrillColor;
+
     // get color of voxels at (x,y,z)
     cColorb m_storedColor;
 
@@ -145,6 +148,9 @@ private:
     std::unique_ptr<Transform2VolumeCoordinates> m_volume_coord_utils;
 
     SimulationAssistedNavRosInterface m_simAssistedNavRosInterface;
+
+    bool m_isUsingDrillForCursor = true;
+    afRigidBodyPtr m_drillTipPtr, m_drillReferencePtr;
 };
 
 class Transform2VolumeCoordinates
