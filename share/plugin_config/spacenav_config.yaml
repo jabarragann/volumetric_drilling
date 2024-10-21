@@ -23,3 +23,11 @@ static count threshold: 100
 velocity sclaing:
   linear: 100.0
   angular: 2.0
+
+# Define if you want to slice volume or not
+slice volume:
+  volume name: mastoidectomy_volume
+  matcap path: /home/hishida3/adnan/volumetric_drilling/resources/matcap/00ShinyWhite.jpg
+
+publish state: # ROSTOPIC /spacenav/State : geometry_msgs/Twist
+  object: drill_tip
