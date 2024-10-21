@@ -285,10 +285,8 @@ void afCameraHMD::left_compressed_img_callback(const sensor_msgs::CompressedImag
     {
         cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
-        ROS_INFO("width and height: %d x %d", image.cols, image.rows);
         if (!image.empty())
         {
-            ROS_INFO("Successfully decompressed the image. Image size: %d x %d", image.cols, image.rows);
             left_img_ptr->image = image;
             left_img_ptr->encoding = sensor_msgs::image_encodings::BGR8;
         }
@@ -305,8 +303,6 @@ void afCameraHMD::left_compressed_img_callback(const sensor_msgs::CompressedImag
 
     // cv::Rect sizeRect(0, 0, left_img_ptr->image.cols - left_img_ptr->image.cols * clipsize, left_img_ptr->image.rows);
     // left_img_ptr->image = left_img_ptr->image(sizeRect);
-
-    cout << "finish left image callback" << endl;
 }
 void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedImagePtr &msg)
 {
@@ -316,8 +312,6 @@ void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedIma
 
         if (!image.empty())
         {
-            ROS_INFO("Successfully decompressed the image. Image size: %d x %d", image.cols, image.rows);
-
             right_img_ptr->image = image;
             right_img_ptr->encoding = sensor_msgs::image_encodings::BGR8;
         }
@@ -338,7 +332,7 @@ void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedIma
     // cv::imshow("Right img", right_img_ptr->image);
     // cv::waitKey(1);
 
-    update_ros_textures_for_headset();
+    update_ros_textures_for_headset(); // This should go there FIX JUAN.
 }
 void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
 {
@@ -381,53 +375,62 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
     update_ros_textures_for_headset();
 }
 
+/*
+* Process ros images and convert them to chai3d texture to display.
+* If left or right images are not received return without doing anything.
+*/
 void afCameraHMD::update_ros_textures_for_headset()
 {
-
-    if (left_img_ptr != nullptr && right_img_ptr != nullptr)
+    // Return if ros images are not initialized.
+    if (left_img_ptr == nullptr || right_img_ptr == nullptr)
     {
-
-        // ROS_INFO("Successfully decompressed the image left. Image size: %d x %d", left_img_ptr->image.cols, left_img_ptr->image.rows);
-        // ROS_INFO("Successfully decompressed the image right. Image size: %d x %d", right_img_ptr->image.cols, right_img_ptr->image.rows);
-
-        cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
-        cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
-
-        if (stereo_cam_info->convert_from_RGB2BGR)
-        {
-            // This is required for zed mini.
-            cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGB2BGR);
-        }
-
-        int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
-        int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
-
-        if (ros_image_size != texture_image_size)
-        {
-            cout << "INITILIZE rosImageTexture" << endl;
-            m_rosImageTexture->m_image->erase();
-
-            // Original implementation in Xinhao's plugin
-            // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
-
-            m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
-            m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
-
-            // Only for debuggin purposes
-            // m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
-        }
-        else
-        {
-            m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
-        }
-
-        //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
-        m_rosImageTexture->markForUpdate();
-
-        // cv::imshow("Concat image", concat_img_ptr->image);
-        // cv::waitKey(1);
-        // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
+        return;
     }
+    if (left_img_ptr->image.cols != right_img_ptr->image.cols || left_img_ptr->image.rows != right_img_ptr->image.rows)
+    {
+        ROS_WARN("Left and right images have different sizes. Left: %d x %d, Right: %d x %d", left_img_ptr->image.cols, left_img_ptr->image.rows, right_img_ptr->image.cols, right_img_ptr->image.rows);
+        return;
+    }
+
+    // Process ros images if received left and right.
+    cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
+    cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
+
+    if (stereo_cam_info->convert_from_RGB2BGR)
+    {
+        // This is required for zed mini.
+        cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGB2BGR);
+    }
+
+    // Initialize chai ROS texture.
+    int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
+    int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
+
+    if (ros_image_size != texture_image_size)
+    {
+        cout << "INITILIZE rosImageTexture" << endl;
+        m_rosImageTexture->m_image->erase();
+
+        // Original implementation in Xinhao's plugin
+        // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
+
+        m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
+        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
+
+        // Only for debuggin purposes
+        // m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
+    }
+    else
+    {
+        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
+    }
+
+    //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
+    m_rosImageTexture->markForUpdate();
+
+    // cv::imshow("Concat image", concat_img_ptr->image);
+    // cv::waitKey(1);
+    // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
 }
 
 void afCameraHMD::window_disparity_callback(const std_msgs::Float32 &msg)

@@ -17,7 +17,7 @@ plugins: [
   {
     filename: libspacenav_plugin.so,
     name: ambf_spacenav_plugin,
-    path: /home/juan95/research/discovery_grant/ambf_spacenav_plugin/build/, # CHECK THIS PATH
+    path: /home/juan95/research/discovery_grant/registration_pipeline/ambf_spacenav_plugin/build/, # CHECK THIS PATH
   }
 ]
 multibody configs:
@@ -32,5 +32,5 @@ multibody configs:
   - "ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #8 
   - "ADF/volume_sim_assisted_test01.yaml" #9
   - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/anatomy2/ambf_data/volume.yaml" #10 - Not included in repo
-  - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan1/Scan1.yaml" #11 # Nimesh pilot
-  - "/home/hishida3/Desktop/20241015_PhantomADF/Scan2/Scan2.yaml" #12 # Nimesh pilot
+  - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan1/Scan1.yaml" #11 # Nimesh pilot 1
+  - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan2/Scan2.yaml" #12 # Nimesh pilot 2
