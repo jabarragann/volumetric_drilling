@@ -44,6 +44,7 @@
 #include <ambf_server/RosComBase.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <yaml-cpp/yaml.h>
+#include <fstream>
 
 using namespace std;
 
@@ -65,8 +66,12 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
     // Ros subscribers
-    left_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_img_callback, this);
-    right_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_img_callback, this);
+    // left_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_img_callback, this);
+    // right_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_img_callback, this);
+
+    left_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_compressed_img_callback, this);
+    right_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_compressed_img_callback, this);
+
     window_disparity_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_disparity", 2, &afCameraHMD::window_disparity_callback, this);
 
     m_camera->setOverrideRendering(true);
@@ -121,6 +126,8 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 
     // Variables related to ROS topics
     concat_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    left_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    right_img_ptr = boost::make_shared<cv_bridge::CvImage>();
 
     // Textures
     m_rosImageTexture = cTexture2d::create();
@@ -234,7 +241,7 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
 {
     YAML::Node specificationDataNode;
 
-    //cerr << "INFO! SPECIFICATION DATA " << a_objectAttribs->getSpecificationData().m_rawData << endl;
+    // cerr << "INFO! SPECIFICATION DATA " << a_objectAttribs->getSpecificationData().m_rawData << endl;
     specificationDataNode = YAML::Load(a_objectAttribs->getSpecificationData().m_rawData);
     YAML::Node plugin_config = specificationDataNode["stereo_cam_config"];
 
@@ -244,13 +251,13 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
         // left_rostopic: /stereo/left/image_raw
         // right_rostopic: /stereo/right/image_raw
         // format: RGB
-        // color_conversion: false 
+        // color_conversion: false
 
-        try    
+        try
         {
             string left_rostopic = plugin_config["left_rostopic"].as<string>();
             string right_rostopic = plugin_config["right_rostopic"].as<string>();
-            string format = plugin_config["format"].as<string>();   
+            string format = plugin_config["format"].as<string>();
             bool color_conversion = plugin_config["color_conversion"].as<bool>();
 
             stereo_cam_info = new StereoRosCameraWrapper(left_rostopic, right_rostopic, cam_name, format, color_conversion);
@@ -270,10 +277,63 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
     {
         throw runtime_error("stereo_cam_config not defined in the yaml file");
     }
-
-
 }
 
+void afCameraHMD::left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg)
+{
+    try
+    {
+        cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+        if (!image.empty())
+        {
+            left_img_ptr->image = image;
+            left_img_ptr->encoding = sensor_msgs::image_encodings::BGR8;
+        }
+        else
+        {
+            ROS_WARN("Converted image is empty.");
+            throw runtime_error("Converted image is empty.");
+        }
+    }
+    catch (cv::Exception &e)
+    {
+        ROS_ERROR("Error decompressing image: %s", e.what());
+    }
+
+    // cv::Rect sizeRect(0, 0, left_img_ptr->image.cols - left_img_ptr->image.cols * clipsize, left_img_ptr->image.rows);
+    // left_img_ptr->image = left_img_ptr->image(sizeRect);
+}
+void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedImagePtr &msg)
+{
+    try
+    {
+        cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+        if (!image.empty())
+        {
+            right_img_ptr->image = image;
+            right_img_ptr->encoding = sensor_msgs::image_encodings::BGR8;
+        }
+        else
+        {
+            ROS_WARN("Converted image is empty.");
+            throw runtime_error("Converted image is empty.");
+        }
+    }
+    catch (cv::Exception &e)
+    {
+        ROS_ERROR("Error decompressing image: %s", e.what());
+    }
+
+    // cv::Rect sizeRect2(clipsize, 0, right_img_ptr->image.cols - right_img_ptr->image.cols * clipsize, right_img_ptr->image.rows);
+    // right_img_ptr->image = right_img_ptr->image(sizeRect2);
+
+    // cv::imshow("Right img", right_img_ptr->image);
+    // cv::waitKey(1);
+
+    update_ros_textures_for_headset(); // This should go there FIX JUAN.
+}
 void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
 {
     try
@@ -315,49 +375,62 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
     update_ros_textures_for_headset();
 }
 
+/*
+* Process ros images and convert them to chai3d texture to display.
+* If left or right images are not received return without doing anything.
+*/
 void afCameraHMD::update_ros_textures_for_headset()
 {
-
-    if (left_img_ptr != nullptr && right_img_ptr != nullptr)
+    // Return if ros images are not initialized.
+    if (left_img_ptr == nullptr || right_img_ptr == nullptr)
     {
-        cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
-        cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
-
-        if (stereo_cam_info->convert_from_RGB2BGR)
-        {
-            // This is required for zed mini.
-            cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGB2BGR);
-        }
-
-        int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
-        int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
-
-        if (ros_image_size != texture_image_size)
-        {
-            cout << "INITILIZE rosImageTexture" << endl;
-            m_rosImageTexture->m_image->erase();
-
-            // Original implementation in Xinhao's plugin
-            // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
-
-            m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
-            m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
-
-            // Only for debuggin purposes
-            // m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
-        }
-        else
-        {
-            m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
-        }
-
-        //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
-        m_rosImageTexture->markForUpdate();
-
-        // cv::imshow("Concat image", concat_img_ptr->image);
-        // cv::waitKey(1);
-        // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
+        return;
     }
+    if (left_img_ptr->image.cols != right_img_ptr->image.cols || left_img_ptr->image.rows != right_img_ptr->image.rows)
+    {
+        ROS_WARN("Left and right images have different sizes. Left: %d x %d, Right: %d x %d", left_img_ptr->image.cols, left_img_ptr->image.rows, right_img_ptr->image.cols, right_img_ptr->image.rows);
+        return;
+    }
+
+    // Process ros images if received left and right.
+    cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
+    cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
+
+    if (stereo_cam_info->convert_from_RGB2BGR)
+    {
+        // This is required for zed mini.
+        cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGB2BGR);
+    }
+
+    // Initialize chai ROS texture.
+    int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
+    int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
+
+    if (ros_image_size != texture_image_size)
+    {
+        cout << "INITILIZE rosImageTexture" << endl;
+        m_rosImageTexture->m_image->erase();
+
+        // Original implementation in Xinhao's plugin
+        // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
+
+        m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
+        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
+
+        // Only for debuggin purposes
+        // m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
+    }
+    else
+    {
+        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
+    }
+
+    //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
+    m_rosImageTexture->markForUpdate();
+
+    // cv::imshow("Concat image", concat_img_ptr->image);
+    // cv::waitKey(1);
+    // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
 }
 
 void afCameraHMD::window_disparity_callback(const std_msgs::Float32 &msg)
