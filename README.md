@@ -26,10 +26,12 @@ Three files contain configure AMBF to mimick the real world setup: `world.yaml`,
 * `world.yaml`: specifies the location of the main camera. This has to change depending on which phantom is used.
 
 ## Keyboard shortcuts
-| # | Linear Motion of Tool | Description                        |
-|---|-----------------------|------------------------------------|
-| 1 | `]`                   | Increase disparity of small window |
-| 2 | `[`                   | Decrease disparity of small window |
+| #   | Keyboard | Description                          |
+| --- | -------- | ------------------------------------ |
+| 1   | `]`      | Increase disparity of small window   |
+| 2   | `[`      | Decrease disparity of small window   |
+| 3   | `t`      | Activate/deactivated drill as cursor |
+
 
 
 # Drilling simulator
@@ -153,33 +155,33 @@ The virtual drill can be manipulated via a keyboard or haptic devices such as th
 
 #### 2.4.1 Keyboard Navigation
 
-| # | Linear Motion of Tool | Description                                  |
-|---|-----------------------|----------------------------------------------|
-| 1 | [Ctrl+W]              | Moves vertically upward w.r.t. camera        |
-| 2 | [Ctrl+S]              | Moves vertically downward w.r.t. camera      |
-| 3 | [Ctrl+A]              | Moves horizontally left w.r.t. camera        |
-| 4 | [Ctrl+D]              | Moves horizontally right w.r.t. camera       |
-| 5 | [Ctrl+I]              | Moves in the forward direction w.r.t camera  |
-| 6 | [Ctrl+K]              | Moves in the backward direction w.r.t camera |
+| #   | Linear Motion of Tool | Description                                  |
+| --- | --------------------- | -------------------------------------------- |
+| 1   | [Ctrl+W]              | Moves vertically upward w.r.t. camera        |
+| 2   | [Ctrl+S]              | Moves vertically downward w.r.t. camera      |
+| 3   | [Ctrl+A]              | Moves horizontally left w.r.t. camera        |
+| 4   | [Ctrl+D]              | Moves horizontally right w.r.t. camera       |
+| 5   | [Ctrl+I]              | Moves in the forward direction w.r.t camera  |
+| 6   | [Ctrl+K]              | Moves in the backward direction w.r.t camera |
 
 
-| # | Angular Motion of Tool | Description                                     |
-|---|------------------------|-------------------------------------------------|
-| 1 | [Num 8]                | Rotates towards upward direction w.r.t tool     |
-| 2 | [Num 5]                | Rotates towards downward direction w.r.t. tool  |
-| 3 | [Num 4]                | Rotates towards the left direction w.r.t. tool  |
-| 4 | [Num 6]                | Rotates towards the right direction w.r.t. tool |
+| #   | Angular Motion of Tool | Description                                     |
+| --- | ---------------------- | ----------------------------------------------- |
+| 1   | [Num 8]                | Rotates towards upward direction w.r.t tool     |
+| 2   | [Num 5]                | Rotates towards downward direction w.r.t. tool  |
+| 3   | [Num 4]                | Rotates towards the left direction w.r.t. tool  |
+| 4   | [Num 6]                | Rotates towards the right direction w.r.t. tool |
 
 
-| # | Miscellaneous | Description                                                                        |
-|---|---------------|------------------------------------------------------------------------------------|
-| 1 | [Ctrl+O (letter o)]      | Toggle the drill's control mode between Haptic Device / Keyboard to ROS Comm       |
-| 1 | [C]      | Changes the size of drill burr/ radius of tip sphere (2 mm, 4 mm, and, 6 mm)       |
-| 2 | [Ctrl+N]      | Resets the shape of the volume                                                     |
-| 3 | [Alt+R]       | Resets the whole world and this plugin                                             |
-| 2 | [X]           | Toggles the functionality of sudden jumping of drill mesh towards the followSphere |
-| 3 | [B]           | Toggles the visibility of drill mesh in the scene                                  |
-| 4 | [Ctrl+C] | Toggles the visbility of collision spheres | 
+| #   | Miscellaneous       | Description                                                                        |
+| --- | ------------------- | ---------------------------------------------------------------------------------- |
+| 1   | [Ctrl+O (letter o)] | Toggle the drill's control mode between Haptic Device / Keyboard to ROS Comm       |
+| 1   | [C]                 | Changes the size of drill burr/ radius of tip sphere (2 mm, 4 mm, and, 6 mm)       |
+| 2   | [Ctrl+N]            | Resets the shape of the volume                                                     |
+| 3   | [Alt+R]             | Resets the whole world and this plugin                                             |
+| 2   | [X]                 | Toggles the functionality of sudden jumping of drill mesh towards the followSphere |
+| 3   | [B]                 | Toggles the visibility of drill mesh in the scene                                  |
+| 4   | [Ctrl+C]            | Toggles the visbility of collision spheres                                         |
 
 #### 2.4.2 Geomagic Touch/Phantom Omni
 
