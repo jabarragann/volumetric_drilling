@@ -278,12 +278,19 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     m_worldPtr->getChaiWorld()->computeGlobalPositions(true);
 
-    if (m_isUsingDrillForCursor){
+    if (m_isUsingDrillForCursor)
+    {
         m_drillReferencePtr->setLocalTransform(m_drillTipPtr->getLocalTransform());
+        publishDrillTipLocationInsideVolume();
     }
+    else
+    {   
+        // manual_indexes_for_slices = m_simAssistedNavRosInterface.increase_vector;
+        m_drillManager.m_drillingPub->publishDrillLocationInVolume(manual_indexes_for_slices, m_worldPtr->getCurrentTimeStamp());
+    }
+
     m_drillManager.update(dt);
 
-    publishDrillTipLocationInsideVolume();
 
     if (m_drillManager.m_toolCursorList[0]->isInContact(m_voxelObj) && m_drillManager.m_targetToolCursorIdx == 0 /*&& (userSwitches == 2)*/)
     {
@@ -994,7 +1001,29 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             }
         }
 
-        else if (a_key == GLFW_KEY_T){
+        else if (a_key == GLFW_KEY_T)
+        {
+            // Initial implementation of manual slicing of the volume
+            if (m_isUsingDrillForCursor) // If deactivating reset manual indexes
+            {
+                cVector3d drill_coordinates;
+                cVector3d drill_tip_in_worldcoord = m_drillManager.m_drillReferenceBody->getLocalPos();
+                m_volume_coord_utils->get_index_location_of_drill_tip(drill_tip_in_worldcoord, drill_coordinates);
+
+                cout << "drill_coordinates: " << drill_coordinates.x() << "," << drill_coordinates.y() 
+                << ", "<< drill_coordinates.z() << endl;
+                if (drill_coordinates.x() == -1 || drill_coordinates.y() == -1 || drill_coordinates.z() == -1)
+                {
+                    manual_indexes_for_slices.set(50,50,50); 
+                    cerr << "set manual index" << endl;
+                }
+                else
+                {
+                    manual_indexes_for_slices.copyfrom(drill_coordinates);
+                    cerr << "set manual index" << endl;
+                }
+            } 
+
             m_isUsingDrillForCursor = !m_isUsingDrillForCursor;
             cerr << "isUsingDrillForCursor: " << m_isUsingDrillForCursor << endl;
         }

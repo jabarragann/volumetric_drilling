@@ -49,6 +49,7 @@
 #include <volumetric_drilling_msgs/DrillSize.h>
 #include <volumetric_drilling_msgs/VolumeInfo.h>
 #include <geometry_msgs/WrenchStamped.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/ColorRGBA.h>
 
 #include <afFramework.h>
@@ -99,6 +100,31 @@ public:
 
     float window_disparity = 0.1;
     ros::Publisher small_window_disparity_pub;
+
+    ros::Subscriber manual_slices_sub;
+    cVector3d increase_vector = cVector3d(0.00, 0.00, 0.00);
+
+    void manual_slices_callback(std_msgs::Float32MultiArray msg)
+    {
+        // if (msg.data.size() == 2)
+        // {
+        //     if (msg.data[0] == 0)
+        //     {
+        //         increase_vector.x(msg.data[1]);
+        //     }
+        //     else if (msg.data[0] == 1)
+        //     {
+        //         increase_vector.y(msg.data[1]);
+        //     }
+        //     else if (msg.data[0] == 2)
+        //     {
+        //         increase_vector.z(msg.data[1]);
+        //     }
+        //     // increase_vector += cVector3d(0.005, 0.005, 0.005);
+        //     // cout << msg.data[0] << " " << msg.data[1] << endl;
+        // cout << increase_vector.x() << " " << increase_vector.y() << " " << increase_vector.z() << endl;
+        // }
+    }
 };
 
 #endif // VOLUMETRIC_PLUGIN_COLLISION_PUBLISHER_H

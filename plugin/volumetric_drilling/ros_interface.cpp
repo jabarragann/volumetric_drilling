@@ -166,4 +166,6 @@ SimulationAssistedNavRosInterface::SimulationAssistedNavRosInterface(std::string
 
     m_rosNode = afROSNode::getNode();
     small_window_disparity_pub = m_rosNode->advertise<std_msgs::Float32>(a_namespace + "/small_window_disparity", 5, true);
+
+    manual_slices_sub = m_rosNode->subscribe("/spacenav/State/axis_value", 5, &SimulationAssistedNavRosInterface::manual_slices_callback, this);
 }

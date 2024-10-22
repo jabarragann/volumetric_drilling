@@ -151,6 +151,7 @@ private:
 
     bool m_isUsingDrillForCursor = true;
     afRigidBodyPtr m_drillTipPtr, m_drillReferencePtr;
+    cVector3d manual_indexes_for_slices = cVector3d(0, 0, 0);
 };
 
 class Transform2VolumeCoordinates
