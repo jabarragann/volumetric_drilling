@@ -9,12 +9,11 @@ transformations:
   - TF marker_body-drill_tip
   - TF drill_tip-drill_body
 
-
-
 TF world-atracsys_drill_marker: # Move drill with atracsys measurements
   parent: World
   child: marker
   type: ROS
+  # rostopic name: /atracsys/brain_lab_pointer/measured_cp
   rostopic name: /atracsys/drill_marker/measured_cp
 
 # NOT USED ANYMORE
@@ -35,7 +34,7 @@ TF world-atracsys_drill_marker: # Move drill with atracsys measurements
 #   child: 6mm_drill_body
 #   type: FIXED
 #   transformation:
-#     position: { x: 0.0, y: 0.0, z: 0.0 } 
+#     position: { x: 0.0, y: 0.0, z: 0.0 }
 #     orientation: { r: 0.0, p: 0.0, y: 2.84 } # For handheld drill. This should be around 117.4 degrees acording to ADF file
 
 TF marker_body-drill_tip: #ADD HERE the pivot calibration transform.
@@ -43,8 +42,8 @@ TF marker_body-drill_tip: #ADD HERE the pivot calibration transform.
   child: drill_tip # sim_assisted_drill_tip_reference
   type: FIXED
   transformation: # from pivot calibration
-    position: {x: 0.194592, y: -0.00732661, z: 0.0566331} # hand held drill
-    # position: {x: -0.257054, y: 0.00250705, z: -0.000840788} # brain lab pointer
+    position: {x: 0.194106, y: -0.00830042, z: 0.0570601} # hand held drill
+    # position: {x: -0.256514, y: 0.00213896, z: -0.000272551} # Brain lab pointer
     orientation: { r: 0.0, p: 0.0, y: 0.0 }
 
 ## This sets the drill body orientation with respect to the drill reference body.
@@ -55,5 +54,5 @@ TF drill_tip-drill_body:
   child: 6mm_drill_body
   type: FIXED
   transformation:
-    position: { x: 0.0, y: 0.0, z: 0.0 } 
+    position: { x: 0.0, y: 0.0, z: 0.0 }
     orientation: { r: 0.0, p: 0.0, y: 2.84 } # For handheld drill. This should be around 117.4 degrees acording to ADF file
