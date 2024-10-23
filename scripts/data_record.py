@@ -559,7 +559,7 @@ if __name__ == "__main__":
     parser.add_argument("--rm_vox_topic", default=ambf_prefix + "/plugin/volumetric_drilling/voxels_removed", type=str,)
     parser.add_argument("--burr_change_topic", default=ambf_prefix + "/plugin/volumetric_drilling/drill_size", type=str,)
     parser.add_argument("--volume_prop_topic", default=ambf_prefix + "/plugin/volumetric_drilling/volume_info", type=str,)
-    parser.add_argument("--objects", default=["mastoidectomy_drill", "main_camera"], type=str, nargs="+")
+    parser.add_argument("--objects", default=["drill_empty_reference", "main_camera"], type=str, nargs="+")
     parser.add_argument("--drill_force_feedback_topic", default=ambf_prefix + "/plugin/volumetric_drilling/drill_force_feedback", type=str,)
 
     parser.add_argument("--sync", action="store_true")

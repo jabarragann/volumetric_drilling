@@ -84,12 +84,15 @@ class AnatomicalVolume:
     def from_png_list(cls, path: Path) -> AnatomicalVolume:
         prev_id = -1
 
-        img_list = natsorted([img for img in path.glob("*.png")])
+        # Natsorting doesn't like Path objects.
+        img_list = [str(img) for img in path.glob("*.png")]
+        img_list = natsorted(img_list)
+
         img_res = np.asarray(Image.open(img_list[0])).shape
         data_matrix = np.zeros((img_res[0], img_res[1], len(img_list), 4))
 
         for count, img_name in enumerate(img_list):
-            png_id = cls.__is_png_id_valid(img_name.name, prev_id)
+            png_id = cls.__is_png_id_valid(img_name.split("/")[-1], prev_id)
             img = np.asarray(Image.open(img_name))
             data_matrix[:, :, count, :] = img
             prev_id = png_id
@@ -103,8 +106,9 @@ class AnatomicalVolume:
             raise RuntimeError("No id in png image")
         png_id = int(png_id[0])
         if png_id <= prev_id:
+            print(f"error processing {file_name}")
             raise RuntimeError(
-                f"Images not processed in right order (prev {prev_id}- current {png_id})"
+                f"Images not processed in right order (prev {prev_id}- current {png_id}). Error with natsorting?"
             )
 
         return png_id
