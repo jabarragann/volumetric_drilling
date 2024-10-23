@@ -5,7 +5,7 @@ from natsort import natsorted
 import numpy as np
 from dataclasses import dataclass
 from PIL import Image
-
+from tqdm import tqdm
 from volumetric_sim_tools.DataUtils.DataMerger import Voxels
 
 
@@ -22,7 +22,7 @@ class AnatomicalVolume:
 
     """
 
-    anatomy_matrix: np.array
+    anatomy_matrix: np.ndarray
 
     def __post_init__(self):
         assert len(self.anatomy_matrix.shape) == 4, "wrong shape for input matrix"
@@ -45,7 +45,7 @@ class AnatomicalVolume:
     def remove_voxels(self, voxels_to_remove: Voxels):
         consistent = 0
         total = len(voxels_to_remove)
-        for idx, (ts, loc, color) in enumerate(voxels_to_remove):
+        for ts, loc, color in tqdm(voxels_to_remove):
             consistent += self.__remove_voxel(loc.squeeze(), color.squeeze())
 
         correctness_score = consistent / total * 100
@@ -57,24 +57,48 @@ class AnatomicalVolume:
             )
 
     def __remove_voxel(self, voxel_loc: np.ndarray, voxel_color: np.ndarray):
-        """Remove a voxel using voxels in hdf5. To obtain the corresponding
+        """
+        Remove a voxel using voxels in hdf5. To obtain the corresponding
         voxel_loc in the anatomical volume, the following considerations need
         to be taken into account:
 
         Voxels_loc are reported as x,y,z positions while anatomical structures
         as stored using row,col indexes.
 
-        Images in simulator are fliped along the y-axis (rows are flipped)
+        Images in simulator are fliped along the y-axis (rows are flipped). See diagram below.
+                                              
+        x,y,z --> coordinates of removed voxels from hdf5. 
+        i,j,k --> volume indexes.                                                      
 
+                i                                     
+            ┌───────►                                 
+            │ ┌────────────────┐          
+          j │ │     SLICE      │          
+            ▼ │                │          
+            ▲ │                │          
+            │ │                │          
+          y │ └────────────────┘          
+            └───────►                                 
+                x                                     
         """
-        color_in_anatomy = self.anatomy_matrix[255 - voxel_loc[1], voxel_loc[0], voxel_loc[2]]
+
+        y_dim: int = self.anatomy_matrix.shape[0]
+        converted_loc = [y_dim - 1 - voxel_loc[1], voxel_loc[0], voxel_loc[2]]
+
+        ## Debugging
+        # print(f"voxel_loc {voxel_loc}")
+        # print(f"converted_loc {converted_loc}")
+        # print(f"anatomy shape {self.anatomy_matrix.shape}")
+
+        color_in_anatomy = self.anatomy_matrix[converted_loc[0], converted_loc[1], converted_loc[2]]
         is_color_the_same = np.all(color_in_anatomy == voxel_color)
         if not is_color_the_same:
             return 0
         else:
-            self.anatomy_matrix[255 - voxel_loc[1], voxel_loc[0], voxel_loc[2]] = np.array(
-                [255.0, 0.0, 0.0, 50.0]
-            )
+            # color = [255.0, 0.0, 0.0, 50.0] ## RED 
+            color = [0.0, 0.0, 0.0, 0.0]      ## No color
+
+            self.anatomy_matrix[converted_loc[0],converted_loc[1], converted_loc[2]] = np.array( color )
             return 1
 
     def is_remove_voxel_data(self):
