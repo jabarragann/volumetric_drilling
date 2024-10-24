@@ -34,6 +34,18 @@ class AnatomicalVolume:
             im_name = im_prefix + f"{nz:06d}" + ".png"
             im_name = str(dst_path / im_name)
             self.save_image(self.anatomy_matrix[:, :, nz, :], im_name)
+    
+    def save_png_images_for_slicer(self, dst_path: Path, im_prefix="plane"):
+        volume_copy = self.anatomy_matrix.copy()
+
+        ## Undo axis flipping for slicer 
+        volume_copy = np.flip(volume_copy, 0)   
+
+        print("Saving volume to png images ....")
+        for nz in range(volume_copy.shape[2]):
+            im_name = im_prefix + f"{nz:06d}" + ".png"
+            im_name = str(dst_path / im_name)
+            self.save_image(volume_copy[:, :, nz, :], im_name)
 
     def save_image(self, array, im_name):
         im = Image.fromarray(array.astype(np.uint8))

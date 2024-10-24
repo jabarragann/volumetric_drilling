@@ -36,7 +36,8 @@ def modify_anatomy_with_hdf5(png_dir: str, hdf5_dir: str, output_dir: str):
     removed_voxels = experiment_data.get_removed_voxels()
     anatomical_vol.remove_voxels(removed_voxels)
 
-    anatomical_vol.save_png_images(output_dir, im_prefix="finalplane")
+    # anatomical_vol.save_png_images(output_dir, im_prefix="finalplane")
+    anatomical_vol.save_png_images_for_slicer(output_dir, im_prefix="finalplane")
 
 def main():
     modify_anatomy_with_hdf5()
