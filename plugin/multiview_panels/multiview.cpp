@@ -44,6 +44,7 @@
 
 #include "multiview.h"
 #include <ambf_server/RosComBase.h>
+#include <yaml-cpp/yaml.h>
 
 using namespace std;
 
@@ -55,11 +56,33 @@ using namespace std;
 
 string g_current_filepath;
 
+void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objectAttribs)
+{
+    YAML::Node specificationDataNode;
+    // cerr << "INFO! SPECIFICATION DATA " << a_objectAttribs->getSpecificationData().m_rawData << endl;
+    specificationDataNode = YAML::Load(a_objectAttribs->getSpecificationData().m_rawData);
+    YAML::Node plugin_config = specificationDataNode["multiview_plugin_config"];
+
+    if (plugin_config.IsDefined())
+    {
+        try
+        {
+            render_to_frame_buffer = plugin_config["render_to_frame_buffer"].as<bool>();
+        }
+        catch (YAML::Exception &e)
+        {
+            cerr << "multiview_plugin_config has some errors" << endl;
+            cerr << "Using default value of render_to_frame_buffer: " << render_to_frame_buffer << endl;
+        }
+    }
+}
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     // AMBF OBJECTS CONFIG
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
+
+    parse_plugin_config(a_objectAttribs);
 
     // Assistance window config
     m_width = 1000;
@@ -141,16 +164,23 @@ void afCameraMultiview::graphicsUpdate()
     ct_sagittal_window->render_view();
     render_virtual_camera();
 
-    // (OPTION 1)
-    // USE MULTIVIEW PLUGIN ON THE MAIN CAMERA.
-    // THIS REQUIRES RENDERING THE MAIN_CAM AND ADDING THE MULTIVE PLUGIN TO MAIN CAM.
 
-    // (OPTION 2)
+    // (OPTION 1)
     // RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.
     // THIS ENABLE THE IMAGE OVER IMAGE VIEW.
 
-    // main_cam->renderView(m_width, m_height); // (OPT1)
-    m_camera->m_frameBuffer->renderView(); // (OPT2)
+    // (OPTION 2)
+    // USE MULTIVIEW PLUGIN ON THE CAMERA.
+    // THIS REQUIRES RENDERING THE MAIN_CAM AND ADDING THE MULTIVE PLUGIN TO MAIN CAM.
+
+    if (render_to_frame_buffer)
+    {
+        m_camera->m_frameBuffer->renderView(); // (OPT1)
+    }
+    else
+    {
+        main_cam->renderView(m_width, m_height); // (OPT2)
+    }
 
     // swap buffers
     glfwSwapBuffers(m_camera->m_window);

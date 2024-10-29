@@ -243,7 +243,7 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
 
     // cerr << "INFO! SPECIFICATION DATA " << a_objectAttribs->getSpecificationData().m_rawData << endl;
     specificationDataNode = YAML::Load(a_objectAttribs->getSpecificationData().m_rawData);
-    YAML::Node plugin_config = specificationDataNode["stereo_cam_config"];
+    YAML::Node plugin_config = specificationDataNode["sim_assisted_nav_plugin_config"];
 
     if (plugin_config.IsDefined())
     {

@@ -79,6 +79,8 @@ public:
     void init_volume_slicer();
     void set_slice_in_side_view(int slice);
 
+    void parse_plugin_config(const afBaseObjectAttribsPtr a_objectAttribs);
+
     // Get location of drill tip from volumetric drilling to display it in side windows.
     void drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
 
@@ -89,6 +91,7 @@ public:
     void update_ct_slices_with_drill_location();
 
 protected:
+    bool render_to_frame_buffer = true;
     afCameraPtr m_camera; // AMBF camera pointer
     cFrameBufferPtr m_frameBuffer;
 
@@ -198,12 +201,12 @@ public:
         if (w >= h)
         {
             float aspect = (float)h / (float)w;
-            ct_slice->setSize(new_max_dim, new_max_dim*aspect);
+            ct_slice->setSize(new_max_dim, new_max_dim * aspect);
         }
         else
         {
             float aspect = (float)w / (float)h;
-            ct_slice->setSize(new_max_dim*aspect, new_max_dim);
+            ct_slice->setSize(new_max_dim * aspect, new_max_dim);
         }
     }
     void update_ct_slice_size(int width, int height)
