@@ -1,23 +1,22 @@
 # Simulation assisted navigation 
 
+## Usage of full framework
+
+Launching full framework requires the tf_plugin to move the drill. Spacenave plugin can be addionally added to support spacenav control.
+
 ```
-# Test simulation with multiview
-ambf_simulator --launch_file launch.yaml -l 0,2,5,6
-# Test simulation registration pipeline
-ambf_simulator --launch_file launch.yaml -l 0,8,9 --tf_list /home/juan95/research/discovery_grant/registration_pipeline/ambf_tf_plugin/example/juan_tf_config.yaml
+ambf_simulator --launch_file launch.yaml -l 6,8,12 --tf_list share/plugin_config/tf_config.yaml --spf ./share/plugin_config/spacenav_config.yaml --mute true --nt 1
 ```
 
-Running registration pipeline
+Use the `--nt 1` flag to only use the tool cursor in the burr. Also, use the keyboard shortcuts `<C-c>` to toggle visibility of the collision spheres and `<C-o>` update the collision's sphere.
+
+## Running registration pipeline
+
 ```
 ambf_simulator --launch_file launch.yaml -l 4,5 --registration_config /home/juan95/research/discovery_grant/volumetric_drilling/share/plugin_config/registration_config.yaml  --tf_list /home/juan95/research/discovery_grant/volumetric_drilling/share/plugin_config/tf_config.yaml
 ```
 
-Running code with drilling functionality
-```
-ambf_simulator --launch_file launch.yaml -l 6,8,9 --tf_list share/plugin_config/tf_config.yaml --nt 1
-```
 
-Use the `--nt 1` flag to only the tool cursor in the burr. Also use the keyboard shortcuts `<C-c>` to toggle visibility of the collision spheres and `<C-o>` to enable control with the haptic device.
 ## Important configurations
 Three files contain configure AMBF to mimick the real world setup: `world.yaml`, `single_stereo_camera.yaml` and `tf_config.yaml`.
 
@@ -42,8 +41,9 @@ Three files contain configure AMBF to mimick the real world setup: `world.yaml`,
 * When drill is as cursor is activated the drill reference body follows the drill tip.
 
 
+# Documentation for Drilling simulator
 
-# Drilling simulator
+For more information visit the [official repository](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master)
 
 ### [News Coverage](https://techxplore.com/news/2021-12-virtual-reality-simulator-surgeons-skull-base.html) | [Paper](https://arxiv.org/abs/2111.08097) | [Video](https://youtu.be/36pYIt1KGs4)
 This repo provides a realistic virtual drilling simulator presented in our Best Paper at AE-CAI MICCAI 2021, [Virtual reality for synergistic surgical training and data generation](https://arxiv.org/abs/2111.08097).
