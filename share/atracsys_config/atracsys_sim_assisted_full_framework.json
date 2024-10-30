@@ -2,18 +2,18 @@
     "tools":
     [
         {
-            "name": "anatomy_marker",
-            "json-file": "marker_geometries/anatomy_marker2.json"
+            "name": "anatomy_reference_marker",
+            "json-file": "marker_geometries/geometry-AnatomyReferenceMarker.json"
         },
         {
             "name": "drill_marker",
-            "json-file": "marker_geometries/drill_marker2.json",
-            "reference": "anatomy_marker"
+            "json-file": "marker_geometries/geometry-DrillMarker.json",
+            "reference": "anatomy_reference_marker"
         },
         {
             "name": "brain_lab_pointer",
             "json-file": "marker_geometries/geometry-BrainLabPointer.json",
-            "reference": "anatomy_marker"
+            "reference": "anatomy_reference_marker"
         }
 
     ]

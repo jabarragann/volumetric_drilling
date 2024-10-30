@@ -3,7 +3,7 @@
     [
         {
             "name": "anatomy_marker",
-            "json-file": "marker_geometries/zed_mini_marker.json"
+            "json-file": "marker_geometries/geometry-ZedMiniMarker.json"
         }
     ]
 }
