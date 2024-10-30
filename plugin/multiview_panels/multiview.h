@@ -52,7 +52,7 @@
 using namespace std;
 using namespace ambf;
 
-class SliceAnnotator;
+// class SliceAnnotator;
 class SideViewWindow;
 class CtSliceSideWindow;
 
@@ -77,7 +77,6 @@ public:
     void init_multi_view_panels();
     void init_volume_pointer();
     void init_volume_slicer();
-    void set_slice_in_side_view(int slice);
 
     void parse_plugin_config(const afBaseObjectAttribsPtr a_objectAttribs);
 
@@ -122,14 +121,12 @@ protected:
     // Timers
     int ct_slice_idx = 0;
     int total_slices = 0;
-    float ct_slice_update_time = 0.0;
 
     // Volume
     cVoxelObject *c_voxel_object;
     bool volume_initialized = false;
     cMultiImagePtr volume_slices_ptr;
 
-    std::unique_ptr<SliceAnnotator> slice_annotator;
     std::unique_ptr<VolumeSlicer> volume_slicer;
 
     ros::NodeHandle *ros_node_handle;
@@ -216,45 +213,46 @@ public:
     }
 };
 
-struct AnnotationLocation
-{
-    int slice_idx;
-    int x;
-    int y;
-    bool initialized = false;
+// Unused classes - Will be removed in the future
+// struct AnnotationLocation
+// {
+//     int slice_idx;
+//     int x;
+//     int y;
+//     bool initialized = false;
 
-    void set(int slice_idx, int x, int y)
-    {
-        this->slice_idx = slice_idx;
-        this->x = x;
-        this->y = y;
-        this->initialized = true;
-    }
-};
+//     void set(int slice_idx, int x, int y)
+//     {
+//         this->slice_idx = slice_idx;
+//         this->x = x;
+//         this->y = y;
+//         this->initialized = true;
+//     }
+// };
 
-class SliceAnnotator
-{
-public:
-    int slice_width;
-    int slice_height;
-    int number_of_slices;
-    cMultiImagePtr volume_slices_ptr;
-    cColorb marker_color;
-    int marker_size = 6;
+// class SliceAnnotator
+// {
+// public:
+//     int slice_width;
+//     int slice_height;
+//     int number_of_slices;
+//     cMultiImagePtr volume_slices_ptr;
+//     cColorb marker_color;
+//     int marker_size = 6;
 
-    vector<vector<cColorb>> pixels_backup;
+//     vector<vector<cColorb>> pixels_backup;
 
-    AnnotationLocation location_of_last_annotation;
+//     AnnotationLocation location_of_last_annotation;
 
-    SliceAnnotator(cMultiImagePtr volume_slices_ptr);
+//     SliceAnnotator(cMultiImagePtr volume_slices_ptr);
 
-    void init_pixels_backup();
+//     void init_pixels_backup();
 
-    void select_and_annotate(int slice_idx, int x, int y);
+//     void select_and_annotate(int slice_idx, int x, int y);
 
-    void restore_slice();
+//     void restore_slice();
 
-    void print_volume_information();
-};
+//     void print_volume_information();
+// };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraMultiview)

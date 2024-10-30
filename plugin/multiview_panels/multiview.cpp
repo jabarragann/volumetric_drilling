@@ -126,22 +126,13 @@ void afCameraMultiview::graphicsUpdate()
         init_volume_slicer();
         volume_initialized = true;
 
-        set_slice_in_side_view(ct_slice_idx);
         total_slices = volume_slices_ptr->getImageCount();
-        slice_annotator->print_volume_information();
-
-        ct_slice_update_time = glfwGetTime();
-
         volume_slices_ptr->selectImage(0);
-        set_slice_in_side_view(ct_slice_idx);
 
-        // bool success = ct_slice1->loadFromImage(out_of_volume_img);
-        // ct_slice1->setSize(500, 500);
-        bool success = ct_axial_window->update_ct_slice(out_of_volume_img);
-        ct_axial_window->update_ct_slice_size(500, 500);
+        // bool success = ct_axial_window->update_ct_slice(out_of_volume_img);
+        // ct_axial_window->update_ct_slice_size(500, 500);
     }
-
-    if ((glfwGetTime() - ct_slice_update_time > 0.1) && volume_initialized)
+    else 
     {
         update_ct_slices_with_drill_location();
     }
@@ -166,11 +157,11 @@ void afCameraMultiview::graphicsUpdate()
 
 
     // (OPTION 1)
-    // RENDER ONLY THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.
+    // RENDER ONLY TO THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.
     // THIS ENABLE THE IMAGE OVER IMAGE VIEW.
 
     // (OPTION 2)
-    // USE MULTIVIEW PLUGIN ON THE CAMERA.
+    // RENDER MULTIVIEW PLUGIN ON THE CAMERA.
     // THIS REQUIRES RENDERING THE MAIN_CAM AND ADDING THE MULTIVE PLUGIN TO MAIN CAM.
 
     if (render_to_frame_buffer)
@@ -198,79 +189,6 @@ bool afCameraMultiview::close()
 {
     // cout << "Closing " << m_camera->getName() << endl;
     return true;
-}
-
-SliceAnnotator::SliceAnnotator(cMultiImagePtr volume_slices_ptr)
-{
-    this->volume_slices_ptr = volume_slices_ptr;
-
-    this->slice_width = volume_slices_ptr->getWidth();
-    this->slice_height = volume_slices_ptr->getHeight();
-    this->number_of_slices = volume_slices_ptr->getImageCount();
-
-    this->marker_color = cColorb(254, 0, 0);
-
-    init_pixels_backup();
-}
-
-void SliceAnnotator::init_pixels_backup()
-{
-    for (int i = 0; i < marker_size; i++)
-    {
-        vector<cColorb> row;
-        for (int j = 0; j < marker_size; j++)
-        {
-            row.push_back(cColorb(0, 0, 0));
-        }
-        pixels_backup.push_back(row);
-    }
-}
-
-void SliceAnnotator::select_and_annotate(int slice_idx, int x, int y)
-{
-    volume_slices_ptr->selectImage(slice_idx);
-    for (int i = 0; i < marker_size; i++)
-    {
-        for (int j = 0; j < marker_size; j++)
-        {
-            volume_slices_ptr->getPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
-            volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, marker_color);
-        }
-    }
-
-    location_of_last_annotation = AnnotationLocation();
-    location_of_last_annotation.set(slice_idx, x, y);
-}
-
-void SliceAnnotator::restore_slice()
-{
-    if (location_of_last_annotation.initialized)
-    {
-        int slice_idx = location_of_last_annotation.slice_idx;
-        int x = location_of_last_annotation.x;
-        int y = location_of_last_annotation.y;
-
-        volume_slices_ptr->selectImage(slice_idx);
-        for (int i = 0; i < marker_size; i++)
-        {
-            for (int j = 0; j < marker_size; j++)
-            {
-                volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
-            }
-        }
-    }
-}
-
-void SliceAnnotator::print_volume_information()
-{
-    cout << "image count " << volume_slices_ptr->getImageCount() << endl;
-    cout << "get current idx " << volume_slices_ptr->getCurrentIndex() << endl;
-    cout << "(width, height) = (" << volume_slices_ptr->getWidth() << ", " << volume_slices_ptr->getHeight() << ")" << endl;
-    cout << "get fmt " << volume_slices_ptr->getFormat() << endl;
-    cout << "get type " << volume_slices_ptr->getType() << endl;
-    cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
-    cout << "\n\n\n\n"
-         << endl;
 }
 
 afCameraMultiview::afCameraMultiview()
@@ -345,7 +263,6 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         success = ct_sagittal_window->update_ct_slice(out_of_volume_img);
         ct_sagittal_window->update_ct_slice_size(500, 500);
     }
-    ct_slice_update_time = glfwGetTime();
 }
 
 void afCameraMultiview::windowSizeCallback(GLFWwindow *, int new_width, int new_height)
@@ -408,7 +325,7 @@ void afCameraMultiview::init_volume_pointer()
         throw(std::runtime_error("Volume not found"));
     }
 
-    slice_annotator = unique_ptr<SliceAnnotator>(new SliceAnnotator(volume_slices_ptr));
+    // slice_annotator = unique_ptr<SliceAnnotator>(new SliceAnnotator(volume_slices_ptr));
 }
 
 cImagePtr create_c_image_from_file(string path)
@@ -480,14 +397,6 @@ void afCameraMultiview::init_volume_slicer()
     volume_slicer = unique_ptr<VolumeSlicer>(new VolumeSlicer(raw_data, dim_names, volume_shape));
 }
 
-void afCameraMultiview::set_slice_in_side_view(int slice_idx)
-{
-    // bool success = ct_slice1->loadFromImage(volume_slices_ptr);
-    // ct_slice1->setSize(500, 500);
-
-    // bool success = ct_slice1_window->update_ct_slice(out_of_volume_img);
-    // ct_slice1_window->update_ct_slice_size(500, 500);
-}
 
 void afCameraMultiview::updateHMDParams()
 {
@@ -565,3 +474,78 @@ CtSliceSideWindow::~CtSliceSideWindow()
     delete background;
     delete ct_slice;
 }
+
+// Unused classes - Will be removed in the future
+
+// void SliceAnnotator::restore_slice()
+// {
+//     if (location_of_last_annotation.initialized)
+//     {
+//         int slice_idx = location_of_last_annotation.slice_idx;
+//         int x = location_of_last_annotation.x;
+//         int y = location_of_last_annotation.y;
+
+//         volume_slices_ptr->selectImage(slice_idx);
+//         for (int i = 0; i < marker_size; i++)
+//         {
+//             for (int j = 0; j < marker_size; j++)
+//             {
+//                 volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
+//             }
+//         }
+//     }
+// }
+
+// void SliceAnnotator::print_volume_information()
+// {
+//     cout << "image count " << volume_slices_ptr->getImageCount() << endl;
+//     cout << "get current idx " << volume_slices_ptr->getCurrentIndex() << endl;
+//     cout << "(width, height) = (" << volume_slices_ptr->getWidth() << ", " << volume_slices_ptr->getHeight() << ")" << endl;
+//     cout << "get fmt " << volume_slices_ptr->getFormat() << endl;
+//     cout << "get type " << volume_slices_ptr->getType() << endl;
+//     cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
+//     cout << "\n\n\n\n"
+//          << endl;
+// }
+
+// SliceAnnotator::SliceAnnotator(cMultiImagePtr volume_slices_ptr)
+// {
+//     this->volume_slices_ptr = volume_slices_ptr;
+
+//     this->slice_width = volume_slices_ptr->getWidth();
+//     this->slice_height = volume_slices_ptr->getHeight();
+//     this->number_of_slices = volume_slices_ptr->getImageCount();
+
+//     this->marker_color = cColorb(254, 0, 0);
+
+//     init_pixels_backup();
+// }
+
+// void SliceAnnotator::init_pixels_backup()
+// {
+//     for (int i = 0; i < marker_size; i++)
+//     {
+//         vector<cColorb> row;
+//         for (int j = 0; j < marker_size; j++)
+//         {
+//             row.push_back(cColorb(0, 0, 0));
+//         }
+//         pixels_backup.push_back(row);
+//     }
+// }
+
+// void SliceAnnotator::select_and_annotate(int slice_idx, int x, int y)
+// {
+//     volume_slices_ptr->selectImage(slice_idx);
+//     for (int i = 0; i < marker_size; i++)
+//     {
+//         for (int j = 0; j < marker_size; j++)
+//         {
+//             volume_slices_ptr->getPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
+//             volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, marker_color);
+//         }
+//     }
+
+//     location_of_last_annotation = AnnotationLocation();
+//     location_of_last_annotation.set(slice_idx, x, y);
+// }
