@@ -3,8 +3,8 @@ import matplotlib.colorbar as colorbar
 import matplotlib.colors as colors
 import numpy as np
 
-max_val = 1.8
-min_val = -1.8
+max_val = 3.5 
+min_val = -3.5
 num_of_ticks = 9
 
 # Create a figure and axis for the color bar with extra padding
