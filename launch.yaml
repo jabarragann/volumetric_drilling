@@ -12,12 +12,12 @@ plugins: [
   {
     filename: libambf_tf_plugin.so,
     name: ambf_tf_plugin,
-    path: /home/juan95/research/discovery_grant/registration_pipeline/ambf_tf_plugin/build,
+    path: ./plugin/external_plugins/ambf_tf_plugin/build,
   },
   {
     filename: libspacenav_plugin.so,
     name: ambf_spacenav_plugin,
-    path: /home/juan95/research/discovery_grant/registration_pipeline/ambf_spacenav_plugin/build/, # CHECK THIS PATH
+    path: ./plugin/external_plugins/ambf_spacenav_plugin/build/, 
   }
 ]
 multibody configs:

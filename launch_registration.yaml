@@ -1,0 +1,39 @@
+# This is the base file for Coordination Application
+world config: ADF/world/world_registration.yaml
+color config: ADF/color/colors.yaml
+input devices config: ADF/input_devices/input_devices.yaml
+
+plugins:
+  [
+    {
+      path: ./plugin/external_plugins/ambf_registration_plugin,
+      name: registration_plugin,
+      filename: libregistration_plugin.so,
+    },
+    {
+      path: ./plugin/external_plugins/ambf_tf_plugin/build,
+      name: ambf_tf_plugin,
+      filename: libambf_tf_plugin.so,
+    },
+]
+
+multibody configs:
+  # SURGICAL DRILL:
+  - "/home/juan95/research/discovery_grant/volumetric_drilling/ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #0
+  
+  # ANATOMIES:
+  
+  ## Pilot anatomy 2 with Nimesh 
+  - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan2/Scan2.yaml" #1
+  
+  # OLD REGISTRATIONS
+  
+  # ## Pilot anatomy Nimesh
+  # - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan1/Scan1.yaml" #4
+  
+  ## Pilot anatomy 2
+  # - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/anatomy2/ambf_data/volume_with_fiducials.yaml" #4
+  
+  ## Pilot anatomy 1
+  #- "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/ambf_data/volume_with_fiducials.yaml" #body #4
+

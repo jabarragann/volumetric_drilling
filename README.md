@@ -13,7 +13,7 @@ Use the `--nt 1` flag to only use the tool cursor in the burr. Also, use the key
 ## Running registration pipeline
 
 ```
-ambf_simulator --launch_file launch.yaml -l 4,5 --registration_config /home/juan95/research/discovery_grant/volumetric_drilling/share/plugin_config/registration_config.yaml  --tf_list /home/juan95/research/discovery_grant/volumetric_drilling/share/plugin_config/tf_config.yaml
+ambf_simulator --launch_file launch_registration.yaml -l 0,1 --registration_config ./share/plugin_config/registration_config.yaml  --tf_list ./share/plugin_config/tf_config.yaml
 ```
 
 
