@@ -492,8 +492,8 @@ void CtSliceSideWindow::maximize_with_scale_factor()
     }
 
     // Center slice
-    float x_offset = (c_viewpanel_dim - ctslice_cbitmap->getWidth()) / 2;
-    float y_offset = (c_viewpanel_dim - ctslice_cbitmap->getHeight()) / 2;
+    float x_offset = (c_viewpanel_dim - new_width) / 2;
+    float y_offset = (c_viewpanel_dim - new_height) / 2;
 
     // Update ctslice bitmap
     ctslice_cbitmap->setLocalPos(x_offset, y_offset);
