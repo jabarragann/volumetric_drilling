@@ -45,6 +45,7 @@
 #include "multiview.h"
 #include <ambf_server/RosComBase.h>
 #include <yaml-cpp/yaml.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -81,6 +82,11 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     // AMBF OBJECTS CONFIG
     m_camera = (afCameraPtr)a_afObjectPtr;
     m_camera->setOverrideRendering(true);
+
+    cout << "" << endl;
+    cout << "/*********************************************" << endl;
+    cout << "/* Init AMBF Plugin for multiview of CT slices (Loded in camera = " << m_camera->getName() << " )" << endl;
+    cout << "/*********************************************" << endl;
 
     parse_plugin_config(a_objectAttribs);
 
@@ -126,13 +132,21 @@ void afCameraMultiview::graphicsUpdate()
         init_volume_slicer();
         volume_initialized = true;
 
-        total_slices = volume_slices_ptr->getImageCount();
-        volume_slices_ptr->selectImage(0);
+        // Calculate scale factor for CT slices
+        // cVector3d volume_voxel_dims = volume_ptr->getVoxelcount();
+        float max_dimension = std::max({volume_slices_ptr->getWidth(), volume_slices_ptr->getHeight(), volume_slices_ptr->getImageCount()});
+        float scale_factor = 500.0 / max_dimension;
+        ct_axial_window->scale_factor = scale_factor;
+        ct_coronal_window->scale_factor = scale_factor;
+        ct_sagittal_window->scale_factor = scale_factor;
+
+        // total_slices = volume_slices_ptr->getImageCount();
+        // volume_slices_ptr->selectImage(0);
 
         // bool success = ct_axial_window->update_ct_slice(out_of_volume_img);
         // ct_axial_window->update_ct_slice_size(500, 500);
     }
-    else 
+    else
     {
         update_ct_slices_with_drill_location();
     }
@@ -154,7 +168,6 @@ void afCameraMultiview::graphicsUpdate()
     ct_coronal_window->render_view();
     ct_sagittal_window->render_view();
     render_virtual_camera();
-
 
     // (OPTION 1)
     // RENDER ONLY TO THE FRAME BUFFER AND HAVE THE SIM_ASSISTED_NAV PLUGIN HANDLE THE RENDERING.
@@ -234,17 +247,20 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         int reverse_y_loc = axial_slice->slice_height - 1 - drill_location.y();
         axial_slice->annotate(drill_location.x(), reverse_y_loc);
         success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
-        ct_axial_window->maximize_slice(500);
+        ct_axial_window->maximize_with_scale_factor();
+        // ct_axial_window->maximize_slice(500);
 
         unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
         coronal_slice->annotate(drill_location.x(), drill_location.z());
         success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
-        ct_coronal_window->maximize_slice(500);
+        ct_coronal_window->maximize_with_scale_factor();
+        // ct_coronal_window->maximize_slice(500);
 
         unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
         sagittal_slice->annotate(drill_location.y(), drill_location.z());
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
-        ct_sagittal_window->maximize_slice(500);
+        ct_sagittal_window->maximize_with_scale_factor();
+        // ct_sagittal_window->maximize_slice(500);
 
         // slice_annotator->restore_slice(); // Removed red marker from previous location
         // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
@@ -325,6 +341,9 @@ void afCameraMultiview::init_volume_pointer()
         throw(std::runtime_error("Volume not found"));
     }
 
+    cout << "volume dimensions " << volume_slices_ptr->getWidth() << " " << volume_slices_ptr->getHeight() << " " << volume_slices_ptr->getImageCount() << endl;
+    cVector3d dims = volume_ptr->getVoxelCount();
+    cout << "volume dimensions " << dims.x() << " " << dims.y() << " " << dims.z() << endl;
     // slice_annotator = unique_ptr<SliceAnnotator>(new SliceAnnotator(volume_slices_ptr));
 }
 
@@ -396,7 +415,6 @@ void afCameraMultiview::init_volume_slicer()
 
     volume_slicer = unique_ptr<VolumeSlicer>(new VolumeSlicer(raw_data, dim_names, volume_shape));
 }
-
 
 void afCameraMultiview::updateHMDParams()
 {

@@ -183,10 +183,22 @@ class CtSliceSideWindow : public SideViewWindow
     cImagePtr white_background_img;
 
 public:
+    float scale_factor = -1.0;
+
     CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling,
                       cImagePtr white_brackground_img, cImagePtr out_of_volume_img);
     ~CtSliceSideWindow();
     bool update_ct_slice(cImagePtr ct_slice_img) { return ct_slice->loadFromImage(ct_slice_img); };
+
+    void maximize_with_scale_factor()
+    {
+        if (scale_factor > 0)
+        {
+            int new_width = ct_slice->getWidth() * scale_factor;
+            int new_height = ct_slice->getHeight() * scale_factor;
+            update_ct_slice_size(new_width, new_height);
+        }
+    }
 
     // Maximize slice while maitaining aspect ratio
     void maximize_slice(int new_max_dim)
@@ -208,6 +220,7 @@ public:
     }
     void update_ct_slice_size(int width, int height)
     {
+        ct_slice->setLocalPos(0,0);
         ct_slice->setSize(width, height);
         white_background->setSize(width, height);
     }
