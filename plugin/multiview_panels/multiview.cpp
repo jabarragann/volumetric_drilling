@@ -340,7 +340,6 @@ void afCameraMultiview::init_volume_pointer()
         std::cerr << "ERROR! FAILED TO LOAD IMAGES FROM VOLUME " << endl;
         throw(std::runtime_error("Volume not found"));
     }
-
 }
 
 cImagePtr create_c_image_from_file(string path)
@@ -479,6 +478,51 @@ CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_
     camera->m_frontLayer->addChild(ctslice_cbitmap);
 
     update_ct_slice_size(m_width, m_height);
+}
+
+void CtSliceSideWindow::maximize_with_scale_factor()
+{
+    int new_width = ctslice_cbitmap->getWidth();
+    int new_height = ctslice_cbitmap->getHeight();
+
+    if (scale_factor > 0)
+    {
+        new_width = ctslice_cbitmap->getWidth() * scale_factor;
+        new_height = ctslice_cbitmap->getHeight() * scale_factor;
+    }
+
+    // Center slice
+    float x_offset = (c_viewpanel_dim - ctslice_cbitmap->getWidth()) / 2;
+    float y_offset = (c_viewpanel_dim - ctslice_cbitmap->getHeight()) / 2;
+
+    // Update ctslice bitmap
+    ctslice_cbitmap->setLocalPos(x_offset, y_offset);
+    update_ct_slice_size(new_width, new_height);
+
+    // TO VISUALIZE BORDERS
+    background_cbitmap->setLocalPos(x_offset, y_offset);
+    background_cbitmap->setSize(new_width, new_height);
+    // TO COVER THE WHOLE PANE
+    // background_cbitmap->setLocalPos(0, 0);
+    // background_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
+}
+
+void CtSliceSideWindow::maximize_slice(int new_max_dim)
+{
+
+    int w = ctslice_cbitmap->getWidth();
+    int h = ctslice_cbitmap->getHeight();
+
+    if (w >= h)
+    {
+        float aspect = (float)h / (float)w;
+        ctslice_cbitmap->setSize(new_max_dim, new_max_dim * aspect);
+    }
+    else
+    {
+        float aspect = (float)w / (float)h;
+        ctslice_cbitmap->setSize(new_max_dim * aspect, new_max_dim);
+    }
 }
 
 CtSliceSideWindow::~CtSliceSideWindow()

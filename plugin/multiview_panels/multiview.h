@@ -192,51 +192,11 @@ public:
     ~CtSliceSideWindow();
     bool update_ct_slice(cImagePtr ct_slice_img) { return ctslice_cbitmap->loadFromImage(ct_slice_img); };
 
-    void maximize_with_scale_factor()
-    {
-        int new_width = ctslice_cbitmap->getWidth();
-        int new_height = ctslice_cbitmap->getHeight();
-
-        if (scale_factor > 0)
-        {
-            new_width = ctslice_cbitmap->getWidth() * scale_factor;
-            new_height = ctslice_cbitmap->getHeight() * scale_factor;
-        }
-
-        // Center slice
-        float x_offset = (c_viewpanel_dim - ctslice_cbitmap->getWidth()) / 2;
-        float y_offset = (c_viewpanel_dim - ctslice_cbitmap->getHeight()) / 2;
-
-        // Update ctslice bitmap
-        ctslice_cbitmap->setLocalPos(x_offset, y_offset);
-        update_ct_slice_size(new_width, new_height);
-
-        // TO VISUALIZE BORDERS
-        background_cbitmap->setLocalPos(x_offset, y_offset);
-        background_cbitmap->setSize(new_width, new_height);
-        // TO COVER THE WHOLE PANE 
-        // background_cbitmap->setLocalPos(0, 0);
-        // background_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
-    }
+    void maximize_with_scale_factor();
 
     // Maximize slice while maitaining aspect ratio
-    void maximize_slice(int new_max_dim)
-    {
+    void maximize_slice(int new_max_dim);
 
-        int w = ctslice_cbitmap->getWidth();
-        int h = ctslice_cbitmap->getHeight();
-
-        if (w >= h)
-        {
-            float aspect = (float)h / (float)w;
-            ctslice_cbitmap->setSize(new_max_dim, new_max_dim * aspect);
-        }
-        else
-        {
-            float aspect = (float)w / (float)h;
-            ctslice_cbitmap->setSize(new_max_dim * aspect, new_max_dim);
-        }
-    }
     void update_ct_slice_size(int width, int height)
     {
         ctslice_cbitmap->setSize(width, height);
