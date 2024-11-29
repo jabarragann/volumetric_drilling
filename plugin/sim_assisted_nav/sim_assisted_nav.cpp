@@ -172,6 +172,8 @@ void afCameraHMD::graphicsUpdate()
     //     first_time = false;
     // }
 
+    update_ros_textures_for_headset();
+
     // updateHMDParams(); // Update HMD parameters before m_frameBuffer render creates problems.
     glfwMakeContextCurrent(m_camera->m_window);
     m_frameBuffer->renderView();
@@ -305,8 +307,6 @@ void afCameraHMD::left_compressed_img_callback(const sensor_msgs::CompressedImag
         ROS_ERROR("Error decompressing image: %s", e.what());
     }
 
-    // cv::Rect sizeRect(0, 0, left_img_ptr->image.cols - left_img_ptr->image.cols * clipsize, left_img_ptr->image.rows);
-    // left_img_ptr->image = left_img_ptr->image(sizeRect);
 }
 void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedImagePtr &msg)
 {
@@ -330,54 +330,52 @@ void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedIma
         ROS_ERROR("Error decompressing image: %s", e.what());
     }
 
-    // cv::Rect sizeRect2(clipsize, 0, right_img_ptr->image.cols - right_img_ptr->image.cols * clipsize, right_img_ptr->image.rows);
-    // right_img_ptr->image = right_img_ptr->image(sizeRect2);
-
     // cv::imshow("Right img", right_img_ptr->image);
     // cv::waitKey(1);
-
-    update_ros_textures_for_headset(); // This should go there FIX JUAN.
-}
-void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
-{
-    try
-    {
-        left_img_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
-    }
-    catch (cv_bridge::Exception &e)
-    {
-        ROS_ERROR("Could not convert");
-    }
-
-    // cv::resize(cv_ptr->image,cv_ptr->image,cv::Size(cv_ptr->image.cols/2,cv_ptr->image.rows/2));
-
-    cv::Rect sizeRect(0, 0, left_img_ptr->image.cols - left_img_ptr->image.cols * clipsize, left_img_ptr->image.rows);
-    left_img_ptr->image = left_img_ptr->image(sizeRect);
-
-    // cv::imshow("Left img", left_img_ptr->image);
-    // cv::waitKey(1);
 }
 
-void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
-{
-    try
-    {
-        right_img_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
-        // frame2 = cv::imdecode(cv::Mat(msg->data), CV_LOAD_IMAGE_COLOR);
-    }
-    catch (cv_bridge::Exception &e)
-    {
-        ROS_ERROR("Could not convert");
-    }
+// TODO: callbacks for raw video are not use and are not updated with the latest logic.
 
-    cv::Rect sizeRect2(clipsize, 0, right_img_ptr->image.cols - right_img_ptr->image.cols * clipsize, right_img_ptr->image.rows);
-    right_img_ptr->image = right_img_ptr->image(sizeRect2);
+// void afCameraHMD::left_img_callback(const sensor_msgs::ImageConstPtr &msg)
+// {
+//     try
+//     {
+//         left_img_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
+//     }
+//     catch (cv_bridge::Exception &e)
+//     {
+//         ROS_ERROR("Could not convert");
+//     }
 
-    // cv::imshow("Right img", right_img_ptr->image);
-    // cv::waitKey(1);
+//     // cv::resize(cv_ptr->image,cv_ptr->image,cv::Size(cv_ptr->image.cols/2,cv_ptr->image.rows/2));
 
-    update_ros_textures_for_headset();
-}
+//     cv::Rect sizeRect(0, 0, left_img_ptr->image.cols - left_img_ptr->image.cols * clipsize, left_img_ptr->image.rows);
+//     left_img_ptr->image = left_img_ptr->image(sizeRect);
+
+//     // cv::imshow("Left img", left_img_ptr->image);
+//     // cv::waitKey(1);
+// }
+
+// void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
+// {
+//     try
+//     {
+//         right_img_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
+//         // frame2 = cv::imdecode(cv::Mat(msg->data), CV_LOAD_IMAGE_COLOR);
+//     }
+//     catch (cv_bridge::Exception &e)
+//     {
+//         ROS_ERROR("Could not convert");
+//     }
+
+//     cv::Rect sizeRect2(clipsize, 0, right_img_ptr->image.cols - right_img_ptr->image.cols * clipsize, right_img_ptr->image.rows);
+//     right_img_ptr->image = right_img_ptr->image(sizeRect2);
+
+//     // cv::imshow("Right img", right_img_ptr->image);
+//     // cv::waitKey(1);
+
+//     // update_ros_textures_for_headset();
+// }
 
 /*
  * Process ros images and convert them to chai3d texture to display.
@@ -390,14 +388,30 @@ void afCameraHMD::update_ros_textures_for_headset()
     {
         return;
     }
+    if (left_img_ptr->image.empty() || right_img_ptr->image.empty())
+    {
+        return;
+    }
     if (left_img_ptr->image.cols != right_img_ptr->image.cols || left_img_ptr->image.rows != right_img_ptr->image.rows)
     {
         ROS_WARN("Left and right images have different sizes. Left: %d x %d, Right: %d x %d", left_img_ptr->image.cols, left_img_ptr->image.rows, right_img_ptr->image.cols, right_img_ptr->image.rows);
         return;
     }
 
+    // Copy before processing
+    cv_bridge::CvImagePtr left_for_process = boost::make_shared<cv_bridge::CvImage>();
+    cv_bridge::CvImagePtr right_for_process = boost::make_shared<cv_bridge::CvImage>();
+
+    left_for_process->header = left_img_ptr->header;
+    left_for_process->encoding = left_img_ptr->encoding;
+    left_for_process->image = left_img_ptr->image.clone();
+
+    right_for_process->header = right_img_ptr->header;
+    right_for_process->encoding = right_img_ptr->encoding;
+    right_for_process->image = right_img_ptr->image.clone();
+
     // Process ros images if received left and right.
-    cv::hconcat(left_img_ptr->image, right_img_ptr->image, concat_img_ptr->image);
+    cv::hconcat(left_for_process->image, right_for_process->image, concat_img_ptr->image);
     cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
 
     if (stereo_cam_info->convert_from_RGB2BGR)
