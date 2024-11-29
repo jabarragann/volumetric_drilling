@@ -76,8 +76,8 @@ public:
     void left_img_callback(const sensor_msgs::ImageConstPtr &msg);
     void right_img_callback(const sensor_msgs::ImageConstPtr &msg);
 
-    void left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr& msg);
-    void right_compressed_img_callback(const sensor_msgs::CompressedImagePtr& msg);
+    void left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg);
+    void right_compressed_img_callback(const sensor_msgs::CompressedImagePtr &msg);
 
     void window_disparity_callback(const std_msgs::Float32 &msg);
     void update_ros_textures_for_headset();
@@ -90,6 +90,9 @@ public:
 
     // Shader uniform variables
     float window_disparity = 0.1;
+
+    void assignGLFWCallbacks();
+    void windowSizeCallback(GLFWwindow *window_ptr, int width, int height);
 
 protected:
     afCameraPtr m_camera;
@@ -128,7 +131,7 @@ struct StereoRosCameraWrapper
         }
         else
         {
-            cerr << "ERROR! Pixel format " << pixel_format <<  " not supported. Check plugin config." << endl;
+            cerr << "ERROR! Pixel format " << pixel_format << " not supported. Check plugin config." << endl;
             throw runtime_error("Pixel format not supported");
         }
     }

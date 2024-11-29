@@ -6,7 +6,8 @@
 // * small_window_disparity: defines the top left corner of the left and right small windows.
 // * rect_size: size of the small window.
 //
-// +-----------------------+-------------------------+
+//                         (0.5, 1)                  (1,1)
+// +-----------------------X-------------------------X 
 // |  left_small_window    |  right_small_window     |
 // |    +----------+       |       +----------+      |
 // |    |          |       |       |          |      |
@@ -15,8 +16,8 @@
 // |    |          |   |   |       |          |      |
 // |    +----------+   |   |       +----------+      |
 // |                   |   |                         |
-// +-------------------+---+-------------------------+
-//                     |                              
+// X-------------------+---+-------------------------+
+// (0,0)               |                              
 //                     v                              
 //                  small_window_disparity                                        
 
@@ -24,20 +25,32 @@
 
 // in vec2 gl_TexCoord;
 
-//per eye texture to warp for lens distortion
+// UNIFORMS
+// A texture containing the left and right images from the microscope.
 uniform sampler2D rosImageTexture;
+// Texture containing the simulation assisted navigation view.
 uniform sampler2D frameBufferTexture;
-
-
-float offset;
-
 // distance of small window from the center. Value between [0.0, 0.2]
 uniform float small_window_disparity = 0.1;
+uniform int window_width = 1920;
+uniform int window_height = 1043;
 
+
+// CONFIG PARAMETERS
+float small_window_y_pos = 0.60;
+float small_window_height = 0.35;
+
+// Adjust the small window's width to ensure it is always square
+float aspect_ratio = float(window_width) / float(window_height);
+float small_window_width = small_window_height / aspect_ratio;
+
+vec2 rect_size = vec2(small_window_width, small_window_height);
+vec2 left_small_window_pos = vec2(0.5 - rect_size.x - small_window_disparity, small_window_y_pos);
+vec2 right_small_window_pos = vec2(small_window_disparity, small_window_y_pos);
+
+// OTHER PARAMETERS
+float offset;
 vec2 small_window_pos;
-vec2 rect_size = vec2(0.3, 0.3);
-vec2 left_small_window_pos = vec2(0.5 - rect_size.x - small_window_disparity, 0.65);
-vec2 right_small_window_pos = vec2(small_window_disparity, 0.65);
 
 float remap(float t, float a, float b, float c, float d)
 {

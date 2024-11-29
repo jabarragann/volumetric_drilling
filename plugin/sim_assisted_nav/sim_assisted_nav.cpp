@@ -63,6 +63,7 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 
     m_camera = (afCameraPtr)a_afObjectPtr; // Get pointer to camera
     ros_node_handle = afROSNode::getNode();
+    assignGLFWCallbacks();
 
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
     // Ros subscribers
@@ -216,6 +217,9 @@ void afCameraHMD::updateHMDParams()
 
     // Additional parameters
     glUniform1f(glGetUniformLocation(id, "small_window_disparity"), window_disparity);
+
+    glUniform1i(glGetUniformLocation(id, "window_width"), m_width);
+    glUniform1i(glGetUniformLocation(id, "window_height"), m_height);
 }
 
 void afCameraHMD::makeFullScreen()
@@ -376,9 +380,9 @@ void afCameraHMD::right_img_callback(const sensor_msgs::ImageConstPtr &msg)
 }
 
 /*
-* Process ros images and convert them to chai3d texture to display.
-* If left or right images are not received return without doing anything.
-*/
+ * Process ros images and convert them to chai3d texture to display.
+ * If left or right images are not received return without doing anything.
+ */
 void afCameraHMD::update_ros_textures_for_headset()
 {
     // Return if ros images are not initialized.
@@ -436,4 +440,26 @@ void afCameraHMD::update_ros_textures_for_headset()
 void afCameraHMD::window_disparity_callback(const std_msgs::Float32 &msg)
 {
     window_disparity = msg.data;
+}
+
+void afCameraHMD::assignGLFWCallbacks()
+{
+    glfwSetWindowUserPointer(m_camera->m_window, this);
+
+    // Configure callbacks
+    // The lambda function can only get access to the class method by using `glfwGetWindowUserPointer`
+    void (*lambda_resize_window)(GLFWwindow *, int, int) = [](GLFWwindow *w, int width, int height)
+    {
+        static_cast<afCameraHMD *>(glfwGetWindowUserPointer(w))->windowSizeCallback(w, width, height);
+    };
+    glfwSetFramebufferSizeCallback(m_camera->m_window, lambda_resize_window);
+}
+
+void afCameraHMD::windowSizeCallback(GLFWwindow *window_ptr, int width, int height)
+{
+    m_width = width;
+    m_height = height;
+
+    // cout << "Window size callback" << endl;
+    // cout << width << " " << height << endl;
 }
