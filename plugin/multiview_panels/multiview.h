@@ -116,7 +116,7 @@ protected:
 
     // Images loaded from file
     cImagePtr out_of_volume_img;
-    cImagePtr white_background_img;
+    cImagePtr background_img;
 
     // Timers
     int ct_slice_idx = 0;
@@ -200,11 +200,11 @@ public:
     void update_ct_slice_size(int width, int height)
     {
         ctslice_cbitmap->setSize(width, height);
-
-        // To cover the whole pane
-        background_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
-        // TO VISUALIZE BORDERS
-        // background_cbitmap->setSize(width, height);
+    }
+    void maximize_slice_when_out_of_volume()
+    {
+        ctslice_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
+        ctslice_cbitmap->setLocalPos(0, 0);
     }
 };
 

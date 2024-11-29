@@ -38,7 +38,7 @@ uniform int window_height = 1043;
 
 // CONFIG PARAMETERS
 float small_window_y_pos = 0.60;
-float small_window_height = 0.35;
+float small_window_height = 0.38;
 
 // Adjust the small window's width to ensure it is always square
 float aspect_ratio = float(window_width) / float(window_height);

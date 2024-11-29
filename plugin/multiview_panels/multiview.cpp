@@ -248,36 +248,29 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         axial_slice->annotate(drill_location.x(), reverse_y_loc);
         success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
         ct_axial_window->maximize_with_scale_factor();
-        // ct_axial_window->maximize_slice(500);
 
         unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
         coronal_slice->annotate(drill_location.x(), drill_location.z());
         success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
         ct_coronal_window->maximize_with_scale_factor();
-        // ct_coronal_window->maximize_slice(500);
 
         unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
         sagittal_slice->annotate(drill_location.y(), drill_location.z());
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
         ct_sagittal_window->maximize_with_scale_factor();
-        // ct_sagittal_window->maximize_slice(500);
 
-        // slice_annotator->restore_slice(); // Removed red marker from previous location
-        // slice_annotator->select_and_annotate(drill_location.z(), drill_location.x(), drill_location.y());
-        // // slice_annotator->select_and_annotate(ct_slice_idx, drill_location.x(), drill_location.z());
-        // set_slice_in_side_view(ct_slice_idx);
     }
     else
     {
         bool success;
         success = ct_axial_window->update_ct_slice(out_of_volume_img);
-        ct_axial_window->update_ct_slice_size(500, 500);
+        ct_axial_window->maximize_slice_when_out_of_volume();
 
         success = ct_coronal_window->update_ct_slice(out_of_volume_img);
-        ct_coronal_window->update_ct_slice_size(500, 500);
+        ct_coronal_window->maximize_slice_when_out_of_volume();
 
         success = ct_sagittal_window->update_ct_slice(out_of_volume_img);
-        ct_sagittal_window->update_ct_slice_size(500, 500);
+        ct_sagittal_window->maximize_slice_when_out_of_volume();
     }
 }
 
@@ -368,8 +361,8 @@ void afCameraMultiview::init_multi_view_panels()
     m_frameBuffer = cFrameBuffer::create();
     m_frameBuffer->setup(world_cam, m_width * m_alias_scaling, m_height * m_alias_scaling, true, true, GL_RGBA);
 
-    out_of_volume_img = create_c_image_from_file(out_of_volume_img_path);
-    white_background_img = create_c_image_from_file(background_img_path);
+    out_of_volume_img = create_c_image_from_file(background_img_path);
+    background_img = create_c_image_from_file(background_img_path);
 
     int halfW = m_width / 2;
     int halfH = m_height / 2;
@@ -378,17 +371,17 @@ void afCameraMultiview::init_multi_view_panels()
     ct_coronal_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("coronal_view", side_cam2,
                                                                                  m_width / 2, m_height / 2,
                                                                                  0, 0, m_alias_scaling,
-                                                                                 white_background_img, out_of_volume_img));
+                                                                                 background_img, out_of_volume_img));
 
     ct_sagittal_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("sagittal_view", side_cam3,
                                                                                   m_width / 2, m_height / 2,
                                                                                   halfW + offset, 0, m_alias_scaling,
-                                                                                  white_background_img, out_of_volume_img));
+                                                                                  background_img, out_of_volume_img));
 
     ct_axial_window = std::unique_ptr<CtSliceSideWindow>(new CtSliceSideWindow("axial_view", side_cam1,
                                                                                m_width / 2, m_height / 2,
                                                                                0, halfH + offset, m_alias_scaling,
-                                                                               white_background_img, out_of_volume_img));
+                                                                               background_img, out_of_volume_img));
 
     model_3d_window = new SideViewWindow("3d_view", world_cam, m_width, m_height, halfW + offset, halfH + offset, m_alias_scaling);
 
@@ -500,11 +493,12 @@ void CtSliceSideWindow::maximize_with_scale_factor()
     update_ct_slice_size(new_width, new_height);
 
     // TO VISUALIZE BORDERS
-    background_cbitmap->setLocalPos(x_offset, y_offset);
-    background_cbitmap->setSize(new_width, new_height);
+    // background_cbitmap->setLocalPos(x_offset, y_offset);
+    // background_cbitmap->setSize(new_width, new_height);
+
     // TO COVER THE WHOLE PANE
-    // background_cbitmap->setLocalPos(0, 0);
-    // background_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
+    background_cbitmap->setLocalPos(0, 0);
+    background_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
 }
 
 void CtSliceSideWindow::maximize_slice(int new_max_dim)
