@@ -160,8 +160,10 @@ protected:
     int m_width;
     int m_height;
     int m_alias_scaling;
+    int c_viewpanel_dim = 500;
 
 public:
+
     SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling);
     ~SideViewWindow();
     cViewPanel *get_panel() { return panel; }
@@ -170,6 +172,7 @@ public:
     {
         buffer->setSize(width, height);
         panel->setSize(width, height);
+        c_viewpanel_dim = width;
     }
     void update_panel_location(int x, int y) { panel->setLocalPos(x, y); }
     cCamera *get_camera() { return camera; }
@@ -198,6 +201,12 @@ public:
             int new_height = ct_slice->getHeight() * scale_factor;
             update_ct_slice_size(new_width, new_height);
         }
+
+        // Center slice
+        float x_offset = (c_viewpanel_dim - ct_slice->getWidth())/2;
+        float y_offset = (c_viewpanel_dim - ct_slice->getHeight())/2;
+        ct_slice->setLocalPos(x_offset, y_offset);
+        white_background->setLocalPos(x_offset, y_offset);
     }
 
     // Maximize slice while maitaining aspect ratio
