@@ -163,7 +163,6 @@ protected:
     int c_viewpanel_dim = 500;
 
 public:
-
     SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling);
     ~SideViewWindow();
     cViewPanel *get_panel() { return panel; }
@@ -179,11 +178,11 @@ public:
 };
 class CtSliceSideWindow : public SideViewWindow
 {
-    cBitmap *white_background;
-    cBitmap *ct_slice;
+    cBitmap *background_cbitmap;
+    cBitmap *ctslice_cbitmap;
     cBackground *background;
-    cImagePtr out_of_volume_img;
-    cImagePtr white_background_img;
+    cImagePtr outofvolume_cimage;
+    cImagePtr background_cimage;
 
 public:
     float scale_factor = -1.0;
@@ -191,90 +190,62 @@ public:
     CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling,
                       cImagePtr white_brackground_img, cImagePtr out_of_volume_img);
     ~CtSliceSideWindow();
-    bool update_ct_slice(cImagePtr ct_slice_img) { return ct_slice->loadFromImage(ct_slice_img); };
+    bool update_ct_slice(cImagePtr ct_slice_img) { return ctslice_cbitmap->loadFromImage(ct_slice_img); };
 
     void maximize_with_scale_factor()
     {
+        int new_width = ctslice_cbitmap->getWidth();
+        int new_height = ctslice_cbitmap->getHeight();
+
         if (scale_factor > 0)
         {
-            int new_width = ct_slice->getWidth() * scale_factor;
-            int new_height = ct_slice->getHeight() * scale_factor;
-            update_ct_slice_size(new_width, new_height);
+            new_width = ctslice_cbitmap->getWidth() * scale_factor;
+            new_height = ctslice_cbitmap->getHeight() * scale_factor;
         }
 
         // Center slice
-        float x_offset = (c_viewpanel_dim - ct_slice->getWidth())/2;
-        float y_offset = (c_viewpanel_dim - ct_slice->getHeight())/2;
-        ct_slice->setLocalPos(x_offset, y_offset);
-        white_background->setLocalPos(x_offset, y_offset);
+        float x_offset = (c_viewpanel_dim - ctslice_cbitmap->getWidth()) / 2;
+        float y_offset = (c_viewpanel_dim - ctslice_cbitmap->getHeight()) / 2;
+
+        // Update ctslice bitmap
+        ctslice_cbitmap->setLocalPos(x_offset, y_offset);
+        update_ct_slice_size(new_width, new_height);
+
+        // TO VISUALIZE BORDERS
+        background_cbitmap->setLocalPos(x_offset, y_offset);
+        background_cbitmap->setSize(new_width, new_height);
+        // TO COVER THE WHOLE PANE 
+        // background_cbitmap->setLocalPos(0, 0);
+        // background_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
     }
 
     // Maximize slice while maitaining aspect ratio
     void maximize_slice(int new_max_dim)
     {
 
-        int w = ct_slice->getWidth();
-        int h = ct_slice->getHeight();
+        int w = ctslice_cbitmap->getWidth();
+        int h = ctslice_cbitmap->getHeight();
 
         if (w >= h)
         {
             float aspect = (float)h / (float)w;
-            ct_slice->setSize(new_max_dim, new_max_dim * aspect);
+            ctslice_cbitmap->setSize(new_max_dim, new_max_dim * aspect);
         }
         else
         {
             float aspect = (float)w / (float)h;
-            ct_slice->setSize(new_max_dim * aspect, new_max_dim);
+            ctslice_cbitmap->setSize(new_max_dim * aspect, new_max_dim);
         }
     }
     void update_ct_slice_size(int width, int height)
     {
-        ct_slice->setLocalPos(0,0);
-        ct_slice->setSize(width, height);
-        white_background->setSize(width, height);
+        ctslice_cbitmap->setSize(width, height);
+
+        // To cover the whole pane
+        background_cbitmap->setSize(c_viewpanel_dim, c_viewpanel_dim);
+        // TO VISUALIZE BORDERS
+        // background_cbitmap->setSize(width, height);
     }
 };
-
-// Unused classes - Will be removed in the future
-// struct AnnotationLocation
-// {
-//     int slice_idx;
-//     int x;
-//     int y;
-//     bool initialized = false;
-
-//     void set(int slice_idx, int x, int y)
-//     {
-//         this->slice_idx = slice_idx;
-//         this->x = x;
-//         this->y = y;
-//         this->initialized = true;
-//     }
-// };
-
-// class SliceAnnotator
-// {
-// public:
-//     int slice_width;
-//     int slice_height;
-//     int number_of_slices;
-//     cMultiImagePtr volume_slices_ptr;
-//     cColorb marker_color;
-//     int marker_size = 6;
-
-//     vector<vector<cColorb>> pixels_backup;
-
-//     AnnotationLocation location_of_last_annotation;
-
-//     SliceAnnotator(cMultiImagePtr volume_slices_ptr);
-
-//     void init_pixels_backup();
-
-//     void select_and_annotate(int slice_idx, int x, int y);
-
-//     void restore_slice();
-
-//     void print_volume_information();
-// };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraMultiview)

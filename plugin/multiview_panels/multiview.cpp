@@ -341,10 +341,6 @@ void afCameraMultiview::init_volume_pointer()
         throw(std::runtime_error("Volume not found"));
     }
 
-    cout << "volume dimensions " << volume_slices_ptr->getWidth() << " " << volume_slices_ptr->getHeight() << " " << volume_slices_ptr->getImageCount() << endl;
-    cVector3d dims = volume_ptr->getVoxelCount();
-    cout << "volume dimensions " << dims.x() << " " << dims.y() << " " << dims.z() << endl;
-    // slice_annotator = unique_ptr<SliceAnnotator>(new SliceAnnotator(volume_slices_ptr));
 }
 
 cImagePtr create_c_image_from_file(string path)
@@ -463,7 +459,7 @@ SideViewWindow::~SideViewWindow()
 CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y,
                                      int m_alias_scaling, cImagePtr white_brackground_img,
                                      cImagePtr out_of_volume_img) : SideViewWindow(window_name, camera, m_width, m_height, pos_x, pos_y, m_alias_scaling),
-                                                                    white_background_img(white_brackground_img), out_of_volume_img(out_of_volume_img)
+                                                                    background_cimage(white_brackground_img), outofvolume_cimage(out_of_volume_img)
 {
     // Set background
     background = new cBackground();
@@ -474,13 +470,13 @@ CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_
                                 cColorf(0.0f, 0.8f, 0.8f));
 
     // load bitmaps
-    white_background = new cBitmap();
-    white_background->loadFromImage(white_background_img);
-    camera->m_frontLayer->addChild(white_background);
+    background_cbitmap = new cBitmap();
+    background_cbitmap->loadFromImage(background_cimage);
+    camera->m_frontLayer->addChild(background_cbitmap);
 
-    ct_slice = new cBitmap();
-    ct_slice->loadFromImage(out_of_volume_img);
-    camera->m_frontLayer->addChild(ct_slice);
+    ctslice_cbitmap = new cBitmap();
+    ctslice_cbitmap->loadFromImage(out_of_volume_img);
+    camera->m_frontLayer->addChild(ctslice_cbitmap);
 
     update_ct_slice_size(m_width, m_height);
 }
@@ -488,82 +484,7 @@ CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_
 CtSliceSideWindow::~CtSliceSideWindow()
 {
     cout << "Destroying CT slice " << window_name << endl;
-    delete white_background;
+    delete background_cbitmap;
     delete background;
-    delete ct_slice;
+    delete ctslice_cbitmap;
 }
-
-// Unused classes - Will be removed in the future
-
-// void SliceAnnotator::restore_slice()
-// {
-//     if (location_of_last_annotation.initialized)
-//     {
-//         int slice_idx = location_of_last_annotation.slice_idx;
-//         int x = location_of_last_annotation.x;
-//         int y = location_of_last_annotation.y;
-
-//         volume_slices_ptr->selectImage(slice_idx);
-//         for (int i = 0; i < marker_size; i++)
-//         {
-//             for (int j = 0; j < marker_size; j++)
-//             {
-//                 volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
-//             }
-//         }
-//     }
-// }
-
-// void SliceAnnotator::print_volume_information()
-// {
-//     cout << "image count " << volume_slices_ptr->getImageCount() << endl;
-//     cout << "get current idx " << volume_slices_ptr->getCurrentIndex() << endl;
-//     cout << "(width, height) = (" << volume_slices_ptr->getWidth() << ", " << volume_slices_ptr->getHeight() << ")" << endl;
-//     cout << "get fmt " << volume_slices_ptr->getFormat() << endl;
-//     cout << "get type " << volume_slices_ptr->getType() << endl;
-//     cout << "get bits per pixel " << volume_slices_ptr->getBitsPerPixel() << endl;
-//     cout << "\n\n\n\n"
-//          << endl;
-// }
-
-// SliceAnnotator::SliceAnnotator(cMultiImagePtr volume_slices_ptr)
-// {
-//     this->volume_slices_ptr = volume_slices_ptr;
-
-//     this->slice_width = volume_slices_ptr->getWidth();
-//     this->slice_height = volume_slices_ptr->getHeight();
-//     this->number_of_slices = volume_slices_ptr->getImageCount();
-
-//     this->marker_color = cColorb(254, 0, 0);
-
-//     init_pixels_backup();
-// }
-
-// void SliceAnnotator::init_pixels_backup()
-// {
-//     for (int i = 0; i < marker_size; i++)
-//     {
-//         vector<cColorb> row;
-//         for (int j = 0; j < marker_size; j++)
-//         {
-//             row.push_back(cColorb(0, 0, 0));
-//         }
-//         pixels_backup.push_back(row);
-//     }
-// }
-
-// void SliceAnnotator::select_and_annotate(int slice_idx, int x, int y)
-// {
-//     volume_slices_ptr->selectImage(slice_idx);
-//     for (int i = 0; i < marker_size; i++)
-//     {
-//         for (int j = 0; j < marker_size; j++)
-//         {
-//             volume_slices_ptr->getPixelColor((i + x) % slice_width, (j + y) % slice_height, pixels_backup[i][j]);
-//             volume_slices_ptr->setPixelColor((i + x) % slice_width, (j + y) % slice_height, marker_color);
-//         }
-//     }
-
-//     location_of_last_annotation = AnnotationLocation();
-//     location_of_last_annotation.set(slice_idx, x, y);
-// }
