@@ -16,7 +16,8 @@ stereoLR:
   clipping plane: { near: 0.2, far: 1006.7654639175257 }
   field view angle: 0.17951634837990105
   monitor: 0
-  stereo: {mode: Passive, eye separation: 0.15, focal length: 200}
+  mouse control multipliers: {pan: 0.1, rotate: 0.1, scroll: 0.1, arcball: 0.1}
+  # stereo: {mode: Passive, eye separation: 0.15, focal length: 200} # Virtual cam doesn't need to be stereo.
   # multipass: true
   # publish image: true
   # preprocessing shaders:
