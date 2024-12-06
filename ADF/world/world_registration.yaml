@@ -12,9 +12,13 @@ light1:
   name: light1
   location: {x: 0.0, y: 0.0, z: 3.5}
   direction: {x: 0.0, y: 0.0, z: -1.0}
+  # Parented to volume
+  # location: {x: 0.009, y: -0.72, z: -0.164 }
+  # direction: {x: -1.0, y: 0.0, z: 0.0}
   spot exponent: 0.3
   shadow quality: 0
   cutoff angle: 1.5
+  # parent: mastoidectomy_volume
 
 model_light:
   namespace: lights/
@@ -23,7 +27,8 @@ model_light:
   direction: {x: 0.0, y: 0.0, z: -1.0}
   spot exponent: 0.3
   shadow quality: 0
-  cutoff angle: 10
+  cutoff angle: 1.5 
+  parent: model_camera
 
 main_camera:
   namespace: cameras/
@@ -57,22 +62,21 @@ main_camera:
 
 model_camera:
   namespace: cameras/
-  name: main_camera
-  location: {x: 0.5, y: 0.0, z: -0.25}
-  look at: {x: 0.0, y: 0.0, z: -0.5}
-  up: {x: 0.0, y: 0.0, z: 1.0}
-  clipping plane: {near: 0.0, far: 3.0}
-  field view angle: 0.7 # so that focal length is approximately 1000px and phantom is 250 mm away
+  name: model_camera
+  parent: VOLUME mastoidectomy_volume 
+
+  location: {x: 0.009, y: -0.72, z: -0.164 }
+  look at: { x: 0.0, y: 0.0, z: 0.0 }
+  up: { x: 0.86, y: 0.5, z: 0.0 } # Defines orientation
+  clipping plane: { near: 0.2, far: 1006.7654639175257 }
+  field view angle: 0.17951634837990105
+
+  # location: {x: 0.5, y: 0.0, z: -0.25}
+  # look at: {x: 0.0, y: 0.0, z: -0.5}
+  # up: {x: 0.0, y: 0.0, z: 1.0}
+  # clipping plane: {near: 0.0, far: 3.0}
+  # field view angle: 0.7 # so that focal length is approximately 1000px and phantom is 250 mm away
   monitor: 0
-  # multipass: true
+  multipass: true
   visible: true
-  # publish image: true
-  # preprocessing shaders:
-  #    path: ../shaders/preprocessing/
-  #    vertex: shader.vs
-  #    fragment: shader.fs
-  # publish image interval: 5   # Publish every nth scene update
-  # publish depth: true
-  # publish depth noise: {mean: 0.1, std_dev: 0.01, bias: 0.0}
-  # publish depth interval: 1 # Publish every nth scene update
-  #  publish image resolution: {width: 640, height: 480}
+  mouse control multipliers: {pan: 0.1, rotate: 0.1, scroll: 0.1, arcball: 0.1}

@@ -20,7 +20,7 @@ TF marker_body-drill_tip:
   child: drill_tip # sim_assisted_drill_tip_reference
   type: FIXED
   transformation: # from pivot calibration
-    position: {x: 0.190489, y: 0.044413, z: -0.0551188} # hand held drill
+    position: {x: 0.190135, y: 0.047802, z: -0.0558815} # hand held drill
     # position: {x: -0.256514, y: 0.00213896, z: -0.000272551} # Brain lab pointer
     orientation: { r: 0.0, p: 0.0, y: 0.0 }
 

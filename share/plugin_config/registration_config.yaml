@@ -1,0 +1,21 @@
+## Pointer based registration
+pointer:
+  tooltip name: drill_tip # Rigid body that is attached to the tip of the tool
+  name of points:
+    - F_01
+    - F_05
+    - F_08
+    - F_12
+    - F_16
+    - F_17
+    - F_B
+
+  object name: volume_anatomical_origin
+
+## Pivot calibration
+pivot:
+  marker namespace: /atracsys/drill_marker/
+  marker name: marker  #AMBF drill body name
+  type: AUTO
+  resolution: 0.01
+  number of points: 150
