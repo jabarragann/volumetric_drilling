@@ -1,0 +1,20 @@
+{
+    "tools":
+    [
+        {
+            "name": "anatomy_reference_marker",
+            "json-file": "marker_geometries/geometry-Bowl4SpheresReferenceMarker.json"
+        },
+        {
+            "name": "drill_marker",
+            "json-file": "marker_geometries/geometry-DrillMarkerBroken3Spheres.json",
+            "reference": "anatomy_reference_marker"
+        },
+        {
+            "name": "brain_lab_pointer",
+            "json-file": "marker_geometries/geometry-BrainLabPointer.json",
+            "reference": "anatomy_reference_marker"
+        }
+
+    ]
+}

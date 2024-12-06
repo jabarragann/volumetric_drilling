@@ -3,11 +3,11 @@
     [
         {
             "name": "anatomy_reference_marker",
-            "json-file": "marker_geometries/geometry-AnatomyReferenceMarker.json"
+            "json-file": "marker_geometries/geometry-FlatPlateReferenceMarker.json"
         },
         {
             "name": "drill_marker",
-            "json-file": "marker_geometries/geometry-DrillMarker.json",
+            "json-file": "marker_geometries/geometry-DrillMarkerBroken3Spheres.json",
             "reference": "anatomy_reference_marker"
         },
         {
