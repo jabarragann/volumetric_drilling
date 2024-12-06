@@ -6,7 +6,7 @@ input devices config: ADF/input_devices/input_devices.yaml
 plugins:
   [
     {
-      path: ./plugin/external_plugins/ambf_registration_plugin,
+      path: ./plugin/external_plugins/ambf_registration_plugin/build,
       name: registration_plugin,
       filename: libregistration_plugin.so,
     },
@@ -18,16 +18,16 @@ plugins:
 ]
 
 multibody configs:
-  # SURGICAL DRILL:
-  - "/home/juan95/research/discovery_grant/volumetric_drilling/ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #0
+  - "ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #0 #surgical drill
   
   # ANATOMIES:
-  
-  ## Pilot anatomy 2 with Nimesh 
-  - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan2/Scan2.yaml" #1
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/20241015_PhantomADF/Scan3/volume.yaml" #1 # pilot 3
   
   # OLD REGISTRATIONS
   
+  ## Pilot anatomy 2 with Nimesh 
+  # - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan2/Scan2.yaml" #1
+
   # ## Pilot anatomy Nimesh
   # - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/20241015_PhantomADF/Scan1/Scan1.yaml" #4
   
