@@ -31,6 +31,7 @@ multibody configs:
   - "ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #8 
   - "ADF/volume_sim_assisted_test01.yaml" #9
   ## Anatomies - not included in repo
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/20241015_PhantomADF/Scan1/Scan1.yaml"  #10 # pilot 1 - Nimesh 
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/20241015_PhantomADF/Scan2/pilot2.yaml" #11 # pilot 2 - Nimesh 
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/20241015_PhantomADF/Scan3/volume.yaml" #12 # pilot 3
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan1/Scan1.yaml"  #10 # pilot 1 - Nimesh 
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan2/pilot2.yaml" #11 # pilot 2 - Nimesh 
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan3/volume.yaml" #12 # pilot 3
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan4/volume.yaml" #13 # pilot 4
