@@ -1,5 +1,8 @@
 # Simulation assisted navigation 
 
+
+## Installation
+
 ### 0. Install original volumetric drilling repo 
 Please first follow the instruction for the [official repository](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master).
 
