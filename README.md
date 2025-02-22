@@ -3,11 +3,21 @@
 
 ## Installation
 
-### 0. Install original volumetric drilling repo 
-Please first follow the instruction for the [official repository](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master).
+### 0. Install AMBF simulator  
+Please install AMBF by following the instruction in the [official repository of the volumetric drilling](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master).
 
 ### 1. Compile and setup external plugins 
-1. Compile and setup [CRTK plugin][crtkplug], [tf plugin][tfplug] and [registration plugin][regplug].  
+Compile and setup [CRTK plugin][crtkplug], [tf plugin][tfplug] and [registration plugin][regplug].  
+
+[camreg]: https://github.com/jabarragann/dvrk-camera-registration
+[crtkplug]: https://github.com/lcsr-ciis/ambf_crtk_plugin
+[tfplug]: https://github.com/LCSR-CIIS/ambf_tf_plugin.git
+[regplug]: https://github.com/LCSR-CIIS/ambf_registration_plugin.git
+
+<details>
+<summary>Instructions</summary>
+
+1. Start by cloning in a folder of your choice all the external plugins.
 
 ```bash
 mkdir <your-external-plugin-folder>
@@ -17,26 +27,32 @@ git clone https://github.com/LCSR-CIIS/ambf_tf_plugin.git
 git clone https://github.com/LCSR-CIIS/ambf_crtk_plugin.git
 
 mkdir ambf_crtk_plugin/build ambf_registration_plugin/build ambf_tf_plugin/build
-
-
 ```
-Then compile each plugin. 
 
 <details>
-  <summary>SSH git clone equivalents</summary>
-  <pre><code> 
+  <summary>Git clone with SSH links</summary>
+
+  ```
   cd your-external-plugin-folder
   git clone git@github.com:LCSR-CIIS/ambf_registration_plugin.git
   git clone git@github.com:LCSR-CIIS/ambf_tf_plugin.git
   git clone git@github.com:LCSR-CIIS/ambf_crtk_plugin.git
-  </code></pre>
+  ```
+
 </details>
 
-2. Add a symbolic link to the `external-plugin-folder` inside the `this volumetric_drilling repo` root folder:
+Then compile each plugin with 
+```bash
+cd <build-folder>
+cmake ..
+make -j8
+```
+
+2. Add a symbolic link to the `external-plugin-folder` inside the `this volumetric_drilling repo` root folder. This will enable the volumetric drillign to easily find the external plugins.
 
 ```bash
-cd <this-folder>
-# Don't use relative links to specify the path to external plugins
+cd <fork-of-volumetric-drilling-repo>
+# Don't use relative links to specify the path to external plugins. ln will not work!
 ln -s <your-external-plugin-folder>/* plugins/external_plugins/ 
 ```
 
@@ -52,6 +68,8 @@ plugins/
     ├── ambf_registration_plugin -> your_external_plugins/ambf_registration_plugin
     └── ambf_tf_plugin ->  your_external_plugins/ambf_tf_plugin
 ```
+
+</details>
 
 ### 2. Compile internal plugins
 
