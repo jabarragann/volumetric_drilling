@@ -258,7 +258,6 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         sagittal_slice->annotate(drill_location.y(), drill_location.z());
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
         ct_sagittal_window->maximize_with_scale_factor();
-
     }
     else
     {
@@ -335,15 +334,18 @@ void afCameraMultiview::init_volume_pointer()
     }
 }
 
-cImagePtr create_c_image_from_file(string path)
+cImagePtr create_c_image_from_file(string filename)
 {
+    string file_path = __FILE__;
+    string current_filepath = file_path.substr(0, file_path.rfind("/"));
+    string complete_img_path = current_filepath + "/sample_imgs/" + filename;
 
     cImagePtr image = cImage::create();
-    bool success = image->loadFromFile(path);
+    bool success = image->loadFromFile(complete_img_path);
 
     if (!success)
     {
-        std::cerr << "ERROR! FAILED TO LOAD OUT OF VOLUME IMAGE " << path << endl;
+        std::cerr << "ERROR! FAILED TO LOAD OUT OF VOLUME IMAGE " << complete_img_path << endl;
         exit(1);
     }
 
