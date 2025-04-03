@@ -75,6 +75,10 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 
     window_disparity_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_disparity", 2, &afCameraHMD::window_disparity_callback, this);
 
+    // initializing the new ones that I added
+    window_size_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_size", 2, &afCameraHMD::window_size_callback, this);
+    window_location_sub = ros_node_handle->subscribe("/sim_assisted_nav/window_location", 2, &afCameraHMD::window_location_callback, this);
+
     m_camera->setOverrideRendering(true);
 
     m_camera->getInternalCamera()->m_stereoOffsetW = 0.1;
@@ -222,6 +226,10 @@ void afCameraHMD::updateHMDParams()
 
     glUniform1i(glGetUniformLocation(id, "window_width"), m_width);
     glUniform1i(glGetUniformLocation(id, "window_height"), m_height);
+
+    // for the uniforms that need to add
+    glUniform1f(glGetUniformLocation(id, "small_window_y_pos"), small_window_y_pos);
+    glUniform1f(glGetUniformLocation(id, "small_window_height"), small_window_height);
 }
 
 void afCameraHMD::makeFullScreen()
@@ -476,4 +484,17 @@ void afCameraHMD::windowSizeCallback(GLFWwindow *window_ptr, int width, int heig
 
     // cout << "Window size callback" << endl;
     // cout << width << " " << height << endl;
+}
+
+// callback functions Samanta is implementing
+// TODO: should i be commenting out the windowSizeCallback above??
+
+void afCameraHMD::window_location_callback(const geometry_msgs::Point::ConstPtr &msg) {
+    small_window_y_pos = msg->y;
+    updateHMDParams(); // call function that pushes the change to the shader
+}
+
+void afCameraHMD::window_size_callback(const geometry_msgs::Point::ConstPtr &msg) {
+    small_window_height = msg->x;
+    updateHMDParams();
 }

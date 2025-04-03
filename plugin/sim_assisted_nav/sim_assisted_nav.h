@@ -73,6 +73,10 @@ public:
     ros::Subscriber left_sub, right_sub;
     ros::Subscriber window_disparity_sub;
 
+    // ROS topics Samanta is adding
+    ros::Subscriber window_size_sub; // rostopoc for the window size
+    ros::Subscriber window_location_sub; // rostopic for the window location
+
     void left_img_callback(const sensor_msgs::ImageConstPtr &msg);
     void right_img_callback(const sensor_msgs::ImageConstPtr &msg);
 
@@ -80,6 +84,12 @@ public:
     void right_compressed_img_callback(const sensor_msgs::CompressedImagePtr &msg);
 
     void window_disparity_callback(const std_msgs::Float32 &msg);
+
+    // callbacks Samanta is adding
+    void window_location_callback(const geometry_msgs::Point::ConstPtr &msg);
+    void window_size_callback(const geometry_msgs::Point::ConstPtr &msg);
+
+
     void update_ros_textures_for_headset();
     cv_bridge::CvImagePtr left_img_ptr = nullptr;
     cv_bridge::CvImagePtr right_img_ptr = nullptr;
@@ -90,6 +100,10 @@ public:
 
     // Shader uniform variables
     float window_disparity = 0.1;
+    // New member variable for location
+    float small_window_y_pos = 0.60f;  
+    // New member variable for size
+    float small_window_height = 0.38f;
 
     void assignGLFWCallbacks();
     void windowSizeCallback(GLFWwindow *window_ptr, int width, int height);
