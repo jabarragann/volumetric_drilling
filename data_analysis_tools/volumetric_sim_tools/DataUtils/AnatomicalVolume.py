@@ -105,6 +105,8 @@ class AnatomicalVolume:
         color_in_anatomy = self.anatomy_matrix[converted_loc[0], converted_loc[1], converted_loc[2]]
         is_color_the_same = np.all(color_in_anatomy == voxel_color)
         if not is_color_the_same:
+            # print(f"color in anatomy {color_in_anatomy}")
+            # print(f"voxel color {voxel_color}")
             return 0
         else:
             # color = [255.0, 0.0, 0.0, 50.0] ## RED 
