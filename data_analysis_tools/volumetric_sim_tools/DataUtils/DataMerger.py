@@ -17,20 +17,24 @@ class Voxels:
     voxels_color: np.ndarray
     voxels_ts: np.ndarray
 
-    voxel_ts_mapper: InitVar[np.ndarray]
+    # voxel_ts_mapper: InitVar[np.ndarray]
 
-    def __post_init__(self, voxel_ts_mapper):
+    def __post_init__(self):
         self.__current_index = -1
 
-        # Duplicate element in voxels_ts to have the same size as voxels_color and voxel_loc
-        ts_idx = voxel_ts_mapper[:]
-        self.voxels_ts: np.ndarray = self.voxels_ts[ts_idx]
+        # # Duplicate element in voxels_ts to have the same size as voxels_color and voxel_loc
+        # ts_idx = voxel_ts_mapper[:]
+        # self.voxels_ts: np.ndarray = self.voxels_ts[ts_idx]
 
         self.__start_time = self.voxels_ts[0]
         self.__end_time = self.voxels_ts[-1]
 
-        assert self.voxels_ts.shape[0] == self.voxels_color.shape[0], "inconsistent data"
-        assert self.voxels_ts.shape[0] == self.voxels_color.shape[0], "inconsistent data"
+        assert self.voxels_ts.shape[0] == self.voxels_color.shape[0], (
+            "inconsistent data"
+        )
+        assert self.voxels_ts.shape[0] == self.voxels_color.shape[0], (
+            "inconsistent data"
+        )
 
     def __len__(self):
         return self.voxels_loc.shape[0]
@@ -46,7 +50,6 @@ class Voxels:
         raise StopIteration
 
     def __getitem__(self, idx):
-
         ts = self.voxels_ts[idx]
         loc = self.voxels_loc[idx]
         color = self.voxels_color[idx]
@@ -100,8 +103,10 @@ class DataMerger:
 
         for idx, file_name in enumerate(self.file_names):
             file = h5py.File(file_name, "r")
+
             if verbose:
                 print(idx, "Opening", file_name)
+
             for grp in file.keys():
                 if grp == "metadata":
                     continue
@@ -110,23 +115,65 @@ class DataMerger:
                     self._data[grp] = OrderedDict()
                 if verbose:
                     print("\t Processing Group ", grp)
+
                 for dset in file[grp].keys():
                     if grp == "data" and dset != "time" and "pose_" not in dset:
                         continue
+
 
                     if len(file[grp][dset]) == 0:
                         continue
 
                     if verbose:
                         print("\t\t Processing Dataset ", dset)
+
+                    ## Store data from each file in a list to fix the timestamps
                     if dset not in self._data[grp]:
-                        self._data[grp][dset] = file[grp][dset][()]
+                        self._data[grp][dset] = []
+                        self._data[grp][dset].append(file[grp][dset][()])
                     else:
-                        self._data[grp][dset] = np.append(
-                            self._data[grp][dset], file[grp][dset][()], axis=0
-                        )
+                        self._data[grp][dset].append(file[grp][dset][()])
+
+
             file.close()
+
+        # Fix time stamps
+        self.add_corrected_ts()
+
+        # Merge data
+        for grp in self._data["voxels_removed"].keys():
+            self._data["voxels_removed"][grp] = np.concatenate( self._data["voxels_removed"][grp], axis=0)
+
         return self._data
+    
+    def add_corrected_ts(self):
+        """
+        Voxels are removed in groups. Everytime a group of voxels is removed in the simulator, a timestamp
+        is created and then the information of the voxels is recorded. 
+
+        This means timestamps have not the same size as the number of voxels removed.
+
+        This method creates a new array with corrected timestamps.
+
+        """
+
+        assert isinstance(self._data["voxels_removed"]["voxel_removed"], list), "error data from file should be store in a list "
+
+        self._data["voxels_removed"]["voxel_corrected_ts"] = []
+
+        for idx in range(len(self.file_names)):
+            data_file_i = self._data["voxels_removed"]
+
+            if idx == len(data_file_i["voxel_removed"]):
+                break
+
+            # The first column of the voxel_removed array is the index to the timestamp array
+            voxel_indexes = data_file_i["voxel_removed"][idx][:, 0].astype(np.int32)
+            corrected_ts = data_file_i["voxel_time_stamp"][idx][
+                voxel_indexes
+            ]
+            self._data["voxels_removed"]["voxel_corrected_ts"].append(corrected_ts)
+
 
     def get_removed_voxels(self) -> Voxels:
         """Get array of removed voxels
@@ -137,12 +184,18 @@ class DataMerger:
             Array of removed voxels information of shape (N,7). First three
             columes provide the indexes and remaning 4 columns the RGBA color.
         """
-        voxel_ts_mapper = self._data["voxels_removed"]["voxel_removed"][:, 0].astype(np.int32)
-        voxel_color = self._data["voxels_removed"]["voxel_color"][:, 1:].astype(np.uint8)
-        voxel_loc = self._data["voxels_removed"]["voxel_removed"][:, 1:].astype(np.int32)
-        voxel_ts = self._data["voxels_removed"]["voxel_time_stamp"]
 
-        voxels = Voxels(voxel_loc, voxel_color, voxel_ts, voxel_ts_mapper)
+
+        voxel_color = self._data["voxels_removed"]["voxel_color"][:, 1:].astype(
+            np.uint8
+        )
+        voxel_loc = self._data["voxels_removed"]["voxel_removed"][:, 1:].astype(
+            np.int32
+        )
+        voxel_ts = self._data["voxels_removed"]["voxel_corrected_ts"]
+
+        voxels = Voxels(voxel_loc, voxel_color, voxel_ts)
+
         # result_arr = np.zeros((voxel_color.shape[0],7)).astype(np.int32)
         # result_arr[:,0:3]= voxel_removed[:,1:].astype(np.int32)
         # result_arr[:,3:7] = voxel_color[:,1:].astype(np.int32)
@@ -156,7 +209,9 @@ class DataMerger:
             output_grp = output_file.create_group(grp)
             for dset in data[grp].keys():
                 print("Writing Dataset", dset)
-                output_grp.create_dataset(dset, data=data[grp][dset], compression="gzip")
+                output_grp.create_dataset(
+                    dset, data=data[grp][dset], compression="gzip"
+                )
 
         output_file.close()
 
@@ -166,7 +221,9 @@ def main():
     # data_path = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/RedCap/Baseline")
     # data_path = data_path / "Participant_3/2022-11-04 14.32.45"
 
-    data_path = Path("/home/juan1995/research_juan/cisII_SDF_project/Data/UserStudy2_IROS")
+    data_path = Path(
+        "/home/juan1995/research_juan/cisII_SDF_project/Data/UserStudy2_IROS"
+    )
     data_path = data_path / "Participant_08/2023-02-08 10:07:14_AnatomyA_baseline"
 
     # data_path = data_path / "Participant_08/test_dir"
@@ -190,7 +247,6 @@ def main():
     ts, loc, color = removed_voxels.get_voxels_at_time(half_time)
     print(f"Voxels removed at time {half_time:0.4f} - voxels removed: {loc.shape}")
 
-    x = 0
     # DataMerger.save_data_to_hdf5(data, data_path)
 
 
