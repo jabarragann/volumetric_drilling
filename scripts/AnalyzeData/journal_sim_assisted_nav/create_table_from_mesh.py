@@ -3,7 +3,7 @@ import numpy as np
 import csv
 
 # Load the PLY and extract 'quality'
-plydata = PlyData.read('/home/juan95/Downloads/SimAssistedPaper/meshlab_nice/drilled_area.ply')
+plydata = PlyData.read('//home/juan95/research/discovery_grant/user_studies/experimental_data/20241217_Andy_experiment/ExperimentAnalysis/MeshlabAnalysis/drilled_region_only_with_colored_errors.ply')
 quality = np.array(plydata['vertex'].data['quality'])
 
 # Total number of vertices
