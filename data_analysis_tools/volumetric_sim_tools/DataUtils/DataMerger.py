@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Tuple
 import h5py
 import numpy as np
 from natsort import natsorted
@@ -88,7 +88,7 @@ class DataMerger:
 
         self.file_names = []
 
-    def get_merged_data(self, dir, verbose=False):
+    def get_merged_data(self, dir, verbose=False) -> OrderedDict:
         self._clear_data()
 
         # os.chdir(dir)
@@ -117,9 +117,9 @@ class DataMerger:
                     print("\t Processing Group ", grp)
 
                 for dset in file[grp].keys():
+                    # Skip img data. For instance, l_img, r_img.
                     if grp == "data" and dset != "time" and "pose_" not in dset:
                         continue
-
 
                     if len(file[grp][dset]) == 0:
                         continue
@@ -134,22 +134,33 @@ class DataMerger:
                     else:
                         self._data[grp][dset].append(file[grp][dset][()])
 
-
             file.close()
 
-        # Fix time stamps
+        # Fix time stamps for voxels_removed dataset
         self.add_corrected_ts()
 
         # Merge data
         for grp in self._data["voxels_removed"].keys():
-            self._data["voxels_removed"][grp] = np.concatenate( self._data["voxels_removed"][grp], axis=0)
+            self._data["voxels_removed"][grp] = np.concatenate(
+                self._data["voxels_removed"][grp], axis=0
+            )
+
+        if "atracsys_data" in self._data.keys():
+            for grp in self._data["atracsys_data"].keys():
+                self._data["atracsys_data"][grp] = np.concatenate(
+                    self._data["atracsys_data"][grp], axis=0
+                )
+
+            self.atracsys_data_available = True
+        else:
+            self.atracsys_data_available = False
 
         return self._data
-    
+
     def add_corrected_ts(self):
         """
         Voxels are removed in groups. Everytime a group of voxels is removed in the simulator, a timestamp
-        is created and then the information of the voxels is recorded. 
+        is created and then the information of the voxels is recorded.
 
         This means timestamps have not the same size as the number of voxels removed.
 
@@ -157,7 +168,9 @@ class DataMerger:
 
         """
 
-        assert isinstance(self._data["voxels_removed"]["voxel_removed"], list), "error data from file should be store in a list "
+        assert isinstance(self._data["voxels_removed"]["voxel_removed"], list), (
+            "error data from file should be store in a list "
+        )
 
         self._data["voxels_removed"]["voxel_corrected_ts"] = []
 
@@ -169,11 +182,16 @@ class DataMerger:
 
             # The first column of the voxel_removed array is the index to the timestamp array
             voxel_indexes = data_file_i["voxel_removed"][idx][:, 0].astype(np.int32)
-            corrected_ts = data_file_i["voxel_time_stamp"][idx][
-                voxel_indexes
-            ]
+            corrected_ts = data_file_i["voxel_time_stamp"][idx][voxel_indexes]
             self._data["voxels_removed"]["voxel_corrected_ts"].append(corrected_ts)
 
+    def get_atracsys_data(self) -> Tuple[np.ndarray, np.ndarray] | Tuple[None, None]:
+        if self.atracsys_data_available:
+            atracsys_data = self._data["atracsys_data"]
+            return atracsys_data["time_stamp"], atracsys_data["drill_pose"]
+
+        else:
+            return None, None
 
     def get_removed_voxels(self) -> Voxels:
         """Get array of removed voxels
@@ -184,7 +202,6 @@ class DataMerger:
             Array of removed voxels information of shape (N,7). First three
             columes provide the indexes and remaning 4 columns the RGBA color.
         """
-
 
         voxel_color = self._data["voxels_removed"]["voxel_color"][:, 1:].astype(
             np.uint8
@@ -230,8 +247,9 @@ def main():
 
     # data_path = data_path / "Participant_09/2023-02-10 09:54:45"
 
-    data = data_merge.get_merged_data(data_path)
-    removed_voxels: Voxels = data_merge.get_removed_voxels()
+    raw_data = data_merge.get_merged_data(data_path)
+
+    removed_voxels = data_merge.get_removed_voxels()
 
     ts, loc, color = removed_voxels[:]
     print(f"{ts.shape}")
