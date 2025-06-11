@@ -25,7 +25,7 @@ import rospy
 from ambf_msgs.msg import RigidBodyState, CameraState
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image, PointCloud2
-from geometry_msgs.msg import WrenchStamped
+from geometry_msgs.msg import WrenchStamped, PoseStamped
 
 try:
     from volumetric_drilling_msgs.msg import Voxels, DrillSize, VolumeInfo
@@ -181,6 +181,7 @@ def init_hdf5(args):
     file.create_group("voxels_removed")
     file.create_group("burr_change")
     file.create_group("drill_force_feedback")
+    file.create_group("atracsys_data")
 
     return file, img_height, img_width, s, volume_pose
 
@@ -228,7 +229,11 @@ def write_to_hdf5():
 
     ##################################
     #### Save img data and burr_change
-    containers = [(f["data"], container), (f["burr_change"], burr_change), (f["drill_force_feedback"], drill_force_feedback)]
+    containers = [(f["data"], container), 
+                  (f["burr_change"], burr_change), 
+                  (f["drill_force_feedback"], drill_force_feedback),
+                  (f["atracsys_data"], atracsys_data)]
+
     for group, data in containers:
         for key, value in data.items():
             if len(value) > 0:
@@ -366,6 +371,13 @@ def drill_force_feedback_callback(wrench_msg):
     drill_force_feedback['time_stamp'].append(wrench_msg.header.stamp.to_sec())
     drill_force_feedback['wrench'].append(wrench)
 
+def atracsys_callback(atracsys_msg: PoseStamped):
+    """
+    Atracsys callback updates the timestamp of the atracys message so that it is in sync with the other messages
+    """
+
+    atracsys_data['time_stamp'].append(rospy.Time.now().to_sec()) #Update atracsys to current time
+    atracsys_data['drill_pose'].append([atracsys_msg.pose.position.x, atracsys_msg.pose.position.y, atracsys_msg.pose.position.z])
 
 def burr_change_callback(burr_change_msg):
     global burr_change
@@ -465,6 +477,15 @@ def setup_subscriber(args):
         else:
             log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.force_topic)
             exit()
+    
+    if args.atracsys_data_topic != "None":
+        if args.atracsys_data_topic in active_topics:
+            rospy.Subscriber(args.atracsys_data_topic, PoseStamped, atracsys_callback)
+            atracsys_data["time_stamp"] = []
+            atracsys_data["drill_pose"] = []
+        else:
+            log.log(logging.CRITICAL, "CRITICAL! Failed to subscribe to " + args.atracsys_data_topic)
+            exit()
 
     # poses
     for name in args.objects:
@@ -559,6 +580,7 @@ if __name__ == "__main__":
     parser.add_argument("--rm_vox_topic", default=ambf_prefix + "/plugin/volumetric_drilling/voxels_removed", type=str,)
     parser.add_argument("--burr_change_topic", default=ambf_prefix + "/plugin/volumetric_drilling/drill_size", type=str,)
     parser.add_argument("--volume_prop_topic", default=ambf_prefix + "/plugin/volumetric_drilling/volume_info", type=str,)
+    parser.add_argument("--atracsys_data_topic", default="/atracsys/drill_marker/measured_cp", type=str,)
     parser.add_argument("--objects", default=["drill_empty_reference", "main_camera"], type=str, nargs="+")
     parser.add_argument("--drill_force_feedback_topic", default=ambf_prefix + "/plugin/volumetric_drilling/drill_force_feedback", type=str,)
 
@@ -613,6 +635,7 @@ if __name__ == "__main__":
     collisions = OrderedDict()
     burr_change = OrderedDict()
     drill_force_feedback = OrderedDict()
+    atracsys_data = OrderedDict()
     voxel_volume = 0
 
     main(args)
