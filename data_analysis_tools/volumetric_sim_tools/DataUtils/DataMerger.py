@@ -1,11 +1,10 @@
-import os
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Tuple
 import h5py
 import numpy as np
 from natsort import natsorted
 from collections import OrderedDict
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
 
 # {0:{ts:float, voxels:ndarray, color:}}
 # https://github.com/uvemas/ViTables
@@ -66,7 +65,7 @@ class Voxels:
     def get_total_time(self) -> float:
         return self.__end_time - self.__start_time
 
-    def get_voxels_at_time(self, t: float) -> List[np.ndarray]:
+    def get_voxels_at_time(self, t: float) -> Tuple[np.ndarray, ...]:
         t = t + self.__start_time
         selected_idx = self.voxels_ts < t
 
@@ -116,12 +115,12 @@ class DataMerger:
                 if verbose:
                     print("\t Processing Group ", grp)
 
-                for dset in file[grp].keys():
+                for dset in file[grp].keys():  # type: ignore
                     # Skip img data. For instance, l_img, r_img.
                     if grp == "data" and dset != "time" and "pose_" not in dset:
                         continue
 
-                    if len(file[grp][dset]) == 0:
+                    if len(file[grp][dset]) == 0:  # type: ignore
                         continue
 
                     if verbose:
@@ -130,9 +129,9 @@ class DataMerger:
                     ## Store data from each file in a list to fix the timestamps
                     if dset not in self._data[grp]:
                         self._data[grp][dset] = []
-                        self._data[grp][dset].append(file[grp][dset][()])
+                        self._data[grp][dset].append(file[grp][dset][()])  # type: ignore
                     else:
-                        self._data[grp][dset].append(file[grp][dset][()])
+                        self._data[grp][dset].append(file[grp][dset][()])  # type: ignore
 
             file.close()
 
@@ -220,7 +219,7 @@ class DataMerger:
         return voxels
 
     @classmethod
-    def save_data_to_hdf5(self, data, dst_path, outfile="output.hdf5"):
+    def save_data_to_hdf5(cls, data, dst_path, outfile="output.hdf5"):
         output_file = h5py.File(dst_path / outfile, "w")
         for grp in data.keys():
             output_grp = output_file.create_group(grp)
@@ -247,7 +246,8 @@ def main():
 
     # data_path = data_path / "Participant_09/2023-02-10 09:54:45"
 
-    raw_data = data_merge.get_merged_data(data_path)
+    # raw_data = data_merge.get_merged_data(data_path) #could return raw data
+    data_merge.get_merged_data(data_path)
 
     removed_voxels = data_merge.get_removed_voxels()
 
