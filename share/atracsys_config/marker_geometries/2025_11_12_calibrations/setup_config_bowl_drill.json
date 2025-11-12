@@ -1,0 +1,16 @@
+{
+    "tools":
+    [
+        {
+            "name": "bowl_marker",
+            "json-file": "marker_geometry_bowl.json"
+        },
+        {
+            "name": "drill_marker",
+            "json-file": "marker_geometry_drill.json",
+            "reference": "bowl_marker"
+        }
+
+    ]
+
+}

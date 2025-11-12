@@ -1,6 +1,9 @@
+# Notes
 
+## Notes:
+* Remember to `id` field to geometry files. The tool makers is not doing it by default.
 
-# Syntax to define a reference marker
+## Syntax to define a reference marker
 
 ```json
 {
