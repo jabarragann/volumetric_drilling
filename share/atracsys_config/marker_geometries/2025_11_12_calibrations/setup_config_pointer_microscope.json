@@ -1,0 +1,15 @@
+{
+    "tools":
+    [
+        {
+            "name": "microscope_marker",
+            "json-file": "marker_geometry_microscope.json"
+        },
+        {
+            "name": "pointer_marker",
+            "json-file": "marker_geometry_brainLabPointer.json"
+        }
+
+    ]
+
+}
