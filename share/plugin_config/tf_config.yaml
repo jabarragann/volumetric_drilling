@@ -20,11 +20,12 @@ TF marker_body-drill_tip:
   child: drill_tip # sim_assisted_drill_tip_reference
   type: FIXED
   transformation: # from pivot calibration
-    # position: {x: 0.190135, y: 0.047802, z: -0.0558815} # Pilot 03 - George's experiment 
-    position: {x: 0.176561, y: 0.045504, z: -0.0574722} # Pilot 04 - Andy's experiment.
-    # position: {x: -0.193099, y: 0.000640584, z: -0.0531437} # Drill
-    # position: {x: -0.256514, y: 0.00213896, z: -0.000272551} # Brain lab pointer
+    # Experiments 02-20-2026
+    # position: {x: 0.0, y: 0.0 , z: 0.0} #drill
+    position: {x: 0.125657, y: -0.137231, z: -0.0570812} #drill
     orientation: { r: 0.0, p: 0.0, y: 0.0 }
+
+
 
 ## This sets the drill body orientation with respect to the drill reference body.
 # This value came from doing two pivot calibrations with shafts of different lenghts

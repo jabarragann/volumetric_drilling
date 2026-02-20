@@ -6,29 +6,20 @@ input devices config: ADF/input_devices/input_devices.yaml
 plugins:
   [
     {
-      path: ./plugin/external_plugins/ambf_registration_plugin/build,
+      path: /home/saint/research/saint_system/util_plugins/ambf_registration_plugin/build/,
       name: registration_plugin,
       filename: libregistration_plugin.so,
     },
     {
-      path: ./plugin/external_plugins/ambf_tf_plugin/build,
+      path: /home/saint/research/saint_system/util_plugins/ambf_tf_plugin/build/,
       name: ambf_tf_plugin,
       filename: libambf_tf_plugin.so,
     },
 ]
 
 multibody configs:
-  - "ADF/drills/4mm_drill_in_real_units/4mm_drill_in_real_units.yaml" #0 #surgical drill
-  
+  - "ADF/drills/drills_in_si_units/4mm_drill_in_real_units.yaml" #0 #surgical drill
   # ANATOMIES:
-  # - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan3/volume_with_fiducials.yaml" #1 # pilot 3
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan4/volume_with_fiducials.yaml" #1 # pilot 4
+  - "/home/saint/research/saint_system/SAINT2026/phatom01/ADF/phantom01.yaml" #1 # anatomy
 
-  # OLD REGISTRATIONS
-  
-  ## Pilot anatomy 2 with Nimesh 
-  # - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan2/pilot2.yaml" #1 
-
-  # ## Pilot anatomy Nimesh
-  # - "/home/juan95/research/discovery_grant/registration_pipeline/pilot_anatomy/Scan1/Scan1.yaml" #4
 

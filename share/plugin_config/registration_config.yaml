@@ -3,18 +3,17 @@ pointer:
   tooltip name: drill_tip # Rigid body that is attached to the tip of the tool
   name of points:
     - F_01
+    - F_03
     - F_05
+    - F_07
     - F_08
-    - F_12
-    - F_16
-    - F_17
-    - F_B
+    - F_14
 
-  object name: volume_anatomical_origin
+  object name: phantom01_Anatomical_Origin
 
 ## Pivot calibration
 pivot:
-  marker namespace: /atracsys/drill_marker/
+  marker namespace: /atracsys/drill_marker
   marker name: marker  #AMBF drill body name
   type: AUTO
   resolution: 0.01
