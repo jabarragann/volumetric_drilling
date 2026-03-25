@@ -31,10 +31,10 @@ multibody configs:
   - "ADF/drills/drills_in_si_units/4mm_drill_in_real_units.yaml" #8 
   - "ADF/drills/drills_in_si_units/6mm_drill_in_real_units.yaml" #9 
   - "ADF/volume_sim_assisted_test01.yaml" #10
+  - "resources/ros2_test_assets/phantom01/phantom01.yaml" #11 # SAINT 2026 - Phantom01
   ## Anatomies - not included in repo
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan1/Scan1.yaml"  #11 # pilot 1 - Nimesh 
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan2/pilot2.yaml" #12 # pilot 2 - Nimesh 
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan3/volume.yaml" #13 # pilot 3 - George
-  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan4/volume.yaml" #14 # pilot 4 - Andy
-  - "/home/juan95/research/discovery_grant/saint_2026/ambf_out/phantom01"                #15 # SAINT 2026 - Phantom01
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan1/Scan1.yaml"  #12 # pilot 1 - Nimesh 
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan2/pilot2.yaml" #13 # pilot 2 - Nimesh 
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan3/volume.yaml" #14 # pilot 3 - George
+  - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan4/volume.yaml" #15 # pilot 4 - Andy
   - "/home/saint/cynthia_dir/nrrd_to_adf/my_data/test_03132026_2/phantom01.yaml"         #16 # Pilot with cynthia

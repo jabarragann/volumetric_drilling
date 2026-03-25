@@ -1,0 +1,218 @@
+ADF Version: 1.0
+volumes:
+- VOLUME mastoidectomy_volume
+bodies:
+- BODY phantom01_Anatomical_Origin
+- BODY F_01
+- BODY F_02
+- BODY F_03
+- BODY F_04
+- BODY F_05
+- BODY F_06
+- BODY F_07
+- BODY F_08
+- BODY F_09
+- BODY F_10
+- BODY F_11
+- BODY F_12
+- BODY F_13
+- BODY F_14
+- BODY F_15
+- BODY F_16
+- BODY F_17
+- BODY F_18
+- BODY F_19
+
+VOLUME mastoidectomy_volume:
+  name: phantom01
+  location:
+    position:
+      x: 0.06270459508241907
+      y: -0.003980301999999981
+      z: 0.05686411151581345
+    orientation:
+      r: 3.141592653589793
+      p: -6.47879915403049e-05
+      y: 0.0
+  scale: 1.0
+  dimensions:
+    x: 0.06475
+    y: 0.11934999999999998
+    z: 0.0881999981759314
+  images:
+    path: slices
+    prefix: slice000
+    count: 252
+    format: png
+  iso-surface value: 0.5
+  volume filepath: /home/saint/research/saint_system/SAINT2026/phatom01/slicer/saint2026-phantom01.seg.nrrd
+  parent: BODY phantom01_Anatomical_Origin
+  shaders:
+    path: shaders
+    vertex: shader.vs
+    fragment: shader.fs
+
+BODY phantom01_Anatomical_Origin:
+  name: phantom01_Anatomical_Origin
+  location:
+    # position: {x: 0.0, y: 0.0, z: 0.0}
+    # orientation: {r: 0.0, p: 0.0, y: 0.0}
+    position: {x: 0.201435, y: 0.0450273, z: 1.57541}
+    orientation: {r: 2.94536, p: 0.156835, y: 1.5834}
+  scale: 1.0
+  mass: 0.0
+
+
+fiducial_locations:
+  F_01_LOC: &F_01_LOC_ANCHOR {x: 4.411350858176039946e-02, y: -2.482102601740785938e-02, z: 7.996098933120956986e-02}
+  F_02_LOC: &F_02_LOC_ANCHOR {x: 7.446354177966048316e-02, y: -3.757899319415381606e-02, z: 7.889200443082620973e-02}
+  F_03_LOC: &F_03_LOC_ANCHOR {x: 7.458395140149765012e-02, y: -4.418101501464843928e-02, z: 6.243847469031103825e-02}
+  F_04_LOC: &F_04_LOC_ANCHOR {x: 7.451986568468689509e-02, y: -4.410319148772033626e-02, z: 5.261165483690910527e-02}
+  F_05_LOC: &F_05_LOC_ANCHOR {x: 7.430971401232361329e-02, y: -4.445639201099024079e-02, z: 4.231952203678550350e-02}
+  F_06_LOC: &F_06_LOC_ANCHOR {x: 7.224890899658203969e-02, y: 3.603161229967180579e-02, z: 6.156958780408795795e-02}
+  F_07_LOC: &F_07_LOC_ANCHOR {x: 7.237673113282701298e-02, y: 3.580897270238159180e-02, z: 5.121548843383789268e-02}
+  F_08_LOC: &F_08_LOC_ANCHOR {x: 7.225195099456280245e-02, y: 3.572770005819653205e-02, z: 4.148214708598595840e-02}
+  F_09_LOC: &F_09_LOC_ANCHOR {x: 4.348135276056359910e-02, y: -4.776444181892925550e-03, z: 7.995854433275871587e-02}
+  F_10_LOC: &F_10_LOC_ANCHOR {x: 4.308835782976378620e-02, y: 1.528197574615478352e-02, z: 7.953848234390220595e-02}
+  F_11_LOC: &F_11_LOC_ANCHOR {x: 4.249225616455078181e-02, y: 2.262802140925356323e-02, z: 7.193289450148150632e-02}
+  F_12_LOC: &F_12_LOC_ANCHOR {x: 4.251899515529895118e-02, y: 2.211717046359753733e-02, z: 5.177025604248047114e-02}
+  F_13_LOC: &F_13_LOC_ANCHOR {x: 4.248508880131302012e-02, y: 2.196793746948242504e-02, z: 3.164784308661307971e-02}
+  F_14_LOC: &F_14_LOC_ANCHOR {x: 4.255372797390247208e-02, y: 1.452212333679199323e-02, z: 2.449729537963867346e-02}
+  F_15_LOC: &F_15_LOC_ANCHOR {x: 4.307225418090820240e-02, y: -5.551593303680419852e-03, z: 2.456753158569335849e-02}
+  F_16_LOC: &F_16_LOC_ANCHOR {x: 4.358217620849609564e-02, y: -2.565030916430168645e-02, z: 2.498225149322802832e-02}
+  F_17_LOC: &F_17_LOC_ANCHOR {x: 4.411193518080615272e-02, y: -3.293702416204382505e-02, z: 3.239878463745117509e-02}
+  F_18_LOC: &F_18_LOC_ANCHOR {x: 4.424923350532006250e-02, y: -3.249504115302514345e-02, z: 5.233432006835937733e-02}
+  F_19_LOC: &F_19_LOC_ANCHOR {x: 4.459713972038942958e-02, y: -3.215845622553862443e-02, z: 7.241843753908182302e-02}
+
+BODY F_01:
+  name: F_01
+  mass: 0.001
+  location:
+    position: *F_01_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_02:
+  name: F_02
+  mass: 0.001
+  location:
+    position: *F_02_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_03:
+  name: F_03
+  mass: 0.001
+  location:
+    position: *F_03_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_04:
+  name: F_04
+  mass: 0.001
+  location:
+    position: *F_04_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_05:
+  name: F_05
+  mass: 0.001
+  location:
+    position: *F_05_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_06:
+  name: F_06
+  mass: 0.001
+  location:
+    position: *F_06_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_07:
+  name: F_07
+  mass: 0.001
+  location:
+    position: *F_07_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_08:
+  name: F_08
+  mass: 0.001
+  location:
+    position: *F_08_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_09:
+  name: F_09
+  mass: 0.001
+  location:
+    position: *F_09_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_10:
+  name: F_10
+  mass: 0.001
+  location:
+    position: *F_10_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_11:
+  name: F_11
+  mass: 0.001
+  location:
+    position: *F_11_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_12:
+  name: F_12
+  mass: 0.001
+  location:
+    position: *F_12_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_13:
+  name: F_13
+  mass: 0.001
+  location:
+    position: *F_13_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_14:
+  name: F_14
+  mass: 0.001
+  location:
+    position: *F_14_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_15:
+  name: F_15
+  mass: 0.001
+  location:
+    position: *F_15_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_16:
+  name: F_16
+  mass: 0.001
+  location:
+    position: *F_16_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_17:
+  name: F_17
+  mass: 0.001
+  location:
+    position: *F_17_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_18:
+  name: F_18
+  mass: 0.001
+  location:
+    position: *F_18_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+
+BODY F_19:
+  name: F_19
+  mass: 0.001
+  location:
+    position: *F_19_LOC_ANCHOR
+    orientation: {r: 0.0, p: 0.0, y: 0.0}

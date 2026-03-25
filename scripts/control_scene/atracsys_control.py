@@ -47,7 +47,7 @@ node = rclpy.create_node("pose_player_node")
 time.sleep(0.4)
 ############
 
-CSV_FILE = "atracsys_touching_surface.csv"   # <-- change to your csv file path
+CSV_FILE = "../../resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"   # <-- change to your csv file path
 APPLY_PERIOD = 0.01       # 100 ms
 
 # -------------------------

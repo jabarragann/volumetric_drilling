@@ -1,0 +1,49 @@
+## Pivot calibration
+position: {x: 0.125657, y: -0.137231, z: -0.0570812} #drill
+
+## Attempt 1
+
+Saved. x: 0.192163 y: 0.0750265 z: 1.48802
+Saved. x: 0.168851 y: 0.106751  z: 1.49785
+Saved. x: 0.182415 y: 0.0964636 z: 1.52909
+Saved. x: 0.248096 y: 0.107162  z: 1.52241
+Saved. x: 0.244715 y: 0.111544  z: 1.53241
+Saved. x: 0.220895 y: 0.0845949 z: 1.54821
+
+Successfully collected 6 points...
+position: {x: 0.214184, y: 0.0370711, z: 1.57411}
+orientation: {r: 3.03222, p: 0.0635974, y: 1.6644}
+Total error in x, y, z directions: [0.0285645 0.0209481  0.013376]
+JSON file created: output.json
+
+## Attempt 2
+
+Saved. x: 0.191888 y: 0.0758045 z: 1.48526
+Saved. x: 0.168644 y: 0.107495 z: 1.49492
+Saved. x: 0.165138 y: 0.110442 z: 1.51466
+Saved. x: 0.245734 y: 0.110444 z: 1.52053
+Saved. x: 0.24374 y: 0.111895 z: 1.52968
+Saved. x: 0.220777 y: 0.0841858 z: 1.54883
+
+Successfully collected 6 points...
+position: {x: 0.202258, y: 0.0452233, z: 1.57522}
+orientation: {r: 2.95966, p: 0.156409, y: 1.58694}
+
+Total error in x, y, z directions: [ 0.00107777 0.000527187  0.00303905]
+JSON file created: output.json
+
+## Attempt 3
+
+Saved. x: 0.191725 y: 0.0755409 z: 1.48524
+Saved. x: 0.168758 y: 0.107173 z: 1.49484
+Saved. x: 0.164905 y: 0.110339 z: 1.51358
+Saved. x: 0.24607 y: 0.110133 z: 1.52176
+Saved. x: 0.244032 y: 0.111786 z: 1.53085
+Saved. x: 0.220968 y: 0.0840052 z: 1.54905
+
+Successfully collected 6 points...
+position: {x: 0.201435, y: 0.0450273, z: 1.57541}
+orientation: {r: 2.94536, p: 0.156835, y: 1.5834}
+
+Total error in x, y, z directions: [ 0.00330773 0.000809302  0.00338799]
+JSON file created: output.json

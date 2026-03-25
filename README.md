@@ -1,6 +1,27 @@
 # Simulation assisted navigation 
 
 
+## ROS2 documentation
+
+### Python venv setup
+In ubuntu 24.04 packages cannot be longer installed system-wide with pip. Instead use a virtual environment.
+
+```bash
+python3 -m venv ws_python_env 
+source ws_python_env/bin/activate
+pip install numpy==1.26
+pip install pyyaml
+pip install transforms3d
+```
+
+Then to activate add an activation script
+```bash
+root_path=$HOME/ros_ws/ros2_ws_saint_experimental
+source ${root_path}/install/setup.bash
+source ${root_path}/ws_python_env/bin/activate
+```
+
+
 ## Installation
 
 ### 0. Install AMBF simulator  
