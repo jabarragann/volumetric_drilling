@@ -6,18 +6,18 @@ plugins: [
   {
     name: DRILLING_SIMULATOR,
     filename: libvolumetric_drilling.so,
-    path: build/
+    path: build/volumetric_drilling/
   },
-  {
-    filename: libambf_tf_plugin.so,
-    name: ambf_tf_plugin,
-    path: /home/saint/research/saint_system/util_plugins/ambf_tf_plugin/build/,
-  },
-  {
-    filename: libspacenav_plugin.so,
-    name: ambf_spacenav_plugin,
-    path: ./plugin/external_plugins/ambf_spacenav_plugin/build/, 
-  }
+  # {
+  #   filename: libambf_tf_plugin.so,
+  #   name: ambf_tf_plugin,
+  #   path: /home/saint/research/saint_system/util_plugins/ambf_tf_plugin/build/,
+  # },
+  # {
+  #   filename: libspacenav_plugin.so,
+  #   name: ambf_spacenav_plugin,
+  #   path: ./plugin/external_plugins/ambf_spacenav_plugin/build/, 
+  # }
 ]
 multibody configs:
   - "ADF/drills.yaml" #0
