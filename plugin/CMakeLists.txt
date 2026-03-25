@@ -25,23 +25,23 @@ add_definitions(${AMBF_DEFINITIONS})
 set (vol_plugin_prefix "volumetric_drilling")
 
 add_library(volumetric_drilling SHARED
-    # ${vol_plugin_prefix}/common.h
-    # ${vol_plugin_prefix}/volumetric_drilling.cpp
-    # ${vol_plugin_prefix}/volumetric_drilling.h
+    ${vol_plugin_prefix}/common.h
+    ${vol_plugin_prefix}/volumetric_drilling.cpp
+    ${vol_plugin_prefix}/volumetric_drilling.h
     ${vol_plugin_prefix}/ros_interface.cpp
     ${vol_plugin_prefix}/ros_interface.h
-    # ${vol_plugin_prefix}/joystick.cpp
-    # ${vol_plugin_prefix}/joystick.h
-    # ${vol_plugin_prefix}/footpedal.cpp
-    # ${vol_plugin_prefix}/footpedal.h
-    # ${vol_plugin_prefix}/wave_generator.cpp
-    # ${vol_plugin_prefix}/wave_generator.h
-    # ${vol_plugin_prefix}/drill_manager.cpp
-    # ${vol_plugin_prefix}/drill_manager.h
-    # ${vol_plugin_prefix}/camera_panel_manager.h
-    # ${vol_plugin_prefix}/camera_panel_manager.cpp
-    # ${vol_plugin_prefix}/gaze_marker_controller.h
-    # ${vol_plugin_prefix}/gaze_marker_controller.cpp
+    ${vol_plugin_prefix}/joystick.cpp
+    ${vol_plugin_prefix}/joystick.h
+    ${vol_plugin_prefix}/footpedal.cpp
+    ${vol_plugin_prefix}/footpedal.h
+    ${vol_plugin_prefix}/wave_generator.cpp
+    ${vol_plugin_prefix}/wave_generator.h
+    ${vol_plugin_prefix}/drill_manager.cpp
+    ${vol_plugin_prefix}/drill_manager.h
+    ${vol_plugin_prefix}/camera_panel_manager.h
+    ${vol_plugin_prefix}/camera_panel_manager.cpp
+    ${vol_plugin_prefix}/gaze_marker_controller.h
+    ${vol_plugin_prefix}/gaze_marker_controller.cpp
     )
 
 

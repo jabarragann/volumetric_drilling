@@ -742,17 +742,17 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         if (a_key == GLFW_KEY_LEFT_BRACKET) // [
         {
             m_simAssistedNavRosInterface.window_disparity += 0.0015;
-            std_msgs::Float32 msg;
+            std_msgs::msg::Float32 msg;
             msg.data = m_simAssistedNavRosInterface.window_disparity;
-            m_simAssistedNavRosInterface.small_window_disparity_pub.publish(msg);
+            m_simAssistedNavRosInterface.small_window_disparity_pub -> publish(msg);
         }
         // Decrease disparity of small window
         else if (a_key == GLFW_KEY_RIGHT_BRACKET) // ]
         {
             m_simAssistedNavRosInterface.window_disparity -= 0.0015;
-            std_msgs::Float32 msg;
+            std_msgs::msg::Float32 msg;
             msg.data = m_simAssistedNavRosInterface.window_disparity;
-            m_simAssistedNavRosInterface.small_window_disparity_pub.publish(msg);
+            m_simAssistedNavRosInterface.small_window_disparity_pub->publish(msg);
         }
         //********************************/
 
