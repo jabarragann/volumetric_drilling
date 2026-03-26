@@ -12,7 +12,16 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    install_requires=["numpy", "scipy", "rich", "click", "pynrrd", "Pillow", "natsort", "h5py"],
+    install_requires=[
+        "numpy",
+        "rich",
+        "click",
+        "pynrrd",
+        "Pillow",
+        "natsort",
+        "h5py",
+        "tqdm",
+    ],
     include_package_data=True,
     python_requires=">=3.7",
     entry_points={
