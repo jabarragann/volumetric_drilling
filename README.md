@@ -12,6 +12,8 @@ source ws_python_env/bin/activate
 pip install numpy==1.26
 pip install pyyaml
 pip install transforms3d
+pip install h5py
+pip install typed-argument-parser
 ```
 
 Then to activate add an activation script
