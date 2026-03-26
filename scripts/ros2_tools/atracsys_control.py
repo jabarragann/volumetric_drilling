@@ -38,14 +38,14 @@ def matrix_to_pose(T):
 
     return pose
 
-############
-# Temp solution (ROS2 init required by your environment)
-############
-import rclpy
-rclpy.init()
-node = rclpy.create_node("pose_player_node")
-time.sleep(0.4)
-############
+# ############
+# # Temp solution (ROS2 init required by your environment)
+# ############
+# import rclpy
+# rclpy.init()
+# node = rclpy.create_node("pose_player_node")
+# time.sleep(0.4)
+# ############
 
 CSV_FILE = "../../resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"   # <-- change to your csv file path
 APPLY_PERIOD = 0.01       # 100 ms
