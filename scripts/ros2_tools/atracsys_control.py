@@ -1,13 +1,16 @@
 import time
 import csv
-from ambf_client import Client
+from ambf_client import Client # type: ignore
 from geometry_msgs.msg import Pose
 import numpy as np
-from tf_transformations import (
-    quaternion_matrix,
-    quaternion_from_matrix
-)
+from tf_transformations import quaternion_matrix, quaternion_from_matrix # type: ignore
+from pyprojroot.here import here # type: ignore
 
+
+CSV_FILE = (
+    here() / "resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"
+)  
+APPLY_PERIOD = 0.01  # 100 ms
 
 def pose_to_matrix(pose: Pose):
     q = pose.orientation
@@ -20,6 +23,7 @@ def pose_to_matrix(pose: Pose):
     T[0:3, 3] = [t.x, t.y, t.z]
 
     return T
+
 
 def matrix_to_pose(T):
     pose = Pose()
@@ -38,103 +42,92 @@ def matrix_to_pose(T):
 
     return pose
 
-# ############
-# # Temp solution (ROS2 init required by your environment)
-# ############
-# import rclpy
-# rclpy.init()
-# node = rclpy.create_node("pose_player_node")
-# time.sleep(0.4)
-# ############
+def main():
+    client = Client("client")
+    client.connect()
 
-CSV_FILE = "../../resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"   # <-- change to your csv file path
-APPLY_PERIOD = 0.01       # 100 ms
+    print("Connected to AMBF")
 
-# -------------------------
-# Connect to AMBF
-# -------------------------
-client = Client("client")
-client.connect()
+    drill_body_handle = client.get_obj_handle("drill_body_4mm")
+    drill_marker_handle = client.get_obj_handle("marker")
+    drill_tip_handle = client.get_obj_handle("drill_tip")
 
-print("Connected to AMBF")
+    if drill_marker_handle is None or drill_tip_handle is None:
+        raise RuntimeError("Could not retrieve drill handles")
 
-drill_body_handle = client.get_obj_handle("drill_body_4mm")
-drill_marker_handle = client.get_obj_handle("marker")
-drill_tip_handle = client.get_obj_handle("drill_tip")
+    print("Handles acquired")
 
-if drill_marker_handle is None or drill_tip_handle is None:
-    raise RuntimeError("Could not retrieve drill handles")
+    pivot_pose = Pose()
 
-print("Handles acquired")
+    # Position
+    pivot_pose.position.x = 0.125657
+    pivot_pose.position.y = -0.137231
+    pivot_pose.position.z = -0.0570812
 
-pivot_pose = Pose()
+    # Orientation (quaternion)
+    pivot_pose.orientation.x = 1.0
+    pivot_pose.orientation.y = 0.0
+    pivot_pose.orientation.z = 0.0
+    pivot_pose.orientation.w = 0.0
 
-# Position
-pivot_pose.position.x = 0.125657
-pivot_pose.position.y = -0.137231
-pivot_pose.position.z = -0.0570812
+    marker_T_tip = pose_to_matrix(pivot_pose)
 
-# Orientation (quaternion)
-pivot_pose.orientation.x = 1.0 
-pivot_pose.orientation.y = 0.0 
-pivot_pose.orientation.z = 0.0 
-pivot_pose.orientation.w = 0.0 
+    print(marker_T_tip)
 
-marker_T_tip = pose_to_matrix(pivot_pose)
+    # -------------------------
+    # Read CSV and apply poses
+    # -------------------------
+    with open(CSV_FILE, "r") as f:
+        reader = csv.reader(f)
 
-print(marker_T_tip)
+        for row in reader:
+            # Skip empty lines
+            if not row:
+                continue
 
-# -------------------------
-# Read CSV and apply poses
-# -------------------------
-with open(CSV_FILE, "r") as f:
-    reader = csv.reader(f)
+            # Skip header if present
+            if row[0].strip().lower() == "x":
+                continue
 
-    for row in reader:
-        # Skip empty lines
-        if not row:
-            continue
+            x, y, z, rx, ry, rz, rw = map(float, row)
 
-        # Skip header if present
-        if row[0].strip().lower() == "x":
-            continue
+            body_pose = Pose()
 
-        x, y, z, rx, ry, rz, rw = map(float, row)
+            # Position
+            body_pose.position.x = x
+            body_pose.position.y = y
+            body_pose.position.z = z
 
-        body_pose = Pose()
+            # Orientation (quaternion)
+            body_pose.orientation.x = rx
+            body_pose.orientation.y = ry
+            body_pose.orientation.z = rz
+            body_pose.orientation.w = rw
 
-        # Position
-        body_pose.position.x = x
-        body_pose.position.y = y
-        body_pose.position.z = z
+            world_T_marker = pose_to_matrix(body_pose)
 
-        # Orientation (quaternion)
-        body_pose.orientation.x = rx
-        body_pose.orientation.y = ry
-        body_pose.orientation.z = rz
-        body_pose.orientation.w = rw
+            world_T_tip = world_T_marker @ marker_T_tip
 
-        world_T_marker = pose_to_matrix(body_pose)
+            tip_final_pose = matrix_to_pose(world_T_tip)
 
-        world_T_tip =  world_T_marker @ marker_T_tip 
+            ## Body drill - rotate 180 degrees about y
+            tip_T_body = np.identity(4)
+            tip_T_body[0, 0] = -1.0
+            tip_T_body[2, 2] = -1.0
 
-        tip_final_pose = matrix_to_pose(world_T_tip)
+            world_T_body = world_T_tip @ tip_T_body
+            body_final_pose = matrix_to_pose(world_T_body)
 
-        ## Body drill - rotate 180 degrees about y
-        tip_T_body = np.identity(4)
-        tip_T_body[0,0] = -1.0
-        tip_T_body[2,2] = -1.0
-        
-        world_T_body = world_T_tip @ tip_T_body
-        body_final_pose = matrix_to_pose(world_T_body)
+            # Apply to both handles
+            drill_body_handle.set_pose(body_final_pose)
+            drill_tip_handle.set_pose(tip_final_pose)
+            drill_marker_handle.set_pose(body_pose)
 
-        # Apply to both handles
-        drill_body_handle.set_pose(body_final_pose)
-        drill_tip_handle.set_pose(tip_final_pose)
-        drill_marker_handle.set_pose(body_pose)
+            time.sleep(APPLY_PERIOD)
 
-        time.sleep(APPLY_PERIOD)
+    client.clean_up()
+    rclpy.shutdown()
+    print("Finished applying poses")
 
-client.clean_up()
-rclpy.shutdown()
-print("Finished applying poses")
+if __name__ == "__main__":
+    main()
