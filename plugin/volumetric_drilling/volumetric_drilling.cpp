@@ -654,8 +654,8 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             
             mode_t mode = 0755; // Permissions: rwxr-xr-x (owner: read, write, execute; group, others: read, execute)
             string dir_name = ("temp/intermediate_volumes/" + volumeName + "/" + date);
-            mkdir("temp/intermediate_volumes/", mode);
-            mkdir(("temp/intermediate_volumes/" + volumeName).c_str(), mode);
+            mkdir("resources/intermediate_volumes/", mode);
+            mkdir(("resources/intermediate_volumes/" + volumeName).c_str(), mode);
             mkdir(dir_name.c_str(), mode);
 
             // Loop through each Z-slice and save it as a 2D image

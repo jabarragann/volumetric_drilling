@@ -129,7 +129,7 @@ public:
 
     Drill *m_activeDrill = nullptr;
 
-    bool m_overrideControl = false;
+    bool m_overrideControl = true;
 
     // rate of drill movement
     double m_drillRate = 0.020f;
@@ -163,6 +163,8 @@ public:
     cLabel *m_sizeLabel;
 
     cLabel *m_controlModeLabel;
+    const std::string m_drillControlModeExternalLabel = "[CTRL+O] Drill Control Mode = External afComm";
+    const std::string m_drillControlModeHapticLabel = "[CTRL+O] Drill Control Mode = Haptic Device / Keyboard";
 
     cAudioSource *m_audioSource = nullptr;
 

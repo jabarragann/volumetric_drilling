@@ -295,9 +295,17 @@ void DrillManager::initializeLabels()
     //    m_panelManager->setVisible(m_sizePanel, true);
 
     m_controlModeLabel = new cLabel(font);
-    m_controlModeLabel->m_fontColor.setGreen();
     m_controlModeLabel->setFontScale(.5);
-    m_controlModeLabel->setText("[CTRL+O] Drill Control Mode = Haptic Device / Keyboard");
+    if (getOverrideControl())
+    {
+        m_controlModeLabel->m_fontColor.setRed();
+        m_controlModeLabel->setText(m_drillControlModeExternalLabel);
+    }
+    else
+    {
+        m_controlModeLabel->m_fontColor.setGreen();
+        m_controlModeLabel->setText(m_drillControlModeHapticLabel);
+    }
     m_panelManager->addPanel(m_controlModeLabel, 20, 35, PanelReferenceOrigin::LOWER_LEFT, PanelReferenceType::PIXEL);
 }
 
@@ -308,13 +316,13 @@ void DrillManager::setOverrideControl(bool val)
     if (getOverrideControl())
     {
         color.setRed();
-        m_panelManager->setText(m_controlModeLabel, "[CTRL+O] Drill Control Mode = External afComm");
+        m_panelManager->setText(m_controlModeLabel, m_drillControlModeExternalLabel);
         m_panelManager->setFontColor(m_controlModeLabel, color);
     }
     else
     {
         color.setGreen();
-        m_panelManager->setText(m_controlModeLabel, "[CTRL+O] Drill Control Mode = Haptic Device / Keyboard");
+        m_panelManager->setText(m_controlModeLabel, m_drillControlModeHapticLabel);
         m_panelManager->setFontColor(m_controlModeLabel, color);
     }
 }
