@@ -1,7 +1,15 @@
 # Simulation assisted navigation 
 
 
+- [ROS2 documentation](#ros2-documentation)
+  - [Python venv setup](#python-venv-setup)
+- [Installation](#installation)
+  - [0. Install AMBF simulator](#0-install-ambf-simulator)
+  - [1. Compile and setup external plugins](#1-compile-and-setup-external-plugins)
+- [Usage](#usage)
+
 ## ROS2 documentation
+[Back to Top](#simulation-assisted-navigation)
 
 ### Python venv setup
 In ubuntu 24.04 packages cannot be longer installed system-wide with pip. Instead use a virtual environment.
@@ -26,6 +34,7 @@ source ${root_path}/ws_python_env/bin/activate
 
 
 ## Installation
+[Back to Top](#simulation-assisted-navigation)
 
 ### 0. Install AMBF simulator  
 Please install AMBF by following the instruction in the [official repository of the volumetric drilling](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master).
@@ -105,7 +114,8 @@ cmake ..
 make -j7
 ```
 
-## Usage of full framework
+## Usage
+[Back to Top](#simulation-assisted-navigation)
 
 Launching full framework requires the tf_plugin to move the drill. Spacenave plugin can be addionally added to support spacenav control.
 
@@ -147,6 +157,7 @@ Three files contain configure AMBF to mimick the real world setup: `world.yaml`,
 
 
 # Documentation for Drilling simulator
+[Back to Top](#simulation-assisted-navigation)
 
 For more information visit the [official repository](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master)
 
