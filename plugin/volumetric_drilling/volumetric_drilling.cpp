@@ -280,14 +280,16 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     if (m_isUsingDrillForCursor)
     {
-        m_drillReferencePtr->setLocalTransform(m_drillTipPtr->getLocalTransform());
+        // m_drillReferencePtr->setLocalTransform(m_drillTipPtr->getLocalTransform());
         publishDrillTipLocationInsideVolume();
     }
-    else
-    {   
-        // manual_indexes_for_slices = m_simAssistedNavRosInterface.increase_vector;
-        m_drillManager.m_drillingPub->publishDrillLocationInVolume(manual_indexes_for_slices, m_worldPtr->getCurrentTimeStamp());
-    }
+
+    // Manual control of slices not test
+    // else
+    // {   
+    //     // manual_indexes_for_slices = m_simAssistedNavRosInterface.increase_vector;
+    //     m_drillManager.m_drillingPub->publishDrillLocationInVolume(manual_indexes_for_slices, m_worldPtr->getCurrentTimeStamp());
+    // }
 
     m_drillManager.update(dt);
 

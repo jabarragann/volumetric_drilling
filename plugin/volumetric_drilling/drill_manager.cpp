@@ -91,8 +91,14 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager
         cerr << "ERROR! VALID NUMBER OF TOOL CURSORS ARE BETWEEN 1 - 8. Specified value = " << nt << endl;
         return -1;
     }
+    
 
-    m_drillReferenceBody = a_worldPtr->getRigidBody("drill_empty_reference");
+    // IMPORTANT:
+    // m_drillReferenceBody is the body that guides the movement of the tool_cursor(spheres that detect collection)
+    // Before m_drillReferenceBody was set to track an empty reference body with no mass.
+    // I have updated to track the drill_tip body which is updated by the tf plugin or python scripts.
+    // m_drillReferenceBody = a_worldPtr->getRigidBody("drill_empty_reference");
+    m_drillReferenceBody = a_worldPtr->getRigidBody("drill_tip");
 
     if (!m_drillReferenceBody)
     {
@@ -227,25 +233,27 @@ void DrillManager::update(double dt)
     {
         m_T_d = m_drillReferenceBody->getLocalTransform();
     }
-    else if (m_hapticDevice->isDeviceAvailable())
-    {
-        m_hapticDevice->getTransform(m_T_i);
-        m_hapticDevice->getLinearVelocity(m_V_i);
-        m_V_i = T_c_w.getLocalRot() * (m_V_i / m_toolCursorList[0]->getWorkspaceScaleFactor());
-        m_T_d.setLocalPos(m_T_d.getLocalPos() + (m_V_i * 0.4 * !m_deviceClutch * !m_camClutch));
-        m_T_d.setLocalRot(T_c_w.getLocalRot() * m_T_i.getLocalRot());
+    // Haptic device logic -- not tested
 
-        // set zero forces when manipulating objects
-        if (m_deviceClutch || m_camClutch)
-        {
-            if (m_camClutch)
-            {
-                m_mainCamera->setView(T_c_w.getLocalPos() + m_V_i * !m_deviceClutch, m_mainCamera->getTargetPosLocal(), m_mainCamera->getUpVector());
-            }
-            m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
-        }
-        m_drillReferenceBody->setLocalTransform(m_T_d);
-    }
+    // else if (m_hapticDevice->isDeviceAvailable())
+    // {
+    //     m_hapticDevice->getTransform(m_T_i);
+    //     m_hapticDevice->getLinearVelocity(m_V_i);
+    //     m_V_i = T_c_w.getLocalRot() * (m_V_i / m_toolCursorList[0]->getWorkspaceScaleFactor());
+    //     m_T_d.setLocalPos(m_T_d.getLocalPos() + (m_V_i * 0.4 * !m_deviceClutch * !m_camClutch));
+    //     m_T_d.setLocalRot(T_c_w.getLocalRot() * m_T_i.getLocalRot());
+
+    //     // set zero forces when manipulating objects
+    //     if (m_deviceClutch || m_camClutch)
+    //     {
+    //         if (m_camClutch)
+    //         {
+    //             m_mainCamera->setView(T_c_w.getLocalPos() + m_V_i * !m_deviceClutch, m_mainCamera->getTargetPosLocal(), m_mainCamera->getUpVector());
+    //         }
+    //         m_toolCursorList[0]->setDeviceLocalForce(0.0, 0.0, 0.0);
+    //     }
+    //     m_drillReferenceBody->setLocalTransform(m_T_d);
+    // }
 
     toolCursorsPosUpdate(m_T_d);
 
