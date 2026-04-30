@@ -5,11 +5,13 @@ from geometry_msgs.msg import Pose
 import numpy as np
 from tf_transformations import quaternion_matrix, quaternion_from_matrix # type: ignore
 from pyprojroot.here import here # type: ignore
+import rclpy
 
 
-CSV_FILE = (
-    here() / "resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"
-)  
+# CSV_FILE = (
+#     here() / "resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"
+# )  
+CSV_FILE ="/home/juan95/research/discovery_grant/saint_2026/experiments/drilling-pilot-2026-03-13/recordings/drilling_02.csv" 
 APPLY_PERIOD = 0.01  # 100 ms
 
 def pose_to_matrix(pose: Pose):
@@ -60,9 +62,10 @@ def main():
     pivot_pose = Pose()
 
     # Position
-    pivot_pose.position.x = 0.125657
-    pivot_pose.position.y = -0.137231
-    pivot_pose.position.z = -0.0570812
+
+    pivot_pose.position.x = 0.125338
+    pivot_pose.position.y = -0.137753
+    pivot_pose.position.z = -0.0551841
 
     # Orientation (quaternion)
     pivot_pose.orientation.x = 1.0

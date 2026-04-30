@@ -38,3 +38,4 @@ multibody configs:
   - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan3/volume.yaml" #14 # pilot 3 - George
   - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan4/volume.yaml" #15 # pilot 4 - Andy
   - "/home/saint/cynthia_dir/nrrd_to_adf/my_data/test_03132026_2/phantom01.yaml"         #16 # Pilot with cynthia
+  - "/home/juan95/research/discovery_grant/saint_2026/experiments/drilling-pilot-2026-03-13/ADF/phantom01.yaml" #17 # drilling_experiment_2026-03-13
