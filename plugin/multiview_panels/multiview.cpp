@@ -45,7 +45,6 @@
 #include "multiview.h"
 #include <ambf_server/RosComBase.h>
 #include <yaml-cpp/yaml.h>
-#include <algorithm>
 
 using namespace std;
 
@@ -116,15 +115,42 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
               << endl;
 
     // ROS subscriber config
-    ros_node_handle = afROSNode::getNodeAndRegister("multiview_panels");
+    ros_node_handle = afROSNode::getNodeAndRegister("/multiview_panels");
+
+    // Previous approach via ambf_ral helper (kept for reference):
     ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, PointStamped), afCameraMultiview>
-        (drill_loc_subscriber, ros_node_handle, drill_loc_topic, 300, &afCameraMultiview::drill_location_callback, this);
+        (drill_loc_subscriber, ros_node_handle, drill_loc_topic, 4, &afCameraMultiview::drill_location_callback, this);
+
+    // Alternative approach: create the subscriber directly through rclcpp.
+    // This avoids dependency on ambf_ral::create_subscriber while still using
+    // the AMBF-managed node handle.
+
+    // Method 1
+    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
+    //     drill_loc_topic,
+    //     rclcpp::QoS(4),
+    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
+    
+    // Method 2
+    // auto drill_loc_qos = rclcpp::QoS(rclcpp::KeepLast(4))
+    // .reliable()
+    // .transient_local();
+    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
+    //     drill_loc_topic,
+    //     drill_loc_qos,
+    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
 
     return 1;
 }
 
 void afCameraMultiview::graphicsUpdate()
 {
+    // Process pending ROS callbacks each AMBF iteration.
+    if (ros_node_handle)
+    {
+        rclcpp::spin_some(ros_node_handle);
+    }
+
     if (!volume_initialized)
     {
         // Volume pointer needs to be initialized in first graphics update.
