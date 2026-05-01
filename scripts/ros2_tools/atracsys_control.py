@@ -5,6 +5,7 @@ from geometry_msgs.msg import Pose
 import numpy as np
 from tf_transformations import quaternion_matrix, quaternion_from_matrix # type: ignore
 from pyprojroot.here import here # type: ignore
+import argparse
 import rclpy
 
 
@@ -44,13 +45,13 @@ def matrix_to_pose(T):
 
     return pose
 
-def main():
+def main(args):
     client = Client("client")
     client.connect()
 
     print("Connected to AMBF")
 
-    drill_body_handle = client.get_obj_handle("drill_body_4mm")
+    drill_body_handle = client.get_obj_handle(f"drill_body_{args.drill_size}mm")
     drill_marker_handle = client.get_obj_handle("marker")
     drill_tip_handle = client.get_obj_handle("drill_tip")
 
@@ -133,4 +134,15 @@ def main():
     print("Finished applying poses")
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(description="Control the drill in AMBF via Atracsys pose stream.")
+    parser.add_argument(
+        "--drill-size", 
+        type=int, 
+        choices=[1, 2, 4, 6], 
+        default=4, 
+        help="Drill size (mm): choose from 1, 2, 4, 6. Default is 4."
+    )
+    args, unknown = parser.parse_known_args()
+
+    main(args)

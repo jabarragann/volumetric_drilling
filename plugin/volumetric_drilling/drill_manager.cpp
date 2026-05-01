@@ -108,7 +108,10 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager
 
     vector<int> drillTypes = {1, 2, 4, 6};
     vector<int> voxelRemovalThresholds = {1, 3, 6, 10};
+    
 
+    // For saint only one drill will be loaded at a time as TF is controlling the drill body.
+    // Need to think how to implement multiple drill loading if needed.
     for (int i = 0; i < drillTypes.size(); i++)
     {
         string drillName = to_string(drillTypes[i]) + "mm";

@@ -3,13 +3,14 @@
 # Link: https://github.com/WPI-AIM/ambf_addon
 # Generated on: 2024-10-15 12:33:17
 bodies:
-  - BODY drill_body_6mm
+  - BODY drill_body_1mm
   - BODY drill_empty_reference
   - BODY drill_tip
   - BODY marker
 
+# meshes in high and low are the same
 high resolution path: ./high_res/
-low resolution path: ./low_res/
+low resolution path: ./low_res/ 
 ignore inter-collision: true
 gravity:
   x: 0.0
@@ -18,9 +19,9 @@ gravity:
 
 namespace: /ambf/env/
 
-BODY drill_body_6mm:
-  name: drill_body_6mm
-  mesh: 6mm_drill_body.OBJ
+BODY drill_body_1mm:
+  name: drill_body_1mm
+  mesh: 1mm_drill_body.OBJ
   collision mesh type: CONCAVE_MESH
   mass: 1.0
   inertia:
