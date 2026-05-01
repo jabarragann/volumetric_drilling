@@ -44,9 +44,11 @@
 // To silence warnings on MacOS
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
+#include <rclcpp/rclcpp.hpp>
 #include "memory"
 #include "vector"
-#include "ros/ros.h"
+#include <ambf_server/ambf_ral.h>
+#include <geometry_msgs/msg/point_stamped.hpp>
 #include "volume_slicer.h"
 
 using namespace std;
@@ -81,7 +83,7 @@ public:
     void parse_plugin_config(const afBaseObjectAttribsPtr a_objectAttribs);
 
     // Get location of drill tip from volumetric drilling to display it in side windows.
-    void drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
+    void drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
 
     // Render virtual camera in the multi-window view.
     void render_virtual_camera();
@@ -129,8 +131,9 @@ protected:
 
     std::unique_ptr<VolumeSlicer> volume_slicer;
 
-    ros::NodeHandle *ros_node_handle;
-    ros::Subscriber drill_loc_subscriber;
+    // ROS section
+    ambf_ral::node_ptr_t ros_node_handle;
+    rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr drill_loc_subscriber;
     cVector3d drill_location;
 
     // Config strings

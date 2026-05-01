@@ -6,7 +6,7 @@ plugins: [
   {
     name: DRILLING_SIMULATOR,
     filename: libvolumetric_drilling.so,
-    path: build/volumetric_drilling/
+    path: build/simulation_assisted_navigation_framework/
   },
   # {
   #   filename: libambf_tf_plugin.so,

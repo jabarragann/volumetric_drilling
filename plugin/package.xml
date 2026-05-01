@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>volumetric_drilling</name>
+  <name>simulation_assisted_navigation_framework</name>
   <version>0.0.0</version>
-  <description>AMBF plugin for the simulation assisted navgation system.</description>
+  <description>AMBF plugin for the simulation assisted navigation system.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -19,6 +19,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
   <depend>volumetric_drilling_msgs</depend>
   <depend>ambf_server</depend>
 

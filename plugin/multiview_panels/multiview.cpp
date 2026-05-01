@@ -116,8 +116,9 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
               << endl;
 
     // ROS subscriber config
-    ros_node_handle = afROSNode::getNode();
-    drill_loc_subscriber = ros_node_handle->subscribe(drill_loc_topic, 300, &afCameraMultiview::drill_location_callback, this);
+    ros_node_handle = afROSNode::getNodeAndRegister("multiview_panels");
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, PointStamped), afCameraMultiview>
+        (drill_loc_subscriber, ros_node_handle, drill_loc_topic, 300, &afCameraMultiview::drill_location_callback, this);
 
     return 1;
 }
@@ -217,7 +218,7 @@ afCameraMultiview::~afCameraMultiview()
     cout << "Destroying afCameraMultivew plugin object" << endl;
 }
 
-void afCameraMultiview::drill_location_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
+void afCameraMultiview::drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
 {
     // std::cout << "Received drill location: " << msg->point.x << " " << msg->point.y << " " << msg->point.z << endl;
     drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);

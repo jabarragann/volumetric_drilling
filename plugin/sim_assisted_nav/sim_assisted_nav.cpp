@@ -62,7 +62,7 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 {
 
     m_camera = (afCameraPtr)a_afObjectPtr; // Get pointer to camera
-    ros_node_handle = afROSNode::getNode();
+    ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");
     assignGLFWCallbacks();
 
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
@@ -70,10 +70,12 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     // left_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_img_callback, this);
     // right_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_img_callback, this);
 
-    left_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_compressed_img_callback, this);
-    right_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_compressed_img_callback, this);
-
-    window_disparity_sub = ros_node_handle->subscribe("/sim_assisted_nav/small_window_disparity", 2, &afCameraHMD::window_disparity_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), afCameraHMD>
+        (left_sub, ros_node_handle, stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_compressed_img_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), afCameraHMD>
+        (right_sub, ros_node_handle, stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_compressed_img_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), afCameraHMD>
+        (window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &afCameraHMD::window_disparity_callback, this);
 
     m_camera->setOverrideRendering(true);
 
@@ -126,9 +128,9 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_quadMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
 
     // Variables related to ROS topics
-    concat_img_ptr = boost::make_shared<cv_bridge::CvImage>();
-    left_img_ptr = boost::make_shared<cv_bridge::CvImage>();
-    right_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    concat_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    left_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    right_img_ptr = std::make_shared<cv_bridge::CvImage>();
 
     // Textures
     m_rosImageTexture = cTexture2d::create();
@@ -285,7 +287,7 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
     }
 }
 
-void afCameraHMD::left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg)
+void afCameraHMD::left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
 {
     try
     {
@@ -298,17 +300,17 @@ void afCameraHMD::left_compressed_img_callback(const sensor_msgs::CompressedImag
         }
         else
         {
-            ROS_WARN("Converted image is empty.");
+            RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"), "Converted image is empty.");
             throw runtime_error("Converted image is empty.");
         }
     }
     catch (cv::Exception &e)
     {
-        ROS_ERROR("Error decompressing image: %s", e.what());
+        RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), "Error decompressing image: %s", e.what());
     }
 
 }
-void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedImagePtr &msg)
+void afCameraHMD::right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
 {
     try
     {
@@ -321,13 +323,13 @@ void afCameraHMD::right_compressed_img_callback(const sensor_msgs::CompressedIma
         }
         else
         {
-            ROS_WARN("Converted image is empty.");
+            RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"), "Converted image is empty.");
             throw runtime_error("Converted image is empty.");
         }
     }
     catch (cv::Exception &e)
     {
-        ROS_ERROR("Error decompressing image: %s", e.what());
+        RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), "Error decompressing image: %s", e.what());
     }
 
     // cv::imshow("Right img", right_img_ptr->image);
@@ -394,13 +396,15 @@ void afCameraHMD::update_ros_textures_for_headset()
     }
     if (left_img_ptr->image.cols != right_img_ptr->image.cols || left_img_ptr->image.rows != right_img_ptr->image.rows)
     {
-        ROS_WARN("Left and right images have different sizes. Left: %d x %d, Right: %d x %d", left_img_ptr->image.cols, left_img_ptr->image.rows, right_img_ptr->image.cols, right_img_ptr->image.rows);
+        RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"),
+                    "Left and right images have different sizes. Left: %d x %d, Right: %d x %d",
+                    left_img_ptr->image.cols, left_img_ptr->image.rows, right_img_ptr->image.cols, right_img_ptr->image.rows);
         return;
     }
 
     // Copy before processing
-    cv_bridge::CvImagePtr left_for_process = boost::make_shared<cv_bridge::CvImage>();
-    cv_bridge::CvImagePtr right_for_process = boost::make_shared<cv_bridge::CvImage>();
+    cv_bridge::CvImagePtr left_for_process = std::make_shared<cv_bridge::CvImage>();
+    cv_bridge::CvImagePtr right_for_process = std::make_shared<cv_bridge::CvImage>();
 
     left_for_process->header = left_img_ptr->header;
     left_for_process->encoding = left_img_ptr->encoding;
@@ -451,9 +455,9 @@ void afCameraHMD::update_ros_textures_for_headset()
     // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
 }
 
-void afCameraHMD::window_disparity_callback(const std_msgs::Float32 &msg)
+void afCameraHMD::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    window_disparity = msg.data;
+    window_disparity = msg->data;
 }
 
 void afCameraHMD::assignGLFWCallbacks()

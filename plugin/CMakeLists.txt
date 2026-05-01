@@ -1,16 +1,17 @@
 cmake_minimum_required (VERSION 3.3)
-project (volumetric_drilling)
+project (simulation_assisted_navigation_framework)
 
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(AMBF)
 find_package(Boost COMPONENTS program_options filesystem)
+find_package(OpenCV REQUIRED)
 
 set (AMBF_ROS_VERSION 2)
 find_package (ament_cmake QUIET)
 message ("Found ROS 2")
 
-set (ROS2_depends rclcpp geometry_msgs std_msgs ambf_server AMBF volumetric_drilling_msgs)
+set (ROS2_depends rclcpp geometry_msgs std_msgs sensor_msgs cv_bridge ambf_server AMBF volumetric_drilling_msgs)
 
 foreach (_dep ${ROS2_depends})
     find_package (${_dep} REQUIRED)
@@ -18,12 +19,13 @@ endforeach()
 
 include_directories(${AMBF_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 link_directories(${AMBF_LIBRARY_DIRS})
 add_definitions(${AMBF_DEFINITIONS})
 
+## Ambf application plugin - volumetric drilling
 set (vol_plugin_prefix "volumetric_drilling")
-
 add_library(volumetric_drilling SHARED
     ${vol_plugin_prefix}/common.h
     ${vol_plugin_prefix}/volumetric_drilling.cpp
@@ -44,16 +46,53 @@ add_library(volumetric_drilling SHARED
     ${vol_plugin_prefix}/gaze_marker_controller.cpp
     )
 
+ament_target_dependencies (volumetric_drilling ${ROS2_depends})
+
+## Ambf camera plugin - camera hmd
+add_library(camera_hmd camera_hmd/hmd.cpp camera_hmd/hmd.h)
+target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
+ament_target_dependencies(camera_hmd rclcpp)
+set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+## Ambf camera plugin - sim assisted nav
+add_library(sim_assisted_nav SHARED sim_assisted_nav/sim_assisted_nav.cpp sim_assisted_nav/sim_assisted_nav.h)
+target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
+ament_target_dependencies(sim_assisted_nav rclcpp sensor_msgs std_msgs cv_bridge ambf_server)
+set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+
+# Ambf camera plugin - Multiview plugin
+include_directories(multiview_panels)
+set(multiview_dir "multiview_panels")
+
+## Slicer lib
+add_library(slicer_lib ${multiview_dir}/volume_slicer.cpp ${multiview_dir}/volume_slicer.h)
+target_link_libraries(slicer_lib ${AMBF_LIBRARIES})
+set_property(TARGET slicer_lib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+## Slicer lib test executables
+set(multiview_scripts_dir ${multiview_dir}/test_executables/)
+add_executable(create_orthogonal_slices_test ${multiview_scripts_dir}/create_orthogonal_slices_test_deprecated.cpp)
+target_link_libraries(create_orthogonal_slices_test ${AMBF_LIBRARIES})
+add_executable(test_volume_slicer_01 ${multiview_scripts_dir}/test_volume_slicer_01.cpp)
+target_link_libraries(test_volume_slicer_01 slicer_lib ${AMBF_LIBRARIES})
+
+add_library(multiview SHARED ${multiview_dir}/multiview.cpp ${multiview_dir}/multiview.h)
+target_link_libraries(multiview ${AMBF_LIBRARIES} slicer_lib)
+ament_target_dependencies(multiview rclcpp geometry_msgs ambf_server)
+set_property(TARGET multiview PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
 
 install (
-TARGETS volumetric_drilling
+TARGETS
+  volumetric_drilling
+  camera_hmd
+  sim_assisted_nav
+  slicer_lib
+  multiview
 LIBRARY DESTINATION lib
 ARCHIVE DESTINATION lib
 RUNTIME DESTINATION bin
 )
-ament_target_dependencies (volumetric_drilling ${ROS2_depends})
-ament_package ()
 
-# add_library(camera_hmd camera_hmd/hmd.cpp camera_hmd/hmd.h)
-# target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
-# set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+ament_package ()

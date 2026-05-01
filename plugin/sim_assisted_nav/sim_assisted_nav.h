@@ -43,8 +43,13 @@
 // To silence warnings on MacOS
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
-#include <sensor_msgs/Image.h>
-#include <cv_bridge/cv_bridge.h>
+#include <rclcpp/rclcpp.hpp>
+#include <ambf_server/ambf_ral.h>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/compressed_image.hpp>
+#include <sensor_msgs/image_encodings.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <cv_bridge/cv_bridge.hpp>
 
 using namespace std;
 using namespace ambf;
@@ -69,17 +74,17 @@ public:
 
     // ROS attributes and callbacks
     StereoRosCameraWrapper *stereo_cam_info;
-    ros::NodeHandle *ros_node_handle;
-    ros::Subscriber left_sub, right_sub;
-    ros::Subscriber window_disparity_sub;
+    ambf_ral::node_ptr_t ros_node_handle;
+    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr left_sub, right_sub;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
 
-    void left_img_callback(const sensor_msgs::ImageConstPtr &msg);
-    void right_img_callback(const sensor_msgs::ImageConstPtr &msg);
+    void left_img_callback(const sensor_msgs::msg::Image::SharedPtr msg);
+    void right_img_callback(const sensor_msgs::msg::Image::SharedPtr msg);
 
-    void left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg);
-    void right_compressed_img_callback(const sensor_msgs::CompressedImagePtr &msg);
+    void left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
+    void right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
 
-    void window_disparity_callback(const std_msgs::Float32 &msg);
+    void window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void update_ros_textures_for_headset();
     cv_bridge::CvImagePtr left_img_ptr = nullptr;
     cv_bridge::CvImagePtr right_img_ptr = nullptr;
