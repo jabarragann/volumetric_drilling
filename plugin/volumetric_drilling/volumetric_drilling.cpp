@@ -307,7 +307,8 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
         if (m_storedColor != m_zeroColor && m_storedColor != m_nonDrillColor)
         {
-            if (m_drillManager.m_isOn)
+            // if (m_drillManager.m_isOn)
+            if (true)
             {
                 int removalCount = cMin(m_drillManager.m_activeDrill->getVoxelRemovalThreshold(), (int)contact->m_events.size());
                 m_drillManager.m_drillingPub->clearVoxelMsg();
