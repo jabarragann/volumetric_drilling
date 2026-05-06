@@ -191,11 +191,11 @@ void afCameraMultiview::graphicsUpdate()
 
 void afCameraMultiview::physicsUpdate(double dt)
 {
-    // // Process pending ROS callbacks each AMBF iteration.
-    // if (ros_interface.ros_node_handle)
-    // {
-    //     rclcpp::spin_some(ros_interface.ros_node_handle);
-    // }
+    // Process pending ROS callbacks each AMBF iteration.
+    if (ros_interface.ros_node_handle)
+    {
+        rclcpp::spin_some(ros_interface.ros_node_handle);
+    }
 }
 
 void afCameraMultiview::reset()

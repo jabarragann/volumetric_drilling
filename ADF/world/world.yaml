@@ -103,9 +103,11 @@ main_camera:
   plugins:
     [
       ## See graphics function in the multiview.cpp. The camera doesn't render by default.
+      # ROS2 NOTE: Multiview plugin cannot be loaded multiple times or it will trigger seg fault.
+      # Probably because of multiple nodes with same name.
       {
         name: multiview_plugin,
-        filename: "libmultiview2.so",
+        filename: "libmultiview.so2", # Had typo to avoid loading the plugin
         path: "build/simulation_assisted_navigation_framework/",
       }
     ]
