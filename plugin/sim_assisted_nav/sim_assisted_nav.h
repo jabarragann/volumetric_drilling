@@ -56,6 +56,28 @@ using namespace ambf;
 
 class StereoRosCameraWrapper; // Forward declaration
 
+class RosInterface
+{
+public:
+    RosInterface();
+    ~RosInterface();
+    void init(const std::string &left_topic, const std::string &right_topic);
+
+    ambf_ral::node_ptr_t ros_node_handle;
+    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr left_sub, right_sub;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
+
+    cv_bridge::CvImagePtr left_img_ptr = nullptr;
+    cv_bridge::CvImagePtr right_img_ptr = nullptr;
+
+    // Shader uniform variable updated via ROS subscription
+    float window_disparity = 0.1;
+
+    void left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
+    void right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
+    void window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg);
+};
+
 class afCameraHMD : public afObjectPlugin
 {
 public:
@@ -72,29 +94,14 @@ public:
 
     void create_stereo_cam_info_from_yaml(string cam_name, const afBaseObjectAttribsPtr a_objectAttribs);
 
-    // ROS attributes and callbacks
     StereoRosCameraWrapper *stereo_cam_info;
-    ambf_ral::node_ptr_t ros_node_handle;
-    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr left_sub, right_sub;
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
+    RosInterface ros_interface;
 
-    void left_img_callback(const sensor_msgs::msg::Image::SharedPtr msg);
-    void right_img_callback(const sensor_msgs::msg::Image::SharedPtr msg);
-
-    void left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
-    void right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
-
-    void window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void update_ros_textures_for_headset();
-    cv_bridge::CvImagePtr left_img_ptr = nullptr;
-    cv_bridge::CvImagePtr right_img_ptr = nullptr;
     cv_bridge::CvImagePtr concat_img_ptr = nullptr;
     int clipsize = 0.3;
 
     cTexture2dPtr m_rosImageTexture;
-
-    // Shader uniform variables
-    float window_disparity = 0.1;
 
     void assignGLFWCallbacks();
     void windowSizeCallback(GLFWwindow *window_ptr, int width, int height);

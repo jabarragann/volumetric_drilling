@@ -62,20 +62,11 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 {
 
     m_camera = (afCameraPtr)a_afObjectPtr; // Get pointer to camera
-    ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");
     assignGLFWCallbacks();
 
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
-    // Ros subscribers
-    // left_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_img_callback, this);
-    // right_sub = ros_node_handle->subscribe(stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_img_callback, this);
 
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), afCameraHMD>
-        (left_sub, ros_node_handle, stereo_cam_info->rostopic_left, 2, &afCameraHMD::left_compressed_img_callback, this);
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), afCameraHMD>
-        (right_sub, ros_node_handle, stereo_cam_info->rostopic_right, 2, &afCameraHMD::right_compressed_img_callback, this);
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), afCameraHMD>
-        (window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &afCameraHMD::window_disparity_callback, this);
+    ros_interface.init(stereo_cam_info->rostopic_left, stereo_cam_info->rostopic_right);
 
     m_camera->setOverrideRendering(true);
 
@@ -129,8 +120,6 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 
     // Variables related to ROS topics
     concat_img_ptr = std::make_shared<cv_bridge::CvImage>();
-    left_img_ptr = std::make_shared<cv_bridge::CvImage>();
-    right_img_ptr = std::make_shared<cv_bridge::CvImage>();
 
     // Textures
     m_rosImageTexture = cTexture2d::create();
@@ -220,7 +209,7 @@ void afCameraHMD::updateHMDParams()
     glUniform1i(glGetUniformLocation(id, "frameBufferTexture"), 2);
 
     // Additional parameters
-    glUniform1f(glGetUniformLocation(id, "small_window_disparity"), window_disparity);
+    glUniform1f(glGetUniformLocation(id, "small_window_disparity"), ros_interface.window_disparity);
 
     glUniform1i(glGetUniformLocation(id, "window_width"), m_width);
     glUniform1i(glGetUniformLocation(id, "window_height"), m_height);
@@ -287,7 +276,30 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
     }
 }
 
-void afCameraHMD::left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+RosInterface::RosInterface()
+{
+}
+
+RosInterface::~RosInterface()
+{
+}
+
+void RosInterface::init(const std::string &left_topic, const std::string &right_topic)
+{
+    ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");
+
+    left_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    right_img_ptr = std::make_shared<cv_bridge::CvImage>();
+
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), RosInterface>
+        (left_sub, ros_node_handle, left_topic, 2, &RosInterface::left_compressed_img_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), RosInterface>
+        (right_sub, ros_node_handle, right_topic, 2, &RosInterface::right_compressed_img_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), RosInterface>
+        (window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &RosInterface::window_disparity_callback, this);
+}
+
+void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
 {
     try
     {
@@ -308,9 +320,9 @@ void afCameraHMD::left_compressed_img_callback(const sensor_msgs::msg::Compresse
     {
         RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), "Error decompressing image: %s", e.what());
     }
-
 }
-void afCameraHMD::right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+
+void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
 {
     try
     {
@@ -331,9 +343,11 @@ void afCameraHMD::right_compressed_img_callback(const sensor_msgs::msg::Compress
     {
         RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), "Error decompressing image: %s", e.what());
     }
+}
 
-    // cv::imshow("Right img", right_img_ptr->image);
-    // cv::waitKey(1);
+void RosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    window_disparity = msg->data;
 }
 
 // TODO: callbacks for raw video are not use and are not updated with the latest logic.
@@ -385,6 +399,9 @@ void afCameraHMD::right_compressed_img_callback(const sensor_msgs::msg::Compress
  */
 void afCameraHMD::update_ros_textures_for_headset()
 {
+    cv_bridge::CvImagePtr &left_img_ptr = ros_interface.left_img_ptr;
+    cv_bridge::CvImagePtr &right_img_ptr = ros_interface.right_img_ptr;
+
     // Return if ros images are not initialized.
     if (left_img_ptr == nullptr || right_img_ptr == nullptr)
     {
@@ -453,11 +470,6 @@ void afCameraHMD::update_ros_textures_for_headset()
     // cv::imshow("Concat image", concat_img_ptr->image);
     // cv::waitKey(1);
     // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
-}
-
-void afCameraHMD::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
-{
-    window_disparity = msg->data;
 }
 
 void afCameraHMD::assignGLFWCallbacks()

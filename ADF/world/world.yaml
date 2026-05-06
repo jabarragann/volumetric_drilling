@@ -105,7 +105,7 @@ main_camera:
       ## See graphics function in the multiview.cpp. The camera doesn't render by default.
       {
         name: multiview_plugin,
-        filename: "libmultiview.so",
+        filename: "libmultiview2.so",
         path: "build/simulation_assisted_navigation_framework/",
       }
     ]

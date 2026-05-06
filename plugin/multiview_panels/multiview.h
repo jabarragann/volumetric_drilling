@@ -58,6 +58,20 @@ using namespace ambf;
 class SideViewWindow;
 class CtSliceSideWindow;
 
+class RosInterface
+{
+public:
+    RosInterface();
+    ~RosInterface();
+    void init(const std::string &drill_loc_topic);
+
+    ambf_ral::node_ptr_t ros_node_handle;
+    rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr drill_loc_subscriber;
+    cVector3d drill_location;
+
+    void drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
+};
+
 class afCameraMultiview : public afObjectPlugin
 {
 public:
@@ -81,9 +95,6 @@ public:
     void init_volume_slicer();
 
     void parse_plugin_config(const afBaseObjectAttribsPtr a_objectAttribs);
-
-    // Get location of drill tip from volumetric drilling to display it in side windows.
-    void drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
 
     // Render virtual camera in the multi-window view.
     void render_virtual_camera();
@@ -132,9 +143,7 @@ protected:
     std::unique_ptr<VolumeSlicer> volume_slicer;
 
     // ROS section
-    ambf_ral::node_ptr_t ros_node_handle;
-    rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr drill_loc_subscriber;
-    cVector3d drill_location;
+    RosInterface ros_interface;
 
     // Config strings
     string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";

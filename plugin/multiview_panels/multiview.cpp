@@ -115,30 +115,7 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
               << endl;
 
     // ROS subscriber config
-    ros_node_handle = afROSNode::getNodeAndRegister("/multiview_panels");
-
-    // Previous approach via ambf_ral helper (kept for reference):
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, PointStamped), afCameraMultiview>
-        (drill_loc_subscriber, ros_node_handle, drill_loc_topic, 4, &afCameraMultiview::drill_location_callback, this);
-
-    // Alternative approach: create the subscriber directly through rclcpp.
-    // This avoids dependency on ambf_ral::create_subscriber while still using
-    // the AMBF-managed node handle.
-
-    // Method 1
-    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
-    //     drill_loc_topic,
-    //     rclcpp::QoS(4),
-    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
-    
-    // Method 2
-    // auto drill_loc_qos = rclcpp::QoS(rclcpp::KeepLast(4))
-    // .reliable()
-    // .transient_local();
-    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
-    //     drill_loc_topic,
-    //     drill_loc_qos,
-    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
+    ros_interface.init(drill_loc_topic);
 
     return 1;
 }
@@ -146,9 +123,9 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
 void afCameraMultiview::graphicsUpdate()
 {
     // Process pending ROS callbacks each AMBF iteration.
-    if (ros_node_handle)
+    if (ros_interface.ros_node_handle)
     {
-        rclcpp::spin_some(ros_node_handle);
+        rclcpp::spin_some(ros_interface.ros_node_handle);
     }
 
     if (!volume_initialized)
@@ -244,9 +221,44 @@ afCameraMultiview::~afCameraMultiview()
     cout << "Destroying afCameraMultivew plugin object" << endl;
 }
 
-void afCameraMultiview::drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
+RosInterface::RosInterface()
 {
-    // std::cout << "Received drill location: " << msg->point.x << " " << msg->point.y << " " << msg->point.z << endl;
+}
+
+RosInterface::~RosInterface()
+{
+}
+
+void RosInterface::init(const std::string &drill_loc_topic)
+{
+    ros_node_handle = afROSNode::getNodeAndRegister("/multiview_panels");
+
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, PointStamped), RosInterface>
+        (drill_loc_subscriber, ros_node_handle, drill_loc_topic, 4, &RosInterface::drill_location_callback, this);
+    
+    // Alternative approach for ROS2 only: create the subscriber directly through rclcpp.
+    // This avoids dependency on ambf_ral::create_subscriber while still using
+    // the AMBF-managed node handle.
+
+    // Method 1
+    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
+    //     drill_loc_topic,
+    //     rclcpp::QoS(4),
+    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
+    
+    // Method 2
+    // auto drill_loc_qos = rclcpp::QoS(rclcpp::KeepLast(4))
+    // .reliable()
+    // .transient_local();
+    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
+    //     drill_loc_topic,
+    //     drill_loc_qos,
+    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
+
+}
+
+void RosInterface::drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
+{
     drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
 }
 
@@ -264,25 +276,25 @@ void afCameraMultiview::render_virtual_camera()
 
 void afCameraMultiview::update_ct_slices_with_drill_location()
 {
-    if (drill_location.x() > 0 && drill_location.y() > 0 && drill_location.z() > 0)
+    if (ros_interface.drill_location.x() > 0 && ros_interface.drill_location.y() > 0 && ros_interface.drill_location.z() > 0)
     {
         bool success;
         // 1) CREATE SLICES
         // 2) ANNOTATED SLICES WITH DRILL LOCATION
         // 3) DISPLAY SLICE
-        unique_ptr<Slice2D> axial_slice = volume_slicer->create_2d_slice_reverse_y("xy", drill_location.z());
-        int reverse_y_loc = axial_slice->slice_height - 1 - drill_location.y();
-        axial_slice->annotate(drill_location.x(), reverse_y_loc);
+        unique_ptr<Slice2D> axial_slice = volume_slicer->create_2d_slice_reverse_y("xy", ros_interface.drill_location.z());
+        int reverse_y_loc = axial_slice->slice_height - 1 - ros_interface.drill_location.y();
+        axial_slice->annotate(ros_interface.drill_location.x(), reverse_y_loc);
         success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
         ct_axial_window->maximize_with_scale_factor();
 
-        unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", drill_location.y());
-        coronal_slice->annotate(drill_location.x(), drill_location.z());
+        unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", ros_interface.drill_location.y());
+        coronal_slice->annotate(ros_interface.drill_location.x(), ros_interface.drill_location.z());
         success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
         ct_coronal_window->maximize_with_scale_factor();
 
-        unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", drill_location.x());
-        sagittal_slice->annotate(drill_location.y(), drill_location.z());
+        unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", ros_interface.drill_location.x());
+        sagittal_slice->annotate(ros_interface.drill_location.y(), ros_interface.drill_location.z());
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
         ct_sagittal_window->maximize_with_scale_factor();
     }
