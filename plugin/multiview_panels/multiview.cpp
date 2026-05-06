@@ -122,11 +122,6 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
 
 void afCameraMultiview::graphicsUpdate()
 {
-    // Process pending ROS callbacks each AMBF iteration.
-    if (ros_interface.ros_node_handle)
-    {
-        rclcpp::spin_some(ros_interface.ros_node_handle);
-    }
 
     if (!volume_initialized)
     {
@@ -196,6 +191,11 @@ void afCameraMultiview::graphicsUpdate()
 
 void afCameraMultiview::physicsUpdate(double dt)
 {
+    // // Process pending ROS callbacks each AMBF iteration.
+    // if (ros_interface.ros_node_handle)
+    // {
+    //     rclcpp::spin_some(ros_interface.ros_node_handle);
+    // }
 }
 
 void afCameraMultiview::reset()
