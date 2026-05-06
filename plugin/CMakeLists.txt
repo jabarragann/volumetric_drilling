@@ -7,15 +7,33 @@ find_package(AMBF)
 find_package(Boost COMPONENTS program_options filesystem)
 find_package(OpenCV REQUIRED)
 
-set (AMBF_ROS_VERSION 2)
-find_package (ament_cmake QUIET)
-message ("Found ROS 2")
+# Look for the catkin dependencies (ROS 1)
+set (ROS1_depends roscpp ambf_server volumetric_drilling_msgs geometry_msgs std_msgs sensor_msgs cv_bridge)
+find_package (catkin QUIET
+  COMPONENTS ${ROS1_depends})
 
-set (ROS2_depends rclcpp geometry_msgs std_msgs sensor_msgs cv_bridge ambf_server AMBF volumetric_drilling_msgs)
+if (catkin_FOUND)
+    message ("Found ROS 1")
+    set (AMBF_ROS_VERSION 1)
+    include_directories(include ${catkin_INCLUDE_DIRS})
 
-foreach (_dep ${ROS2_depends})
-    find_package (${_dep} REQUIRED)
-endforeach()
+    catkin_package(
+      INCLUDE_DIRS .
+      LIBRARIES ${PROJECT_NAME}
+      CATKIN_DEPENDS ${ROS1_depends}
+    )
+else (catkin_FOUND)
+    # look for ROS2
+    set (AMBF_ROS_VERSION 2)
+    find_package (ament_cmake QUIET)
+    if (ament_cmake_FOUND)
+        message ("Found ROS 2")
+        set (ROS2_depends rclcpp geometry_msgs std_msgs sensor_msgs cv_bridge ambf_server AMBF volumetric_drilling_msgs)
+        foreach (_dep ${ROS2_depends})
+            find_package (${_dep} REQUIRED)
+        endforeach()
+    endif (ament_cmake_FOUND)
+endif (catkin_FOUND)
 
 include_directories(${AMBF_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
@@ -46,20 +64,15 @@ add_library(volumetric_drilling SHARED
     ${vol_plugin_prefix}/gaze_marker_controller.cpp
     )
 
-ament_target_dependencies (volumetric_drilling ${ROS2_depends})
-
 ## Ambf camera plugin - camera hmd
 add_library(camera_hmd camera_hmd/hmd.cpp camera_hmd/hmd.h)
 target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
-ament_target_dependencies(camera_hmd rclcpp)
 set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 ## Ambf camera plugin - sim assisted nav
 add_library(sim_assisted_nav SHARED sim_assisted_nav/sim_assisted_nav.cpp sim_assisted_nav/sim_assisted_nav.h)
 target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
-ament_target_dependencies(sim_assisted_nav rclcpp sensor_msgs std_msgs cv_bridge ambf_server)
 set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-
 
 # Ambf camera plugin - Multiview plugin
 include_directories(multiview_panels)
@@ -79,20 +92,38 @@ target_link_libraries(test_volume_slicer_01 slicer_lib ${AMBF_LIBRARIES})
 
 add_library(multiview SHARED ${multiview_dir}/multiview.cpp ${multiview_dir}/multiview.h)
 target_link_libraries(multiview ${AMBF_LIBRARIES} slicer_lib)
-ament_target_dependencies(multiview rclcpp geometry_msgs ambf_server)
 set_property(TARGET multiview PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
+# Conditional linkage based on ROS version
+if (AMBF_ROS_VERSION EQUAL 1)
+    add_dependencies (volumetric_drilling ${catkin_EXPORTED_TARGETS})
+    target_link_libraries (volumetric_drilling ${Boost_LIBRARIES} ${AMBF_LIBRARIES} ${catkin_LIBRARIES})
 
-install (
-TARGETS
-  volumetric_drilling
-  camera_hmd
-  sim_assisted_nav
-  slicer_lib
-  multiview
-LIBRARY DESTINATION lib
-ARCHIVE DESTINATION lib
-RUNTIME DESTINATION bin
-)
+    add_dependencies (camera_hmd ${catkin_EXPORTED_TARGETS})
+    target_link_libraries (camera_hmd ${catkin_LIBRARIES})
 
-ament_package ()
+    add_dependencies (sim_assisted_nav ${catkin_EXPORTED_TARGETS})
+    target_link_libraries (sim_assisted_nav ${catkin_LIBRARIES})
+
+    add_dependencies (multiview ${catkin_EXPORTED_TARGETS})
+    target_link_libraries (multiview ${catkin_LIBRARIES})
+else ()
+    install (
+        TARGETS
+            volumetric_drilling
+            camera_hmd
+            sim_assisted_nav
+            slicer_lib
+            multiview
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+    )
+
+    ament_target_dependencies (volumetric_drilling ${ROS2_depends})
+    ament_target_dependencies (camera_hmd rclcpp)
+    ament_target_dependencies (sim_assisted_nav rclcpp sensor_msgs std_msgs cv_bridge ambf_server)
+    ament_target_dependencies (multiview rclcpp geometry_msgs ambf_server)
+
+    ament_package ()
+endif()

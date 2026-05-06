@@ -44,11 +44,19 @@
 // To silence warnings on MacOS
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
-#include <rclcpp/rclcpp.hpp>
 #include "memory"
 #include "vector"
+#include <ambf_server/ambf_ral_config.h>
 #include <ambf_server/ambf_ral.h>
+
+#if AMBF_ROS1
+#include <ros/ros.h>
+#include <geometry_msgs/PointStamped.h>
+#elif AMBF_ROS2
+#include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/point_stamped.hpp>
+#endif
+
 #include "volume_slicer.h"
 
 using namespace std;
@@ -66,10 +74,14 @@ public:
     void init(const std::string &drill_loc_topic);
 
     ambf_ral::node_ptr_t ros_node_handle;
+#if AMBF_ROS1
+    std::shared_ptr<ros::Subscriber> drill_loc_subscriber;
+    void drill_location_callback(const geometry_msgs::PointStampedConstPtr &msg);
+#elif AMBF_ROS2
     rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr drill_loc_subscriber;
-    cVector3d drill_location;
-
     void drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
+#endif
+    cVector3d drill_location;
 };
 
 class afCameraMultiview : public afObjectPlugin

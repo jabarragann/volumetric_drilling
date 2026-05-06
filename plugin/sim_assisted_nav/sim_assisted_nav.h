@@ -43,13 +43,24 @@
 // To silence warnings on MacOS
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
-#include <rclcpp/rclcpp.hpp>
+#include <ambf_server/ambf_ral_config.h>
 #include <ambf_server/ambf_ral.h>
+
+#if AMBF_ROS1
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CompressedImage.h>
+#include <sensor_msgs/image_encodings.h>
+#include <std_msgs/Float32.h>
+#include <cv_bridge/cv_bridge.h>
+#elif AMBF_ROS2
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <cv_bridge/cv_bridge.hpp>
+#endif
 
 using namespace std;
 using namespace ambf;
@@ -64,8 +75,13 @@ public:
     void init(const std::string &left_topic, const std::string &right_topic);
 
     ambf_ral::node_ptr_t ros_node_handle;
+#if AMBF_ROS1
+    std::shared_ptr<ros::Subscriber> left_sub, right_sub;
+    std::shared_ptr<ros::Subscriber> window_disparity_sub;
+#elif AMBF_ROS2
     rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr left_sub, right_sub;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
+#endif
 
     cv_bridge::CvImagePtr left_img_ptr = nullptr;
     cv_bridge::CvImagePtr right_img_ptr = nullptr;
@@ -73,9 +89,15 @@ public:
     // Shader uniform variable updated via ROS subscription
     float window_disparity = 0.1;
 
+#if AMBF_ROS1
+    void left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg);
+    void right_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg);
+    void window_disparity_callback(const std_msgs::Float32::ConstPtr &msg);
+#elif AMBF_ROS2
     void left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
     void right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
     void window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg);
+#endif
 };
 
 class afCameraHMD : public afObjectPlugin

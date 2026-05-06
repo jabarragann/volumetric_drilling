@@ -299,7 +299,19 @@ void RosInterface::init(const std::string &left_topic, const std::string &right_
         (window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &RosInterface::window_disparity_callback, this);
 }
 
+#if AMBF_ROS1
+  #define SAN_LOG_WARN(fmt, ...)  ROS_WARN(fmt, ##__VA_ARGS__)
+  #define SAN_LOG_ERROR(fmt, ...) ROS_ERROR(fmt, ##__VA_ARGS__)
+#elif AMBF_ROS2
+  #define SAN_LOG_WARN(fmt, ...)  RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"), fmt, ##__VA_ARGS__)
+  #define SAN_LOG_ERROR(fmt, ...) RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), fmt, ##__VA_ARGS__)
+#endif
+
+#if AMBF_ROS1
+void RosInterface::left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg)
+#elif AMBF_ROS2
 void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+#endif
 {
     try
     {
@@ -312,17 +324,21 @@ void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::Compress
         }
         else
         {
-            RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"), "Converted image is empty.");
+            SAN_LOG_WARN("Converted image is empty.");
             throw runtime_error("Converted image is empty.");
         }
     }
     catch (cv::Exception &e)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), "Error decompressing image: %s", e.what());
+        SAN_LOG_ERROR("Error decompressing image: %s", e.what());
     }
 }
 
+#if AMBF_ROS1
+void RosInterface::right_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg)
+#elif AMBF_ROS2
 void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+#endif
 {
     try
     {
@@ -335,17 +351,21 @@ void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::Compres
         }
         else
         {
-            RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"), "Converted image is empty.");
+            SAN_LOG_WARN("Converted image is empty.");
             throw runtime_error("Converted image is empty.");
         }
     }
     catch (cv::Exception &e)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), "Error decompressing image: %s", e.what());
+        SAN_LOG_ERROR("Error decompressing image: %s", e.what());
     }
 }
 
+#if AMBF_ROS1
+void RosInterface::window_disparity_callback(const std_msgs::Float32::ConstPtr &msg)
+#elif AMBF_ROS2
 void RosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
+#endif
 {
     window_disparity = msg->data;
 }
@@ -413,9 +433,8 @@ void afCameraHMD::update_ros_textures_for_headset()
     }
     if (left_img_ptr->image.cols != right_img_ptr->image.cols || left_img_ptr->image.rows != right_img_ptr->image.rows)
     {
-        RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"),
-                    "Left and right images have different sizes. Left: %d x %d, Right: %d x %d",
-                    left_img_ptr->image.cols, left_img_ptr->image.rows, right_img_ptr->image.cols, right_img_ptr->image.rows);
+        SAN_LOG_WARN("Left and right images have different sizes. Left: %d x %d, Right: %d x %d",
+                     left_img_ptr->image.cols, left_img_ptr->image.rows, right_img_ptr->image.cols, right_img_ptr->image.rows);
         return;
     }
 

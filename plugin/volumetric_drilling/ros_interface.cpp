@@ -52,9 +52,19 @@ DrillingPublisher::DrillingPublisher(string a_namespace, string a_plugin)
 
 DrillingPublisher::~DrillingPublisher()
 {
+#if AMBF_ROS1
+    m_voxelsRemovalPub->shutdown();
+    m_drillSizePub->shutdown();
+    m_volumeInfoPub->shutdown();
+    m_forcefeedbackPub->shutdown();
+    m_drillLocationInVolumePub->shutdown();
+#elif AMBF_ROS2
     m_voxelsRemovalPub.reset();
     m_drillSizePub.reset();
     m_volumeInfoPub.reset();
+    m_forcefeedbackPub.reset();
+    m_drillLocationInVolumePub.reset();
+#endif
 }
 
 void DrillingPublisher::init(string a_namespace, string a_plugin)
@@ -79,10 +89,14 @@ void DrillingPublisher::publishDrillSize(int burrSize, double time)
 
     m_drill_size_msg.size.data = burrSize;
 
+#if AMBF_ROS1
+    m_drill_size_msg.header.stamp.fromSec(time);
+#elif AMBF_ROS2
     int32_t sec  = static_cast<int32_t>(time);
     uint32_t nsec = static_cast<uint32_t>((time - sec) * 1e9);
     m_drill_size_msg.header.stamp.sec = sec;
     m_drill_size_msg.header.stamp.nanosec = nsec;
+#endif
     m_drillSizePub->publish(m_drill_size_msg);
 }
 
@@ -114,18 +128,27 @@ void DrillingPublisher::setVolumeInfo(cTransform &pose, cVector3d &dimensions, c
 
 void DrillingPublisher::publishVolumeInfo(double time)
 {
+#if AMBF_ROS1
+    m_volume_info_msg.header.stamp.fromSec(time);
+#elif AMBF_ROS2
     int32_t sec  = static_cast<int32_t>(time);
     uint32_t nsec = static_cast<uint32_t>((time - sec) * 1e9);
     m_volume_info_msg.header.stamp.sec = sec;
     m_volume_info_msg.header.stamp.nanosec = nsec;
+#endif
     m_volumeInfoPub->publish(m_volume_info_msg);
 }
 
 void DrillingPublisher::appendToVoxelMsg(cVector3d &index, cColorf &color)
 {
 
+#if AMBF_ROS1
+    volumetric_drilling_msgs::Index idx;
+    std_msgs::ColorRGBA col;
+#elif AMBF_ROS2
     volumetric_drilling_msgs::msg::Index idx;
-    std_msgs::msg::ColorRGBA col; 
+    std_msgs::msg::ColorRGBA col;
+#endif
     idx.x = index.x();
     idx.y = index.y();
     idx.z = index.z();
@@ -146,10 +169,14 @@ void DrillingPublisher::clearVoxelMsg()
 
 void DrillingPublisher::publishVoxelMsg(double time)
 {
+#if AMBF_ROS1
+    m_voxel_msg.header.stamp.fromSec(time);
+#elif AMBF_ROS2
     int32_t sec  = static_cast<int32_t>(time);
     uint32_t nsec = static_cast<uint32_t>((time - sec) * 1e9);
     m_voxel_msg.header.stamp.sec = sec;
     m_voxel_msg.header.stamp.nanosec = nsec;
+#endif
     m_voxelsRemovalPub->publish(m_voxel_msg);
 }
 
@@ -163,29 +190,36 @@ void DrillingPublisher::publishForceFeedback(cVector3d &force, cVector3d &moment
     m_force_feedback_msg.wrench.torque.y = moment.y();
     m_force_feedback_msg.wrench.torque.z = moment.z();
 
-    // m_force_feedback_msg.header.stamp.fromSec(time);
-    // m_forcefeedbackPub.publish(m_force_feedback_msg);
-
+#if AMBF_ROS1
+    m_force_feedback_msg.header.stamp.fromSec(time);
+#elif AMBF_ROS2
     int32_t sec  = static_cast<int32_t>(time);
     uint32_t nsec = static_cast<uint32_t>((time - sec) * 1e9);
     m_force_feedback_msg.header.stamp.sec = sec;
     m_force_feedback_msg.header.stamp.nanosec = nsec;
+#endif
     m_forcefeedbackPub->publish(m_force_feedback_msg);
 }
 
 void DrillingPublisher::publishDrillLocationInVolume(cVector3d &location, double time)
 {
+#if AMBF_ROS1
+    geometry_msgs::PointStamped loc;
+#elif AMBF_ROS2
     geometry_msgs::msg::PointStamped loc;
+#endif
     loc.point.x = location.x();
     loc.point.y = location.y();
     loc.point.z = location.z();
 
-    // m_drillLocationInVolumePub.publish(loc);
-
+#if AMBF_ROS1
+    loc.header.stamp.fromSec(time);
+#elif AMBF_ROS2
     int32_t sec  = static_cast<int32_t>(time);
     uint32_t nsec = static_cast<uint32_t>((time - sec) * 1e9);
     loc.header.stamp.sec = sec;
     loc.header.stamp.nanosec = nsec;
+#endif
     m_drillLocationInVolumePub->publish(loc);
 }
 

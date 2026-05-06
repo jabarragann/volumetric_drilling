@@ -45,20 +45,34 @@
 
 
 
-#include <ambf_server/ambf_ral.h>
-#include <rclcpp/rclcpp.hpp>
-
 #include <string>
+#include <afFramework.h>
+#include <ambf_server/ambf_ral_config.h>
+#include <ambf_server/ambf_ral.h>
+#include <ambf_server/RosComBase.h>
+
+#if AMBF_ROS1
+#include <ros/ros.h>
+#include <geometry_msgs/WrenchStamped.h>
+#include <geometry_msgs/PointStamped.h>
+#include <std_msgs/ColorRGBA.h>
+#include <std_msgs/Float32.h>
+#include <volumetric_drilling_msgs/Voxels.h>
+#include <volumetric_drilling_msgs/DrillSize.h>
+#include <volumetric_drilling_msgs/VolumeInfo.h>
+#include <volumetric_drilling_msgs/Index.h>
+
+#elif AMBF_ROS2
+#include <rclcpp/rclcpp.hpp>
 #include "geometry_msgs/msg/wrench_stamped.hpp"
-// #include <std_msgs/Float32MultiArray.hpp>
+#include "geometry_msgs/msg/point_stamped.hpp"
 #include "std_msgs/msg/color_rgba.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "volumetric_drilling_msgs/msg/voxels.hpp"
 #include "volumetric_drilling_msgs/msg/drill_size.hpp"
 #include "volumetric_drilling_msgs/msg/volume_info.hpp"
-
-#include <afFramework.h>
-#include <ambf_server/ambf_ral_config.h>
-#include <ambf_server/RosComBase.h>
+#include "volumetric_drilling_msgs/msg/index.hpp"
+#endif
 
 using namespace chai3d;
 
@@ -87,6 +101,19 @@ public:
 
 private:
 
+#if AMBF_ROS1
+    std::shared_ptr<ros::Publisher> m_voxelsRemovalPub;
+    std::shared_ptr<ros::Publisher> m_drillSizePub;
+    std::shared_ptr<ros::Publisher> m_volumeInfoPub;
+    std::shared_ptr<ros::Publisher> m_forcefeedbackPub;
+    std::shared_ptr<ros::Publisher> m_drillLocationInVolumePub;
+
+    volumetric_drilling_msgs::Voxels m_voxel_msg;
+    volumetric_drilling_msgs::DrillSize m_drill_size_msg;
+    volumetric_drilling_msgs::VolumeInfo m_volume_info_msg;
+    geometry_msgs::WrenchStamped m_force_feedback_msg;
+
+#elif AMBF_ROS2
     rclcpp::Publisher<volumetric_drilling_msgs::msg::Voxels>::SharedPtr m_voxelsRemovalPub;
     rclcpp::Publisher<volumetric_drilling_msgs::msg::DrillSize>::SharedPtr m_drillSizePub;
     rclcpp::Publisher<volumetric_drilling_msgs::msg::VolumeInfo>::SharedPtr m_volumeInfoPub;
@@ -97,6 +124,7 @@ private:
     volumetric_drilling_msgs::msg::DrillSize m_drill_size_msg;
     volumetric_drilling_msgs::msg::VolumeInfo m_volume_info_msg;
     geometry_msgs::msg::WrenchStamped m_force_feedback_msg;
+#endif
 };
 
 class SimulationAssistedNavRosInterface
@@ -106,7 +134,11 @@ public:
     ambf_ral::node_ptr_t m_rosNode;
 
     float window_disparity = 0.1;
+#if AMBF_ROS1
+    std::shared_ptr<ros::Publisher> small_window_disparity_pub;
+#elif AMBF_ROS2
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr small_window_disparity_pub;
+#endif
 
     // rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr manual_slices_sub;
     cVector3d increase_vector = cVector3d(0.00, 0.00, 0.00);

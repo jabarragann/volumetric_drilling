@@ -194,7 +194,11 @@ void afCameraMultiview::physicsUpdate(double dt)
     // Process pending ROS callbacks each AMBF iteration.
     if (ros_interface.ros_node_handle)
     {
+#if AMBF_ROS1
+        ros::spinOnce();
+#elif AMBF_ROS2
         rclcpp::spin_some(ros_interface.ros_node_handle);
+#endif
     }
 }
 
@@ -235,32 +239,19 @@ void RosInterface::init(const std::string &drill_loc_topic)
 
     ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, PointStamped), RosInterface>
         (drill_loc_subscriber, ros_node_handle, drill_loc_topic, 4, &RosInterface::drill_location_callback, this);
-    
-    // Alternative approach for ROS2 only: create the subscriber directly through rclcpp.
-    // This avoids dependency on ambf_ral::create_subscriber while still using
-    // the AMBF-managed node handle.
-
-    // Method 1
-    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
-    //     drill_loc_topic,
-    //     rclcpp::QoS(4),
-    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
-    
-    // Method 2
-    // auto drill_loc_qos = rclcpp::QoS(rclcpp::KeepLast(4))
-    // .reliable()
-    // .transient_local();
-    // drill_loc_subscriber = ros_node_handle->create_subscription<geometry_msgs::msg::PointStamped>(
-    //     drill_loc_topic,
-    //     drill_loc_qos,
-    //     std::bind(&afCameraMultiview::drill_location_callback, this, std::placeholders::_1));
-
 }
 
+#if AMBF_ROS1
+void RosInterface::drill_location_callback(const geometry_msgs::PointStampedConstPtr &msg)
+{
+    drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
+}
+#elif AMBF_ROS2
 void RosInterface::drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
 {
     drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
 }
+#endif
 
 void afCameraMultiview::render_virtual_camera()
 {
