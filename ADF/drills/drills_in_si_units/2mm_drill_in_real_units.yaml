@@ -22,7 +22,7 @@ BODY drill_body_2mm:
   name: drill_body_2mm
   mesh: 2mm_drill_body.OBJ
   collision mesh type: CONCAVE_MESH
-  mass: 1.0
+  mass: 0.0
   inertia:
     ix: 0.0
     iy: 0.0
@@ -114,7 +114,7 @@ BODY drill_tip:
   name: drill_tip
   mesh: drill_tip.OBJ
   collision mesh type: CONVEX_HULL
-  mass: 1.0
+  mass: 0.0
   collision margin: 0.001
   scale: 1.0
   location:
@@ -166,7 +166,7 @@ BODY marker:
   name: marker
   mesh: marker.OBJ
   collision mesh type: CONVEX_HULL
-  mass: 1.0
+  mass: 0.0
   collision margin: 0.001
   scale: 1.0
   location:
@@ -198,7 +198,7 @@ BODY marker:
   damping:
     angular: 0.1
     linear: 0.04
-  visible: true 
+  visible: false 
   collision groups: []
   use material: false
   color components:
