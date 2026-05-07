@@ -83,8 +83,9 @@ public:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
 #endif
 
-    cv_bridge::CvImagePtr  left_img_ptr;
-    cv_bridge::CvImagePtr right_img_ptr;
+    cv_bridge::CvImagePtr left_img_ptr = nullptr;
+    cv_bridge::CvImagePtr right_img_ptr = nullptr;
+    cv_bridge::CvImagePtr concat_img_ptr = nullptr;
 
     // Shader uniform variable updated via ROS subscription
     float window_disparity = 0.1;
