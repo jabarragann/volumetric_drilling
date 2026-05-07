@@ -500,15 +500,6 @@ void afCameraHMD::update_ros_textures_for_headset()
     }
 
     // Copy before processing
-    // TO remove after testing
-    // ROS 1 way
-    //  cv_bridge::CvImagePtr left_for_process = boost::make_shared<cv_bridge::CvImage>();
-    //  cv_bridge::CvImagePtr right_for_process = boost::make_shared<cv_bridge::CvImage>();
-
-    // ROS 2 way
-    // cv_bridge::CvImagePtr left_for_process = std::make_shared<cv_bridge::CvImage>();
-    // cv_bridge::CvImagePtr right_for_process = std::make_shared<cv_bridge::CvImage>();
-
     left_for_process->header = left_img_ptr->header;
     left_for_process->encoding = left_img_ptr->encoding;
     left_for_process->image = left_img_ptr->image.clone();
