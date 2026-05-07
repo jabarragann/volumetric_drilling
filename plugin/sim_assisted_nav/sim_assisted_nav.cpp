@@ -182,6 +182,11 @@ void afCameraHMD::graphicsUpdate()
 
 void afCameraHMD::physicsUpdate(double dt)
 {
+#if AMBF_ROS1
+    ros::spinOnce();
+#elif AMBF_ROS2
+    rclcpp::spin_some(ros_interface.ros_node_handle);
+#endif
 }
 
 void afCameraHMD::reset()
@@ -480,6 +485,7 @@ void afCameraHMD::update_ros_textures_for_headset()
 {
     cv_bridge::CvImagePtr &left_img_ptr = ros_interface.left_img_ptr;
     cv_bridge::CvImagePtr &right_img_ptr = ros_interface.right_img_ptr;
+    cv_bridge::CvImagePtr &concat_img_ptr = ros_interface.concat_img_ptr;
     cv_bridge::CvImagePtr &left_for_process = ros_interface.left_for_process;
     cv_bridge::CvImagePtr &right_for_process = ros_interface.right_for_process;
 
