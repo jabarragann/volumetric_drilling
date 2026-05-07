@@ -336,7 +336,6 @@ void RosInterface::left_compressed_img_callback(const sensor_msgs::CompressedIma
 }
 #elif AMBF_ROS2
 void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
-#endif
 {
     try
     {
@@ -358,6 +357,7 @@ void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::Compress
         SAN_LOG_ERROR("Error decompressing image: %s", e.what());
     }
 }
+#endif
 
 #if AMBF_ROS1
 void RosInterface::right_compressed_img_callback(const sensor_msgs::CompressedImage &msg)
@@ -384,7 +384,6 @@ void RosInterface::right_compressed_img_callback(const sensor_msgs::CompressedIm
 }
 #elif AMBF_ROS2
 void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
-#endif
 {
     try
     {
@@ -406,6 +405,7 @@ void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::Compres
         SAN_LOG_ERROR("Error decompressing image: %s", e.what());
     }
 }
+#endif
 
 #if AMBF_ROS1
 void RosInterface::window_disparity_callback(const std_msgs::Float32 &msg)
@@ -414,10 +414,10 @@ void RosInterface::window_disparity_callback(const std_msgs::Float32 &msg)
 }
 #elif AMBF_ROS2
 void RosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
-#endif
 {
     window_disparity = msg->data;
 }
+#endif
 
 // TODO: callbacks for raw video are not use and are not updated with the latest logic.
 
