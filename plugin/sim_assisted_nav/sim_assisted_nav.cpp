@@ -60,12 +60,15 @@ afCameraHMD::afCameraHMD()
 
 int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
-
+    cout << "enter vr plug" <<endl;
     m_camera = (afCameraPtr)a_afObjectPtr; // Get pointer to camera
     assignGLFWCallbacks();
-
+  cout << "enter vr plug" <<endl;
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
-
+  cout << "enter vr plug" <<endl;
+  cout << stereo_cam_info ->rostopic_left;
+  cout << "enter vr plug" <<endl;
+    
     ros_interface.init(stereo_cam_info->rostopic_left, stereo_cam_info->rostopic_right);
 
     m_camera->setOverrideRendering(true);
@@ -119,8 +122,10 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_quadMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
 
     // Variables related to ROS topics
-    concat_img_ptr = std::make_shared<cv_bridge::CvImage>();
-
+    cout<< "hello ";
+    // concat_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    concat_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    cout <<" after " << endl;
     // Textures
     m_rosImageTexture = cTexture2d::create();
 
@@ -286,10 +291,31 @@ RosInterface::~RosInterface()
 
 void RosInterface::init(const std::string &left_topic, const std::string &right_topic)
 {
+    cerr << "happy";
     ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");
 
-    left_img_ptr = std::make_shared<cv_bridge::CvImage>();
-    right_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    /*left_img_ptr = std::make_shared<cv_bridge::CvImage>();*/
+    /*right_img_ptr = std::make_shared<cv_bridge::CvImage>();*/
+    cerr << "happy" << endl;
+    // cerr << typeof(left_img_ptr) << endl;
+    auto img_ptr_left2 = boost::make_shared<cv_bridge::CvImage>();
+
+    cerr << "will this work" << endl;
+
+    // left_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    // right_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+
+    try
+    {
+        left_img_ptr  = boost::make_shared<cv_bridge::CvImage>();
+        right_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Allocation failed: " << e.what() << std::endl;
+    }
+
+    cerr << "sad" << endl;
 
     ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), RosInterface>
         (left_sub, ros_node_handle, left_topic, 2, &RosInterface::left_compressed_img_callback, this);
@@ -308,14 +334,14 @@ void RosInterface::init(const std::string &left_topic, const std::string &right_
 #endif
 
 #if AMBF_ROS1
-void RosInterface::left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg)
+void RosInterface::left_compressed_img_callback(const sensor_msgs::CompressedImage &msg)
 #elif AMBF_ROS2
 void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
 #endif
 {
     try
     {
-        cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+        cv::Mat image = cv::imdecode(msg.data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
         if (!image.empty())
         {
@@ -335,14 +361,14 @@ void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::Compress
 }
 
 #if AMBF_ROS1
-void RosInterface::right_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg)
+void RosInterface::right_compressed_img_callback(const sensor_msgs::CompressedImage &msg)
 #elif AMBF_ROS2
 void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
 #endif
 {
     try
     {
-        cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+        cv::Mat image = cv::imdecode(msg.data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
         if (!image.empty())
         {
@@ -362,12 +388,12 @@ void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::Compres
 }
 
 #if AMBF_ROS1
-void RosInterface::window_disparity_callback(const std_msgs::Float32::ConstPtr &msg)
+void RosInterface::window_disparity_callback(const std_msgs::Float32 &msg)
 #elif AMBF_ROS2
 void RosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
 #endif
 {
-    window_disparity = msg->data;
+    window_disparity = msg.data;
 }
 
 // TODO: callbacks for raw video are not use and are not updated with the latest logic.
@@ -439,8 +465,13 @@ void afCameraHMD::update_ros_textures_for_headset()
     }
 
     // Copy before processing
-    cv_bridge::CvImagePtr left_for_process = std::make_shared<cv_bridge::CvImage>();
-    cv_bridge::CvImagePtr right_for_process = std::make_shared<cv_bridge::CvImage>();
+    /*cv_bridge::CvImagePtr left_for_process = std::make_shared<cv_bridge::CvImage>();*/
+    /*cv_bridge::CvImagePtr right_for_process = std::make_shared<cv_bridge::CvImage>();*/
+    cv_bridge::CvImagePtr left_for_process =
+        boost::make_shared<cv_bridge::CvImage>();
+
+    cv_bridge::CvImagePtr right_for_process =
+        boost::make_shared<cv_bridge::CvImage>();
 
     left_for_process->header = left_img_ptr->header;
     left_for_process->encoding = left_img_ptr->encoding;

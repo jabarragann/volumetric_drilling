@@ -242,9 +242,10 @@ void RosInterface::init(const std::string &drill_loc_topic)
 }
 
 #if AMBF_ROS1
-void RosInterface::drill_location_callback(const geometry_msgs::PointStampedConstPtr &msg)
+    void RosInterface::drill_location_callback(const geometry_msgs::PointStamped& msg)
 {
-    drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
+    // drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
+    drill_location = cVector3d(msg.point.x, msg.point.y, msg.point.z);
 }
 #elif AMBF_ROS2
 void RosInterface::drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)

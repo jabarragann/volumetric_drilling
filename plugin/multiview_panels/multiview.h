@@ -75,8 +75,10 @@ public:
 
     ambf_ral::node_ptr_t ros_node_handle;
 #if AMBF_ROS1
+    // ros::Subscriber drill_loc_subscriber;
     std::shared_ptr<ros::Subscriber> drill_loc_subscriber;
-    void drill_location_callback(const geometry_msgs::PointStampedConstPtr &msg);
+    // void drill_location_callback(const geometry_msgs::PointStampedConstPtr &msg);
+    void drill_location_callback(const geometry_msgs::PointStamped& msg);
 #elif AMBF_ROS2
     rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr drill_loc_subscriber;
     void drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg);

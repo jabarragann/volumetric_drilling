@@ -83,16 +83,16 @@ public:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
 #endif
 
-    cv_bridge::CvImagePtr left_img_ptr = nullptr;
-    cv_bridge::CvImagePtr right_img_ptr = nullptr;
+    cv_bridge::CvImagePtr  left_img_ptr;
+    cv_bridge::CvImagePtr right_img_ptr;
 
     // Shader uniform variable updated via ROS subscription
     float window_disparity = 0.1;
 
 #if AMBF_ROS1
-    void left_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg);
-    void right_compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &msg);
-    void window_disparity_callback(const std_msgs::Float32::ConstPtr &msg);
+    void left_compressed_img_callback(const sensor_msgs::CompressedImage &msg);
+    void right_compressed_img_callback(const sensor_msgs::CompressedImage &msg);
+    void window_disparity_callback(const std_msgs::Float32 &msg);
 #elif AMBF_ROS2
     void left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
     void right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);

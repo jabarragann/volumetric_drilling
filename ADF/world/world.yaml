@@ -107,7 +107,7 @@ main_camera:
       # Probably because of multiple nodes with same name.
       {
         name: multiview_plugin,
-        filename: "libmultiview.so2", # Had typo to avoid loading the plugin
+        filename: "libmultiview.so", # Had typo to avoid loading the plugin
         path: "build/simulation_assisted_navigation_framework/",
       }
     ]
