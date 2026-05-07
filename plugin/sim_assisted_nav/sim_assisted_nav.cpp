@@ -63,7 +63,7 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_camera = (afCameraPtr)a_afObjectPtr; // Get pointer to camera
     assignGLFWCallbacks();
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
-    
+
     // Variables related to ROS topics
     ros_interface.init(stereo_cam_info->rostopic_left, stereo_cam_info->rostopic_right);
 
@@ -116,7 +116,6 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_quadMesh->m_vertices->setTexCoord(3, 0.0, 1.0, 1.0);
     m_quadMesh->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
     m_quadMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
-
 
     // Textures
     m_rosImageTexture = cTexture2d::create();
@@ -281,34 +280,45 @@ RosInterface::~RosInterface()
 {
 }
 
+#if AMBF_ROS1
+void RosInterface::init_img_pointers()
+{
+    // ROS 1 way
+    left_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    right_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    concat_img_ptr = boost::make_shared<cv_bridge::CvImage>();
+    left_for_process = boost::make_shared<cv_bridge::CvImage>();
+    right_for_process = boost::make_shared<cv_bridge::CvImage>();
+}
+#elif AMBF_ROS2
+void RosInterface::init_img_pointers()
+{
+    // ROS 2 way
+    left_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    right_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    concat_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    left_for_process = std::make_shared<cv_bridge::CvImage>();
+    right_for_process = std::make_shared<cv_bridge::CvImage>();
+}
+#endif
+
 void RosInterface::init(const std::string &left_topic, const std::string &right_topic)
 {
     ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");
 
-    //ROS 2 way
-    left_img_ptr = std::make_shared<cv_bridge::CvImage>();
-    right_img_ptr = std::make_shared<cv_bridge::CvImage>();
-    concat_img_ptr = std::make_shared<cv_bridge::CvImage>();
+    init_img_pointers();
 
-    //ROS 1 way
-    // left_img_ptr = boost::make_shared<cv_bridge::CvImage>();
-    // right_img_ptr = boost::make_shared<cv_bridge::CvImage>();
-    // concat_img_ptr = boost::make_shared<cv_bridge::CvImage>();
-
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), RosInterface>
-        (left_sub, ros_node_handle, left_topic, 2, &RosInterface::left_compressed_img_callback, this);
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), RosInterface>
-        (right_sub, ros_node_handle, right_topic, 2, &RosInterface::right_compressed_img_callback, this);
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), RosInterface>
-        (window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &RosInterface::window_disparity_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), RosInterface>(left_sub, ros_node_handle, left_topic, 2, &RosInterface::left_compressed_img_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, CompressedImage), RosInterface>(right_sub, ros_node_handle, right_topic, 2, &RosInterface::right_compressed_img_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), RosInterface>(window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &RosInterface::window_disparity_callback, this);
 }
 
 #if AMBF_ROS1
-  #define SAN_LOG_WARN(fmt, ...)  ROS_WARN(fmt, ##__VA_ARGS__)
-  #define SAN_LOG_ERROR(fmt, ...) ROS_ERROR(fmt, ##__VA_ARGS__)
+#define SAN_LOG_WARN(fmt, ...) ROS_WARN(fmt, ##__VA_ARGS__)
+#define SAN_LOG_ERROR(fmt, ...) ROS_ERROR(fmt, ##__VA_ARGS__)
 #elif AMBF_ROS2
-  #define SAN_LOG_WARN(fmt, ...)  RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"), fmt, ##__VA_ARGS__)
-  #define SAN_LOG_ERROR(fmt, ...) RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), fmt, ##__VA_ARGS__)
+#define SAN_LOG_WARN(fmt, ...) RCLCPP_WARN(rclcpp::get_logger("sim_assisted_nav"), fmt, ##__VA_ARGS__)
+#define SAN_LOG_ERROR(fmt, ...) RCLCPP_ERROR(rclcpp::get_logger("sim_assisted_nav"), fmt, ##__VA_ARGS__)
 #endif
 
 #if AMBF_ROS1
@@ -470,6 +480,8 @@ void afCameraHMD::update_ros_textures_for_headset()
 {
     cv_bridge::CvImagePtr &left_img_ptr = ros_interface.left_img_ptr;
     cv_bridge::CvImagePtr &right_img_ptr = ros_interface.right_img_ptr;
+    cv_bridge::CvImagePtr &left_for_process = ros_interface.left_for_process;
+    cv_bridge::CvImagePtr &right_for_process = ros_interface.right_for_process;
 
     // Return if ros images are not initialized.
     if (left_img_ptr == nullptr || right_img_ptr == nullptr)
@@ -488,14 +500,14 @@ void afCameraHMD::update_ros_textures_for_headset()
     }
 
     // Copy before processing
+    // TO remove after testing
+    // ROS 1 way
+    //  cv_bridge::CvImagePtr left_for_process = boost::make_shared<cv_bridge::CvImage>();
+    //  cv_bridge::CvImagePtr right_for_process = boost::make_shared<cv_bridge::CvImage>();
 
-    //ROS 1 way
-    // cv_bridge::CvImagePtr left_for_process = boost::make_shared<cv_bridge::CvImage>();
-    // cv_bridge::CvImagePtr right_for_process = boost::make_shared<cv_bridge::CvImage>();
-
-    //ROS 2 way
-    cv_bridge::CvImagePtr left_for_process = std::make_shared<cv_bridge::CvImage>();
-    cv_bridge::CvImagePtr right_for_process = std::make_shared<cv_bridge::CvImage>();
+    // ROS 2 way
+    // cv_bridge::CvImagePtr left_for_process = std::make_shared<cv_bridge::CvImage>();
+    // cv_bridge::CvImagePtr right_for_process = std::make_shared<cv_bridge::CvImage>();
 
     left_for_process->header = left_img_ptr->header;
     left_for_process->encoding = left_img_ptr->encoding;

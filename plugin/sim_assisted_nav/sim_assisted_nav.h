@@ -73,6 +73,7 @@ public:
     RosInterface();
     ~RosInterface();
     void init(const std::string &left_topic, const std::string &right_topic);
+    void init_img_pointers();
 
     ambf_ral::node_ptr_t ros_node_handle;
 #if AMBF_ROS1
@@ -86,6 +87,9 @@ public:
     cv_bridge::CvImagePtr left_img_ptr = nullptr;
     cv_bridge::CvImagePtr right_img_ptr = nullptr;
     cv_bridge::CvImagePtr concat_img_ptr = nullptr;
+
+    cv_bridge::CvImagePtr left_for_process = nullptr;
+    cv_bridge::CvImagePtr right_for_process = nullptr;
 
     // Shader uniform variable updated via ROS subscription
     float window_disparity = 0.1;
