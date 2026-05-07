@@ -8,14 +8,14 @@ plugins: [
     filename: libvolumetric_drilling.so,
     path: build/simulation_assisted_navigation_framework/
   },
+  {
+    name: ambf_tf_plugin,
+    filename: libambf_tf_plugin.so,
+    path: build/ambf_tf_plugin/,
+  },
   # {
-  #   filename: libambf_tf_plugin.so,
-  #   name: ambf_tf_plugin,
-  #   path: /home/saint/research/saint_system/util_plugins/ambf_tf_plugin/build/,
-  # },
-  # {
-  #   filename: libspacenav_plugin.so,
   #   name: ambf_spacenav_plugin,
+  #   filename: libspacenav_plugin.so,
   #   path: ./plugin/external_plugins/ambf_spacenav_plugin/build/, 
   # }
 ]
