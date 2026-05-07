@@ -17,6 +17,7 @@ In ubuntu 24.04 packages cannot be longer installed system-wide with pip. Instea
 ```bash
 python3 -m venv ws_python_env 
 source ws_python_env/bin/activate
+touch ws_python_env/COLCON_IGNORE
 pip install numpy==1.26
 pip install pyyaml
 pip install transforms3d
