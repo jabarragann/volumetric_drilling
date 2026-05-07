@@ -328,33 +328,18 @@ void RosInterface::init(const std::string &left_topic, const std::string &right_
 
 #if AMBF_ROS1
 void RosInterface::left_compressed_img_callback(const sensor_msgs::CompressedImage &msg)
-{
-    try
-    {
-        cv::Mat image = cv::imdecode(msg.data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-
-        if (!image.empty())
-        {
-            left_img_ptr->image = image;
-            left_img_ptr->encoding = sensor_msgs::image_encodings::BGR8;
-        }
-        else
-        {
-            SAN_LOG_WARN("Converted image is empty.");
-            throw runtime_error("Converted image is empty.");
-        }
-    }
-    catch (cv::Exception &e)
-    {
-        SAN_LOG_ERROR("Error decompressing image: %s", e.what());
-    }
-}
 #elif AMBF_ROS2
 void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+#endif
 {
     try
     {
+
+#if AMBF_ROS1
+        cv::Mat image = cv::imdecode(msg.data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+#elif AMBF_ROS2
         cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+#endif
 
         if (!image.empty())
         {
@@ -372,37 +357,22 @@ void RosInterface::left_compressed_img_callback(const sensor_msgs::msg::Compress
         SAN_LOG_ERROR("Error decompressing image: %s", e.what());
     }
 }
-#endif
+
 
 #if AMBF_ROS1
 void RosInterface::right_compressed_img_callback(const sensor_msgs::CompressedImage &msg)
-{
-    try
-    {
-        cv::Mat image = cv::imdecode(msg.data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-
-        if (!image.empty())
-        {
-            right_img_ptr->image = image;
-            right_img_ptr->encoding = sensor_msgs::image_encodings::BGR8;
-        }
-        else
-        {
-            SAN_LOG_WARN("Converted image is empty.");
-            throw runtime_error("Converted image is empty.");
-        }
-    }
-    catch (cv::Exception &e)
-    {
-        SAN_LOG_ERROR("Error decompressing image: %s", e.what());
-    }
-}
 #elif AMBF_ROS2
 void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+#endif
 {
     try
     {
+
+#if AMBF_ROS1
+        cv::Mat image = cv::imdecode(msg.data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+#elif AMBF_ROS2
         cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+#endif
 
         if (!image.empty())
         {
@@ -420,7 +390,6 @@ void RosInterface::right_compressed_img_callback(const sensor_msgs::msg::Compres
         SAN_LOG_ERROR("Error decompressing image: %s", e.what());
     }
 }
-#endif
 
 #if AMBF_ROS1
 void RosInterface::window_disparity_callback(const std_msgs::Float32 &msg)
