@@ -32,7 +32,7 @@ TF marker_body-drill_tip:
 # This enables you to calculate the drill's body angle with respect to the ref body.
 TF drill_tip-drill_body:
   parent: drill_tip
-  child: drill_body_4mm
+  child: drill_body_1mm
   type: FIXED
   transformation:
     position: { x: 0.0, y: 0.0, z: 0.0 }
