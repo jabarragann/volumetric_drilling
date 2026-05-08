@@ -8,7 +8,7 @@ from geometry_msgs.msg import PoseStamped
 from pyprojroot.here import here  # type: ignore
 
 TOPIC = "/atracsys/drill_marker/measured_cp"
-DEFAULT_CSV_FILE = here() / "resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"
+DEFAULT_CSV_FILE = here() / "resources/ros2_test_assets/phantom01/motions/atracsys_touching_surface.csv"
 APPLY_PERIOD = 0.01  # 100 ms
 
 
