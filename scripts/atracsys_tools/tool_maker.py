@@ -54,7 +54,7 @@ def get_pose_data(ros_topic, expected_marker_count):
         ## Distance filter.
         record_raw = []
         for marker in msg.poses:
-            if marker.position.z < 1.500:
+            if marker.position.z < 1.200:
                 record_raw.append((marker.position.x, marker.position.y, marker.position.z))
                 
         record = np.array(record_raw)
