@@ -8,6 +8,7 @@ from pyprojroot.here import here # type: ignore
 import argparse
 import rclpy
 
+## TODO: Avoid hard coding the CSV file path
 
 # CSV_FILE = (
 #     here() / "resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"
