@@ -41,3 +41,7 @@ multibody configs:
   - "/home/juan95/research/discovery_grant/user_studies/resources/ADF/Scan4/volume.yaml" #17 # pilot 4 - Andy
   - "/home/saint/cynthia_dir/nrrd_to_adf/my_data/test_03132026_2/phantom01.yaml"         #18 # Pilot with cynthia
   - "/home/juan95/research/discovery_grant/saint_2026/experiments/drilling-pilot-2026-03-13/ADF/phantom01.yaml" #19 # drilling_experiment_2026-03-13
+  - "/home/saint/cynthia_dir/3D_slicer_files/experiments_files/07_yaml-from-ADF-modification/P01_04_real_0505.yaml" #20 P01_04_05052026 
+  - "/home/saint/research/saint_system/SAINT2026/experiments/experiment_2026_05_05/04/ADF/phantom_01_T_04.yaml" #21 P01_04_05052026
+
+

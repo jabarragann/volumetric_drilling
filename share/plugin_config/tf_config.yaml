@@ -22,7 +22,7 @@ TF marker_body-drill_tip:
   transformation: # from pivot calibration
     # Experiments 02-20-2026
     # position: {x: 0.0, y: 0.0 , z: 0.0} #drill
-    position: {x: 0.125657, y: -0.137231, z: -0.0570812} #drill
+    position: {x: 0.123229, y: -0.13514, z: -0.0564206} #drill
     orientation: { r: 0.0, p: 0.0, y: 0.0 }
 
 
