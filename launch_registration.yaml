@@ -18,7 +18,7 @@ plugins:
 ]
 
 multibody configs:
-  - "ADF/drills/drills_in_si_units/1mm_drill_in_real_units.yaml" #0 #surgical drill
+  - "ADF/drills/drills_in_si_units/4mm_drill_in_real_units.yaml" #0 #surgical drill
   # ANATOMIES:
   # - "/home/saint/research/saint_system/SAINT2026/phatom01/ADF/phantom01.yaml"  #1 # anatomy
   # - "/home/saint/cynthia_dir/nrrd_to_adf/my_data/test_03132026_2/phantom01.yaml" #1 03132026
