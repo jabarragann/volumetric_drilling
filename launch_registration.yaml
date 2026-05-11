@@ -23,5 +23,5 @@ multibody configs:
   # - "/home/saint/research/saint_system/SAINT2026/phatom01/ADF/phantom01.yaml"  #1 # anatomy
   # - "/home/saint/cynthia_dir/nrrd_to_adf/my_data/test_03132026_2/phantom01.yaml" #1 03132026
   # - "/home/saint/cynthia_dir/3D_slicer_files/experiments_files/07_yaml-from-ADF-modification/P01_04_real_0505.yaml" #1 P01_04_05052026 
-  - "/home/saint/research/saint_system/SAINT2026/experiments/experiment_2026_05_05/04/ADF/phantom_01_T_04.yaml" #1 P01_04_05052026
+  - "/home/saint/research/saint_system/SAINT2026/experiments/experiment-2026-05-05/04/ADF/phantom_01_T_04.yaml" #1 P01_04_05052026
 
