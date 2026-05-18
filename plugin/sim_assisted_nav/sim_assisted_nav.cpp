@@ -159,7 +159,7 @@ void afCameraHMD::graphicsUpdate()
     //     first_time = false;
     // }
 
-    update_textures_for_headset();
+    update_textures_for_headset("zed");
 
     // updateHMDParams(); // Update HMD parameters before m_frameBuffer render creates problems.
     glfwMakeContextCurrent(m_camera->m_window);
@@ -324,15 +324,34 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
  * Process ros images and convert them to chai3d texture to display.
  * If left or right images are not received return without doing anything.
  */
-void afCameraHMD::update_textures_for_headset()
+void afCameraHMD::update_textures_for_headset(const std::string &source)
 {
-    if (!ros_interface.has_received_stereo_images())
+    cv::Mat left_img;
+    cv::Mat right_img;
+
+    if (source == "ros")
     {
+        if (!ros_interface.has_received_stereo_images())
+        {
+            return;
+        }
+        left_img = ros_interface.left_img_ptr->image.clone();
+        right_img = ros_interface.right_img_ptr->image.clone();
+    }
+    else if (source == "zed")
+    {
+        if (!zed_interface.grab() || !zed_interface.has_received_stereo_images())
+        {
+            return;
+        }
+        left_img = zed_interface.left_img.clone();
+        right_img = zed_interface.right_img.clone();
+    }
+    else
+    {
+        cerr << "ERROR! Unknown image source '" << source << "' (expected 'ros' or 'zed')." << endl;
         return;
     }
-
-    cv::Mat left_img = ros_interface.left_img_ptr->image.clone();
-    cv::Mat right_img = ros_interface.right_img_ptr->image.clone();
 
     if (left_img.cols != right_img.cols || left_img.rows != right_img.rows)
     {

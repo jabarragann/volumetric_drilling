@@ -44,6 +44,7 @@
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
 #include "ros_interface.h"
+#include "zed_camera_interface.h"
 
 using namespace std;
 using namespace ambf;
@@ -68,8 +69,9 @@ public:
 
     StereoRosCameraWrapper *stereo_cam_info;
     RosInterface ros_interface;
+    ZedCameraInterface zed_interface;
 
-    void update_textures_for_headset();
+    void update_textures_for_headset(const std::string &source);
     cv_bridge::CvImagePtr concat_img_ptr = nullptr;
     int clipsize = 0.3;
 
