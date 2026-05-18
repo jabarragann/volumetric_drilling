@@ -70,7 +70,11 @@ target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
 set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 ## Ambf camera plugin - sim assisted nav
-add_library(sim_assisted_nav SHARED sim_assisted_nav/sim_assisted_nav.cpp sim_assisted_nav/sim_assisted_nav.h)
+add_library(sim_assisted_nav SHARED
+    sim_assisted_nav/sim_assisted_nav.cpp
+    sim_assisted_nav/sim_assisted_nav.h
+    sim_assisted_nav/ros_interface.cpp
+    sim_assisted_nav/ros_interface.h)
 target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
 set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
