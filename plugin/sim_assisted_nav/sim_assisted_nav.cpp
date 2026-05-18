@@ -326,77 +326,45 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
  */
 void afCameraHMD::update_ros_textures_for_headset()
 {
-    cv_bridge::CvImagePtr &left_img_ptr = ros_interface.left_img_ptr;
-    cv_bridge::CvImagePtr &right_img_ptr = ros_interface.right_img_ptr;
-    cv_bridge::CvImagePtr &concat_img_ptr = ros_interface.concat_img_ptr;
-    cv_bridge::CvImagePtr &left_for_process = ros_interface.left_for_process;
-    cv_bridge::CvImagePtr &right_for_process = ros_interface.right_for_process;
+    if (!ros_interface.has_received_stereo_images())
+    {
+        return;
+    }
 
-    // Return if ros images are not initialized.
-    if (left_img_ptr == nullptr || right_img_ptr == nullptr)
-    {
-        return;
-    }
-    if (left_img_ptr->image.empty() || right_img_ptr->image.empty())
-    {
-        return;
-    }
-    if (left_img_ptr->image.cols != right_img_ptr->image.cols || left_img_ptr->image.rows != right_img_ptr->image.rows)
+    cv::Mat left_img = ros_interface.left_img_ptr->image.clone();
+    cv::Mat right_img = ros_interface.right_img_ptr->image.clone();
+
+    if (left_img.cols != right_img.cols || left_img.rows != right_img.rows)
     {
         cerr << "Left and right images have different sizes. Left: "
-             << left_img_ptr->image.cols << " x " << left_img_ptr->image.rows
-             << ", Right: " << right_img_ptr->image.cols << " x " << right_img_ptr->image.rows << endl;
+             << left_img.cols << " x " << left_img.rows
+             << ", Right: " << right_img.cols << " x " << right_img.rows << endl;
         return;
     }
 
-    // Copy before processing
-    left_for_process->header = left_img_ptr->header;
-    left_for_process->encoding = left_img_ptr->encoding;
-    left_for_process->image = left_img_ptr->image.clone();
-
-    right_for_process->header = right_img_ptr->header;
-    right_for_process->encoding = right_img_ptr->encoding;
-    right_for_process->image = right_img_ptr->image.clone();
-
-    // Process ros images if received left and right.
-    cv::hconcat(left_for_process->image, right_for_process->image, concat_img_ptr->image);
-    cv::flip(concat_img_ptr->image, concat_img_ptr->image, 0);
+    cv::Mat concat_img;
+    cv::hconcat(left_img, right_img, concat_img);
+    cv::flip(concat_img, concat_img, 0);
 
     if (stereo_cam_info->convert_from_RGB2BGR)
     {
         // This is required for zed mini.
-        cv::cvtColor(concat_img_ptr->image, concat_img_ptr->image, cv::COLOR_RGB2BGR);
+        cv::cvtColor(concat_img, concat_img, cv::COLOR_RGB2BGR);
     }
 
     // Initialize chai ROS texture.
-    int ros_image_size = concat_img_ptr->image.cols * concat_img_ptr->image.rows * concat_img_ptr->image.elemSize();
+    int ros_image_size = concat_img.cols * concat_img.rows * concat_img.elemSize();
     int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
 
     if (ros_image_size != texture_image_size)
     {
         cout << "INITILIZE rosImageTexture" << endl;
         m_rosImageTexture->m_image->erase();
-
-        // Original implementation in Xinhao's plugin
-        // m_rosImageTexture->m_image->allocate(cv_ptr->image.cols, cv_ptr->image.rows, getImageFormat(cv_ptr->encoding), getImageType(cv_ptr->encoding));
-
-        m_rosImageTexture->m_image->allocate(concat_img_ptr->image.cols, concat_img_ptr->image.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
-        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
-
-        // Only for debuggin purposes
-        // m_rosImageTexture->saveToFile("rosImageTexture_juan.png");
-    }
-    else
-    {
-        m_rosImageTexture->m_image->setData(concat_img_ptr->image.data, ros_image_size);
+        m_rosImageTexture->m_image->allocate(concat_img.cols, concat_img.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
     }
 
-    //  cerr << "INFO! Image Sizes" << msg->width << "x" << msg->height << " - " << msg->encoding << endl;
+    m_rosImageTexture->m_image->setData(concat_img.data, ros_image_size);
     m_rosImageTexture->markForUpdate();
-
-    // cv::imshow("Concat image", concat_img_ptr->image);
-    // cv::waitKey(1);
-    // cv::resize(cv_ptr2->image,cv_ptr2->image,cv::Size(cv_ptr2->image.cols/2,cv_ptr2->image.rows/2));
 }
 
 void afCameraHMD::assignGLFWCallbacks()

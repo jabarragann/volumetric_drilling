@@ -76,6 +76,15 @@ void RosInterface::init_img_pointers()
 }
 #endif
 
+bool RosInterface::has_received_stereo_images() const
+{
+    if (left_img_ptr == nullptr || right_img_ptr == nullptr)
+    {
+        return false;
+    }
+    return !left_img_ptr->image.empty() && !right_img_ptr->image.empty();
+}
+
 void RosInterface::init(const std::string &left_topic, const std::string &right_topic)
 {
     ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");

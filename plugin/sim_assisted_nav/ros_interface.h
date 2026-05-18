@@ -68,6 +68,7 @@ public:
     ~RosInterface();
     void init(const std::string &left_topic, const std::string &right_topic);
     void init_img_pointers();
+    bool has_received_stereo_images() const;
 
     ambf_ral::node_ptr_t ros_node_handle;
 #if AMBF_ROS1
