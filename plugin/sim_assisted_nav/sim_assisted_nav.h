@@ -69,11 +69,11 @@ public:
     StereoRosCameraWrapper *stereo_cam_info;
     RosInterface ros_interface;
 
-    void update_ros_textures_for_headset();
+    void update_textures_for_headset();
     cv_bridge::CvImagePtr concat_img_ptr = nullptr;
     int clipsize = 0.3;
 
-    cTexture2dPtr m_rosImageTexture;
+    cTexture2dPtr m_hmdImageTexture;
 
     void assignGLFWCallbacks();
     void windowSizeCallback(GLFWwindow *window_ptr, int width, int height);

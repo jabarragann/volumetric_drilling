@@ -118,7 +118,7 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     m_quadMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
 
     // Textures
-    m_rosImageTexture = cTexture2d::create();
+    m_hmdImageTexture = cTexture2d::create();
 
     m_quadMesh->computeAllNormals();
 
@@ -127,7 +127,7 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     // For this case the rosImageTexture gets assigned to m_texture and
     // the texture from the m_imageBuffer to metallicTexture.
 
-    m_quadMesh->m_texture = m_rosImageTexture;
+    m_quadMesh->m_texture = m_hmdImageTexture;
     // m_quadMesh->m_metallicTexture = m_frameBuffer->m_imageBuffer;
 
     if (m_camera->m_frameBuffer->m_imageBuffer == nullptr)
@@ -159,7 +159,7 @@ void afCameraHMD::graphicsUpdate()
     //     first_time = false;
     // }
 
-    update_ros_textures_for_headset();
+    update_textures_for_headset();
 
     // updateHMDParams(); // Update HMD parameters before m_frameBuffer render creates problems.
     glfwMakeContextCurrent(m_camera->m_window);
@@ -324,7 +324,7 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
  * Process ros images and convert them to chai3d texture to display.
  * If left or right images are not received return without doing anything.
  */
-void afCameraHMD::update_ros_textures_for_headset()
+void afCameraHMD::update_textures_for_headset()
 {
     if (!ros_interface.has_received_stereo_images())
     {
@@ -354,17 +354,17 @@ void afCameraHMD::update_ros_textures_for_headset()
 
     // Initialize chai ROS texture.
     int ros_image_size = concat_img.cols * concat_img.rows * concat_img.elemSize();
-    int texture_image_size = m_rosImageTexture->m_image->getWidth() * m_rosImageTexture->m_image->getHeight() * m_rosImageTexture->m_image->getBytesPerPixel();
+    int texture_image_size = m_hmdImageTexture->m_image->getWidth() * m_hmdImageTexture->m_image->getHeight() * m_hmdImageTexture->m_image->getBytesPerPixel();
 
     if (ros_image_size != texture_image_size)
     {
         cout << "INITILIZE rosImageTexture" << endl;
-        m_rosImageTexture->m_image->erase();
-        m_rosImageTexture->m_image->allocate(concat_img.cols, concat_img.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
+        m_hmdImageTexture->m_image->erase();
+        m_hmdImageTexture->m_image->allocate(concat_img.cols, concat_img.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
     }
 
-    m_rosImageTexture->m_image->setData(concat_img.data, ros_image_size);
-    m_rosImageTexture->markForUpdate();
+    m_hmdImageTexture->m_image->setData(concat_img.data, ros_image_size);
+    m_hmdImageTexture->markForUpdate();
 }
 
 void afCameraHMD::assignGLFWCallbacks()
