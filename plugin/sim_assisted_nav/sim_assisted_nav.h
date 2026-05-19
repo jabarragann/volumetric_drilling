@@ -68,7 +68,7 @@ public:
     void create_stereo_cam_info_from_yaml(string cam_name, const afBaseObjectAttribsPtr a_objectAttribs);
 
     StereoRosCameraWrapper *stereo_cam_info;
-    RosInterface ros_interface;
+    HmdRosInterface ros_interface;
     RosStereoCamInterface ros_stereo_cam_interface;
     ZedCameraInterface zed_interface;
 
@@ -77,6 +77,7 @@ public:
     int clipsize = 0.3;
 
     cTexture2dPtr m_hmdImageTexture;
+    cv::Mat m_concat_img;
 
     void assignGLFWCallbacks();
     void windowSizeCallback(GLFWwindow *window_ptr, int width, int height);

@@ -89,11 +89,11 @@ public:
 #endif
 };
 
-class RosInterface
+class HmdRosInterface
 {
 public:
-    RosInterface();
-    ~RosInterface();
+    HmdRosInterface();
+    ~HmdRosInterface();
     void init();
 
     ambf_ral::node_ptr_t ros_node_handle;

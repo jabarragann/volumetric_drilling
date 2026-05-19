@@ -136,31 +136,31 @@ void RosStereoCamInterface::right_compressed_img_callback(const sensor_msgs::msg
 }
 
 // ---------------------------------------------------------------------------
-// RosInterface
+// HmdRosInterface
 // ---------------------------------------------------------------------------
 
-RosInterface::RosInterface()
+HmdRosInterface::HmdRosInterface()
 {
 }
 
-RosInterface::~RosInterface()
+HmdRosInterface::~HmdRosInterface()
 {
 }
 
-void RosInterface::init()
+void HmdRosInterface::init()
 {
     ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");
 
-    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), RosInterface>(window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &RosInterface::window_disparity_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), HmdRosInterface>(window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &HmdRosInterface::window_disparity_callback, this);
 }
 
 #if AMBF_ROS1
-void RosInterface::window_disparity_callback(const std_msgs::Float32 &msg)
+void HmdRosInterface::window_disparity_callback(const std_msgs::Float32 &msg)
 {
     window_disparity = msg.data;
 }
 #elif AMBF_ROS2
-void RosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
+void HmdRosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     window_disparity = msg->data;
 }

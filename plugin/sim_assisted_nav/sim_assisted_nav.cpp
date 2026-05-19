@@ -362,28 +362,29 @@ void afCameraHMD::update_textures_for_headset(const std::string &source)
         return;
     }
 
-    cv::Mat concat_img;
-    cv::hconcat(left_img, right_img, concat_img);
-    cv::flip(concat_img, concat_img, 0);
+    // m_concat_img must be a member: chai3d's setData stores the pointer without
+    // copying, so the buffer backing it must outlive this function.
+    cv::hconcat(left_img, right_img, m_concat_img);
+    cv::flip(m_concat_img, m_concat_img, 0);
 
     if (stereo_cam_info->convert_from_RGB2BGR)
     {
         // This is required for zed mini.
-        cv::cvtColor(concat_img, concat_img, cv::COLOR_RGB2BGR);
+        cv::cvtColor(m_concat_img, m_concat_img, cv::COLOR_RGB2BGR);
     }
 
     // Initialize chai ROS texture.
-    int ros_image_size = concat_img.cols * concat_img.rows * concat_img.elemSize();
+    int ros_image_size = m_concat_img.cols * m_concat_img.rows * m_concat_img.elemSize();
     int texture_image_size = m_hmdImageTexture->m_image->getWidth() * m_hmdImageTexture->m_image->getHeight() * m_hmdImageTexture->m_image->getBytesPerPixel();
 
     if (ros_image_size != texture_image_size)
     {
         cout << "INITILIZE rosImageTexture" << endl;
         m_hmdImageTexture->m_image->erase();
-        m_hmdImageTexture->m_image->allocate(concat_img.cols, concat_img.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
+        m_hmdImageTexture->m_image->allocate(m_concat_img.cols, m_concat_img.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
     }
 
-    m_hmdImageTexture->m_image->setData(concat_img.data, ros_image_size);
+    m_hmdImageTexture->m_image->setData(m_concat_img.data, ros_image_size);
     m_hmdImageTexture->markForUpdate();
 }
 
