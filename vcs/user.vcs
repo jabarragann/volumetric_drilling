@@ -1,0 +1,13 @@
+repositories:
+  saint/volumetric_drilling_saint:
+    type: git
+    url: https://github.com/jabarragann/volumetric_drilling.git
+    version: main
+  saint/ambf_registration_plugin:
+    type: git
+    url: https://github.com/LCSR-CIIS/ambf_registration_plugin.git
+    version: ros2
+  saint/ambf_tf_plugin:
+    type: git
+    url: https://github.com/LCSR-CIIS/ambf_tf_plugin.git
+    version: ros2
