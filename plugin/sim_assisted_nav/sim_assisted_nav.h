@@ -69,6 +69,7 @@ public:
 
     StereoRosCameraWrapper *stereo_cam_info;
     RosInterface ros_interface;
+    RosStereoCamInterface ros_stereo_cam_interface;
     ZedCameraInterface zed_interface;
 
     void update_textures_for_headset(const std::string &source);

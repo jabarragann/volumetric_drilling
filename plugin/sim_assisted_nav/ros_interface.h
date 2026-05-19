@@ -61,11 +61,11 @@
 #include <cv_bridge/cv_bridge.hpp>
 #endif
 
-class RosInterface
+class RosStereoCamInterface
 {
 public:
-    RosInterface();
-    ~RosInterface();
+    RosStereoCamInterface();
+    ~RosStereoCamInterface();
     void init(const std::string &left_topic, const std::string &right_topic);
     void init_img_pointers();
     bool has_received_stereo_images() const;
@@ -73,29 +73,42 @@ public:
     ambf_ral::node_ptr_t ros_node_handle;
 #if AMBF_ROS1
     std::shared_ptr<ros::Subscriber> left_sub, right_sub;
-    std::shared_ptr<ros::Subscriber> window_disparity_sub;
 #elif AMBF_ROS2
     rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr left_sub, right_sub;
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
 #endif
 
     cv_bridge::CvImagePtr left_img_ptr = nullptr;
     cv_bridge::CvImagePtr right_img_ptr = nullptr;
-    cv_bridge::CvImagePtr concat_img_ptr = nullptr;
 
-    cv_bridge::CvImagePtr left_for_process = nullptr;
-    cv_bridge::CvImagePtr right_for_process = nullptr;
+#if AMBF_ROS1
+    void left_compressed_img_callback(const sensor_msgs::CompressedImage &msg);
+    void right_compressed_img_callback(const sensor_msgs::CompressedImage &msg);
+#elif AMBF_ROS2
+    void left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
+    void right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
+#endif
+};
+
+class RosInterface
+{
+public:
+    RosInterface();
+    ~RosInterface();
+    void init();
+
+    ambf_ral::node_ptr_t ros_node_handle;
+#if AMBF_ROS1
+    std::shared_ptr<ros::Subscriber> window_disparity_sub;
+#elif AMBF_ROS2
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
+#endif
 
     // Shader uniform variable updated via ROS subscription
     float window_disparity = 0.1;
 
 #if AMBF_ROS1
-    void left_compressed_img_callback(const sensor_msgs::CompressedImage &msg);
-    void right_compressed_img_callback(const sensor_msgs::CompressedImage &msg);
     void window_disparity_callback(const std_msgs::Float32 &msg);
 #elif AMBF_ROS2
-    void left_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
-    void right_compressed_img_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
     void window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg);
 #endif
 };

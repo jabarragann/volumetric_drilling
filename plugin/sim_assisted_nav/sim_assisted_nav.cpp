@@ -65,7 +65,8 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
 
     // Variables related to ROS topics
-    ros_interface.init(stereo_cam_info->rostopic_left, stereo_cam_info->rostopic_right);
+    ros_stereo_cam_interface.init(stereo_cam_info->rostopic_left, stereo_cam_info->rostopic_right);
+    ros_interface.init();
 
     m_camera->setOverrideRendering(true);
 
@@ -159,7 +160,7 @@ void afCameraHMD::graphicsUpdate()
     //     first_time = false;
     // }
 
-    update_textures_for_headset("zed");
+    update_textures_for_headset("ros");
 
     // updateHMDParams(); // Update HMD parameters before m_frameBuffer render creates problems.
     glfwMakeContextCurrent(m_camera->m_window);
@@ -331,12 +332,12 @@ void afCameraHMD::update_textures_for_headset(const std::string &source)
 
     if (source == "ros")
     {
-        if (!ros_interface.has_received_stereo_images())
+        if (!ros_stereo_cam_interface.has_received_stereo_images())
         {
             return;
         }
-        left_img = ros_interface.left_img_ptr->image.clone();
-        right_img = ros_interface.right_img_ptr->image.clone();
+        left_img = ros_stereo_cam_interface.left_img_ptr->image.clone();
+        right_img = ros_stereo_cam_interface.right_img_ptr->image.clone();
     }
     else if (source == "zed")
     {
