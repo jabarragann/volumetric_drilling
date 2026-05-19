@@ -3,6 +3,7 @@
 
 - [ROS2 documentation](#ros2-documentation)
   - [Python venv setup](#python-venv-setup)
+  - [Colcon workspace setup](#colcon-workspace-setup)
 - [Installation](#installation)
   - [0. Install AMBF simulator](#0-install-ambf-simulator)
   - [1. Compile and setup external plugins](#1-compile-and-setup-external-plugins)
@@ -10,6 +11,14 @@
 
 ## ROS2 documentation
 [Back to Top](#simulation-assisted-navigation)
+
+### Colcon workspace setup
+
+```
+mkdir src
+cd src
+vcs import --recursive --input https://raw.githubusercontent.com/jabarragann/volumetric_drilling/refs/heads/decklink-support/vcs/user.vcs
+```
 
 ### Python venv setup
 In ubuntu 24.04 packages cannot be longer installed system-wide with pip. Instead use a virtual environment.
