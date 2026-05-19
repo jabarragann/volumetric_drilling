@@ -104,10 +104,14 @@ struct StereoRosCameraWrapper
     int pixel_format_gl;
     bool convert_from_RGB2BGR;
 
+    // Where the stereo images come from. Either "ros" or "zed".
+    string video_source;
+
     StereoRosCameraWrapper(string rostopic_left, string rostopic_right, string a_camera_name, string a_pixel_format,
-                           bool a_convert_from_RGB2BGR) : rostopic_left(rostopic_left), rostopic_right(rostopic_right),
+                           bool a_convert_from_RGB2BGR, string a_video_source) : rostopic_left(rostopic_left), rostopic_right(rostopic_right),
                                                           camera_name(a_camera_name), pixel_format(a_pixel_format),
-                                                          convert_from_RGB2BGR(a_convert_from_RGB2BGR)
+                                                          convert_from_RGB2BGR(a_convert_from_RGB2BGR),
+                                                          video_source(a_video_source)
     {
         if (pixel_format == "RGB")
         {
@@ -121,6 +125,12 @@ struct StereoRosCameraWrapper
         {
             cerr << "ERROR! Pixel format " << pixel_format << " not supported. Check plugin config." << endl;
             throw runtime_error("Pixel format not supported");
+        }
+
+        if (video_source != "ros" && video_source != "zed")
+        {
+            cerr << "ERROR! Video source " << video_source << " not supported. Check plugin config." << endl;
+            throw runtime_error("Video source not supported");
         }
     }
 };

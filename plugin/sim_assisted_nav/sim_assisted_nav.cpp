@@ -160,7 +160,7 @@ void afCameraHMD::graphicsUpdate()
     //     first_time = false;
     // }
 
-    update_textures_for_headset("ros");
+    update_textures_for_headset(stereo_cam_info->video_source);
 
     // updateHMDParams(); // Update HMD parameters before m_frameBuffer render creates problems.
     glfwMakeContextCurrent(m_camera->m_window);
@@ -251,6 +251,7 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
         // right_rostopic: /stereo/right/image_raw
         // format: RGB
         // color_conversion: false
+        // video_source: ros
 
         try
         {
@@ -258,8 +259,9 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
             string right_rostopic = plugin_config["right_rostopic"].as<string>();
             string format = plugin_config["format"].as<string>();
             bool color_conversion = plugin_config["color_conversion"].as<bool>();
+            string video_source = plugin_config["video_source"].as<string>();
 
-            stereo_cam_info = new StereoRosCameraWrapper(left_rostopic, right_rostopic, cam_name, format, color_conversion);
+            stereo_cam_info = new StereoRosCameraWrapper(left_rostopic, right_rostopic, cam_name, format, color_conversion, video_source);
         }
         catch (YAML::Exception &e)
         {
@@ -268,6 +270,7 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
             cerr << "right_rostopic" << endl;
             cerr << "format" << endl;
             cerr << "color_conversion" << endl;
+            cerr << "video_source" << endl;
 
             throw runtime_error("Error in stereo_cam_config");
         }

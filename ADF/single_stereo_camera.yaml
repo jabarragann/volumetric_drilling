@@ -85,23 +85,27 @@ stereoLR:
   #   left_rostopic: /ambf/env/cameras/stereoL/ImageData
   #   right_rostopic: /ambf/env/cameras/stereoR/ImageData
   #   format: RGB # RGB or RGBA
-  #   color_conversion: false 
+  #   color_conversion: false
+  #   video_source: ros # ros or zed
 
-  sim_assisted_nav_plugin_config: # ZED mini 
+  sim_assisted_nav_plugin_config: # ZED mini
     left_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
     right_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
     format: RGB
-    color_conversion: true 
+    color_conversion: true
+    video_source: zed # ros or zed
 
-  # sim_assisted_nav_plugin_config: # Mock OR microscope 
+  # sim_assisted_nav_plugin_config: # Mock OR microscope
   #   left_rostopic: /decklink_left/camera/image_raw/compressed
   #   right_rostopic: /decklink_right/camera/image_raw/compressed
   #   format: RGB
-  #   color_conversion: true 
+  #   color_conversion: true
+  #   video_source: ros # ros or zed
 
-  # sim_assisted_nav_plugin_config: # Mock OR microscope 
+  # sim_assisted_nav_plugin_config: # Mock OR microscope
   #   left_rostopic: /decklink_left/camera/image_raw
   #   right_rostopic: /decklink_right/camera/image_raw
   #   format: RGB
-  #   color_conversion: false 
+  #   color_conversion: false
+  #   video_source: ros # ros or zed
    
