@@ -66,11 +66,11 @@ using namespace ambf;
 class SideViewWindow;
 class CtSliceSideWindow;
 
-class RosInterface
+class MultiviewRosInterface
 {
 public:
-    RosInterface();
-    ~RosInterface();
+    MultiviewRosInterface();
+    ~MultiviewRosInterface();
     void init(const std::string &drill_loc_topic);
 
     ambf_ral::node_ptr_t ros_node_handle;
@@ -157,7 +157,7 @@ protected:
     std::unique_ptr<VolumeSlicer> volume_slicer;
 
     // ROS section
-    RosInterface ros_interface;
+    MultiviewRosInterface ros_interface;
 
     // Config strings
     string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";
