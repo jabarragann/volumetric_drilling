@@ -48,7 +48,7 @@
 
 using namespace std;
 
-string g_current_filepath;
+static string g_current_filepath;
 
 afCameraHMD::afCameraHMD()
 {
@@ -336,6 +336,10 @@ void afCameraHMD::update_textures_for_headset(const std::string &source)
         {
             return;
         }
+        //TODO: The threading note from earlier still stands: update_ros_textures_for_headset() 
+        //TODO: (graphics thread) and the image callbacks (ROS thread) access left_img_ptr/right_img_ptr 
+        //TODO: without a lock. Not your current crash, but a real race worth a mutex later.
+
         left_img = ros_stereo_cam_interface.left_img_ptr->image.clone();
         right_img = ros_stereo_cam_interface.right_img_ptr->image.clone();
     }

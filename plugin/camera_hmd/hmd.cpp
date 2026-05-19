@@ -54,7 +54,7 @@ using namespace std;
 
 //------------------------------------------------------------------------------
 
-string g_current_filepath;
+static string g_current_filepath;
 
 afCameraHMD::afCameraHMD()
 {

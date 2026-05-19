@@ -54,7 +54,7 @@ using namespace std;
 
 //------------------------------------------------------------------------------
 
-string g_current_filepath;
+static string g_current_filepath;
 
 void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objectAttribs)
 {
