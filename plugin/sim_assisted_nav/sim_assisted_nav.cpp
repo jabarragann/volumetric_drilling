@@ -41,8 +41,10 @@
 //==============================================================================
 
 #include "sim_assisted_nav.h"
+#include "camera_interfaces/camera_interface_factory.h"
 #include <ambf_server/RosComBase.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
@@ -64,8 +66,16 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     assignGLFWCallbacks();
     create_stereo_cam_info_from_yaml(m_camera->getName(), a_objectAttribs);
 
+    // Build the single stereo camera source selected by the video_source config.
+    m_camera_interface = create_stereo_camera_interface(*stereo_cam_info);
+    if (!m_camera_interface || !m_camera_interface->init())
+    {
+        cerr << "ERROR! Failed to create/initialize camera interface for source '"
+             << stereo_cam_info->video_source << "'." << endl;
+        return -1;
+    }
+
     // Variables related to ROS topics
-    ros_stereo_cam_interface.init(stereo_cam_info->rostopic_left, stereo_cam_info->rostopic_right);
     ros_interface.init();
 
     m_camera->setOverrideRendering(true);
@@ -160,7 +170,7 @@ void afCameraHMD::graphicsUpdate()
     //     first_time = false;
     // }
 
-    update_textures_for_headset(stereo_cam_info->video_source);
+    update_textures_for_headset();
 
     // updateHMDParams(); // Update HMD parameters before m_frameBuffer render creates problems.
     glfwMakeContextCurrent(m_camera->m_window);
@@ -196,6 +206,9 @@ void afCameraHMD::reset()
 
 bool afCameraHMD::close()
 {
+    // Tear down the camera source (ZED close() / Decklink release()) while the
+    // GL/ROS context is still valid, rather than at process exit.
+    m_camera_interface.reset();
     return true;
 }
 
@@ -244,40 +257,54 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
     specificationDataNode = YAML::Load(a_objectAttribs->getSpecificationData().m_rawData);
     YAML::Node plugin_config = specificationDataNode["sim_assisted_nav_plugin_config"];
 
-    if (plugin_config.IsDefined())
+    if (!plugin_config.IsDefined())
     {
-        // Example yaml config
-        // left_rostopic: /stereo/left/image_raw
-        // right_rostopic: /stereo/right/image_raw
-        // format: RGB
-        // color_conversion: false
-        // video_source: ros
-
-        try
-        {
-            string left_rostopic = plugin_config["left_rostopic"].as<string>();
-            string right_rostopic = plugin_config["right_rostopic"].as<string>();
-            string format = plugin_config["format"].as<string>();
-            bool color_conversion = plugin_config["color_conversion"].as<bool>();
-            string video_source = plugin_config["video_source"].as<string>();
-
-            stereo_cam_info = new StereoRosCameraWrapper(left_rostopic, right_rostopic, cam_name, format, color_conversion, video_source);
-        }
-        catch (YAML::Exception &e)
-        {
-            cerr << "stereo_cam_config expects the following config fields " << endl;
-            cerr << "left_rostopic" << endl;
-            cerr << "right_rostopic" << endl;
-            cerr << "format" << endl;
-            cerr << "color_conversion" << endl;
-            cerr << "video_source" << endl;
-
-            throw runtime_error("Error in stereo_cam_config");
-        }
+        throw runtime_error("sim_assisted_nav_plugin_config not defined in the yaml file");
     }
-    else
+
+    // Example yaml config
+    // video_source: ros          # ros, zed or decklink
+    // format: RGB                # RGB or RGBA
+    // color_conversion: false
+    // left_rostopic: /stereo/left/image_raw    # video_source: ros only
+    // right_rostopic: /stereo/right/image_raw  # video_source: ros only
+    // left_device: 0             # video_source: decklink only
+    // right_device: 1            # video_source: decklink only
+
+    try
     {
-        throw runtime_error("stereo_cam_config not defined in the yaml file");
+        auto cfg = std::make_unique<StereoCameraConfig>();
+        cfg->camera_name = cam_name;
+        cfg->video_source = plugin_config["video_source"].as<string>();
+        cfg->pixel_format = plugin_config["format"].as<string>();
+        cfg->convert_from_RGB2BGR = plugin_config["color_conversion"].as<bool>();
+
+        // Source-specific keys are read only for the matching video_source.
+        if (cfg->video_source == "ros")
+        {
+            cfg->rostopic_left = plugin_config["left_rostopic"].as<string>();
+            cfg->rostopic_right = plugin_config["right_rostopic"].as<string>();
+        }
+        else if (cfg->video_source == "decklink")
+        {
+            cfg->left_device = plugin_config["left_device"].as<int>();
+            cfg->right_device = plugin_config["right_device"].as<int>();
+        }
+        // "zed" needs no source-specific keys.
+
+        cfg->validate();
+        stereo_cam_info = std::move(cfg);
+    }
+    catch (YAML::Exception &e)
+    {
+        cerr << "sim_assisted_nav_plugin_config expects the following config fields " << endl;
+        cerr << "video_source (ros, zed or decklink)" << endl;
+        cerr << "format" << endl;
+        cerr << "color_conversion" << endl;
+        cerr << "left_rostopic, right_rostopic (video_source: ros)" << endl;
+        cerr << "left_device, right_device (video_source: decklink)" << endl;
+
+        throw runtime_error("Error in sim_assisted_nav_plugin_config");
     }
 }
 
@@ -325,41 +352,25 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
 // }
 
 /*
- * Process ros images and convert them to chai3d texture to display.
- * If left or right images are not received return without doing anything.
+ * Pull the latest stereo pair from the active camera source and convert it to
+ * a chai3d texture to display. If a fresh pair is not available, return without
+ * doing anything.
  */
-void afCameraHMD::update_textures_for_headset(const std::string &source)
+void afCameraHMD::update_textures_for_headset()
 {
-    cv::Mat left_img;
-    cv::Mat right_img;
-
-    if (source == "ros")
+    // grab() pulls a fresh pair for pull-based sources (ZED, Decklink) and is a
+    // no-op for push-based ROS topics.
+    if (!m_camera_interface->grab() || !m_camera_interface->has_received_stereo_images())
     {
-        if (!ros_stereo_cam_interface.has_received_stereo_images())
-        {
-            return;
-        }
-        //TODO: The threading note from earlier still stands: update_ros_textures_for_headset() 
-        //TODO: (graphics thread) and the image callbacks (ROS thread) access left_img_ptr/right_img_ptr 
-        //TODO: without a lock. Not your current crash, but a real race worth a mutex later.
-
-        left_img = ros_stereo_cam_interface.left_img_ptr->image.clone();
-        right_img = ros_stereo_cam_interface.right_img_ptr->image.clone();
-    }
-    else if (source == "zed")
-    {
-        if (!zed_interface.grab() || !zed_interface.has_received_stereo_images())
-        {
-            return;
-        }
-        left_img = zed_interface.left_img.clone();
-        right_img = zed_interface.right_img.clone();
-    }
-    else
-    {
-        cerr << "ERROR! Unknown image source '" << source << "' (expected 'ros' or 'zed')." << endl;
         return;
     }
+
+    // TODO: For the ROS source, left_image()/right_image() are filled by the ROS
+    // TODO: callback thread while this graphics thread reads them. The clone()s
+    // TODO: below take a private copy, but a mutex in RosStereoCameraInterface
+    // TODO: would be the proper fix.
+    cv::Mat left_img = m_camera_interface->left_image().clone();
+    cv::Mat right_img = m_camera_interface->right_image().clone();
 
     if (left_img.cols != right_img.cols || left_img.rows != right_img.rows)
     {

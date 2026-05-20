@@ -79,8 +79,17 @@ add_library(sim_assisted_nav SHARED
     sim_assisted_nav/sim_assisted_nav.h
     sim_assisted_nav/ros_interface.cpp
     sim_assisted_nav/ros_interface.h
-    sim_assisted_nav/zed_camera_interface.cpp
-    sim_assisted_nav/zed_camera_interface.h)
+    sim_assisted_nav/camera_interfaces/stereo_camera_interface.h
+    sim_assisted_nav/camera_interfaces/stereo_camera_config.cpp
+    sim_assisted_nav/camera_interfaces/stereo_camera_config.h
+    sim_assisted_nav/camera_interfaces/ros_stereo_camera_interface.cpp
+    sim_assisted_nav/camera_interfaces/ros_stereo_camera_interface.h
+    sim_assisted_nav/camera_interfaces/zed_camera_interface.cpp
+    sim_assisted_nav/camera_interfaces/zed_camera_interface.h
+    sim_assisted_nav/camera_interfaces/decklink_camera_interface.cpp
+    sim_assisted_nav/camera_interfaces/decklink_camera_interface.h
+    sim_assisted_nav/camera_interfaces/camera_interface_factory.cpp
+    sim_assisted_nav/camera_interfaces/camera_interface_factory.h)
 target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
 set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 

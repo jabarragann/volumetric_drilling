@@ -81,31 +81,57 @@ stereoLR:
   multiview_plugin_config:
     render_to_frame_buffer: true
 
-  # sim_assisted_nav_plugin_config: # AMBF stereo camera - this requires `stereo_cameras.yaml`
-  #   left_rostopic: /ambf/env/cameras/stereoL/ImageData
-  #   right_rostopic: /ambf/env/cameras/stereoR/ImageData
-  #   format: RGB # RGB or RGBA
-  #   color_conversion: false
-  #   video_source: ros # ros or zed
+  ### CONFIG OPTIONS FOR SIM ASSISTED NAV PLUGIN
 
-  sim_assisted_nav_plugin_config: # ZED mini
-    left_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
-    right_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
-    format: RGB
-    color_conversion: true
-    video_source: zed # ros or zed
+  # video_source selects the camera interface. Only the keys for the chosen
+  # source are read: ros -> left_rostopic/right_rostopic, decklink ->
+  # left_device/right_device, zed -> none.
 
-  # sim_assisted_nav_plugin_config: # Mock OR microscope
-  #   left_rostopic: /decklink_left/camera/image_raw/compressed
-  #   right_rostopic: /decklink_right/camera/image_raw/compressed
+
+  ### ZED DEVICES
+
+  # sim_assisted_nav_plugin_config: # ZED mini
+  #   video_source: zed # ros, zed or decklink
   #   format: RGB
   #   color_conversion: true
-  #   video_source: ros # ros or zed
+  
+  ### ROS DEVICES
+ 
+  sim_assisted_nav_plugin_config: # Zed via ROS 
+    video_source: ros # ros, zed or decklink
+    format: RGB # RGB or RGBA
+    color_conversion: true 
+    left_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
+    right_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
+  
+  # sim_assisted_nav_plugin_config: # Mock OR microscope (compressed ROS topics)
+  #   video_source: ros # ros, zed or decklink
+  #   format: RGB
+  #   color_conversion: true
+  #   left_rostopic: /decklink_left/camera/image_raw/compressed
+  #   right_rostopic: /decklink_right/camera/image_raw/compressed
 
-  # sim_assisted_nav_plugin_config: # Mock OR microscope
-  #   left_rostopic: /decklink_left/camera/image_raw
-  #   right_rostopic: /decklink_right/camera/image_raw
+  # sim_assisted_nav_plugin_config: # Mock OR microscope (raw ROS topics)
+  #   video_source: ros # ros, zed or decklink
   #   format: RGB
   #   color_conversion: false
-  #   video_source: ros # ros or zed
+  #   left_rostopic: /decklink_left/camera/image_raw
+  #   right_rostopic: /decklink_right/camera/image_raw
+  
+  # sim_assisted_nav_plugin_config: # AMBF stereo camera - this requires `stereo_cameras.yaml`
+  #   video_source: ros # ros, zed or decklink
+  #   format: RGB # RGB or RGBA
+  #   color_conversion: false
+  #   left_rostopic: /ambf/env/cameras/stereoL/ImageData
+  #   right_rostopic: /ambf/env/cameras/stereoR/ImageData
+  
+
+  ### DECKLINK
+
+  # sim_assisted_nav_plugin_config: # Decklink SDI capture cards (direct GStreamer)
+  #   video_source: decklink # ros, zed or decklink
+  #   format: RGB
+  #   color_conversion: false
+  #   left_device: 0
+  #   right_device: 1
    

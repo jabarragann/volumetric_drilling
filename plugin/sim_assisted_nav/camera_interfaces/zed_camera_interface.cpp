@@ -105,3 +105,13 @@ bool ZedCameraInterface::has_received_stereo_images() const
 {
     return m_has_images && !left_img.empty() && !right_img.empty();
 }
+
+const cv::Mat &ZedCameraInterface::left_image() const
+{
+    return left_img;
+}
+
+const cv::Mat &ZedCameraInterface::right_image() const
+{
+    return right_img;
+}

@@ -44,12 +44,13 @@
 #define GL_SILENCE_DEPRECATION
 #include <afFramework.h>
 #include "ros_interface.h"
-#include "zed_camera_interface.h"
+#include "camera_interfaces/stereo_camera_interface.h"
+#include "camera_interfaces/stereo_camera_config.h"
+
+#include <memory>
 
 using namespace std;
 using namespace ambf;
-
-class StereoRosCameraWrapper; // Forward declaration
 
 class afCameraHMD : public afObjectPlugin
 {
@@ -67,13 +68,11 @@ public:
 
     void create_stereo_cam_info_from_yaml(string cam_name, const afBaseObjectAttribsPtr a_objectAttribs);
 
-    StereoRosCameraWrapper *stereo_cam_info;
+    std::unique_ptr<StereoCameraConfig> stereo_cam_info;
     HmdRosInterface ros_interface;
-    RosStereoCamInterface ros_stereo_cam_interface;
-    ZedCameraInterface zed_interface;
+    std::unique_ptr<StereoCameraInterface> m_camera_interface;
 
-    void update_textures_for_headset(const std::string &source);
-    cv_bridge::CvImagePtr concat_img_ptr = nullptr;
+    void update_textures_for_headset();
     int clipsize = 0.3;
 
     cTexture2dPtr m_hmdImageTexture;
@@ -91,48 +90,6 @@ protected:
     int m_height;
     int m_alias_scaling;
     cShaderProgramPtr m_shaderPgm;
-};
-
-struct StereoRosCameraWrapper
-{
-    string rostopic_left;
-    string rostopic_right;
-    string camera_name;
-
-    // Either RGB or RGBA
-    string pixel_format;
-    int pixel_format_gl;
-    bool convert_from_RGB2BGR;
-
-    // Where the stereo images come from. Either "ros" or "zed".
-    string video_source;
-
-    StereoRosCameraWrapper(string rostopic_left, string rostopic_right, string a_camera_name, string a_pixel_format,
-                           bool a_convert_from_RGB2BGR, string a_video_source) : rostopic_left(rostopic_left), rostopic_right(rostopic_right),
-                                                          camera_name(a_camera_name), pixel_format(a_pixel_format),
-                                                          convert_from_RGB2BGR(a_convert_from_RGB2BGR),
-                                                          video_source(a_video_source)
-    {
-        if (pixel_format == "RGB")
-        {
-            pixel_format_gl = GL_RGB;
-        }
-        else if (pixel_format == "RGBA")
-        {
-            pixel_format_gl = GL_RGBA;
-        }
-        else
-        {
-            cerr << "ERROR! Pixel format " << pixel_format << " not supported. Check plugin config." << endl;
-            throw runtime_error("Pixel format not supported");
-        }
-
-        if (video_source != "ros" && video_source != "zed")
-        {
-            cerr << "ERROR! Video source " << video_source << " not supported. Check plugin config." << endl;
-            throw runtime_error("Video source not supported");
-        }
-    }
 };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraHMD)

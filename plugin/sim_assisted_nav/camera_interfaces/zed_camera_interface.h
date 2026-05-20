@@ -13,31 +13,35 @@
 
 #pragma once
 
-#include <sl/Camera.hpp>
-#include <opencv2/core.hpp>
+#include "stereo_camera_interface.h"
 
-class ZedCameraInterface
+#include <sl/Camera.hpp>
+
+// Stereo video source backed by the ZED SDK. Pull-based: grab() captures a
+// fresh pair from the camera.
+class ZedCameraInterface : public StereoCameraInterface
 {
 public:
     ZedCameraInterface();
-    ~ZedCameraInterface();
+    ~ZedCameraInterface() override;
 
-    bool init();
+    bool init() override;
+    bool grab() override;
+    bool has_received_stereo_images() const override;
+    const cv::Mat &left_image() const override;
+    const cv::Mat &right_image() const override;
+
     void close();
-
-    // Grab a new pair of frames from the camera. Returns true on success.
-    bool grab();
-
-    bool has_received_stereo_images() const;
-
-    // BGR images written by grab().
-    cv::Mat left_img;
-    cv::Mat right_img;
 
 private:
     sl::Camera m_zed;
     sl::Mat m_zed_left;
     sl::Mat m_zed_right;
+
+    // BGR images written by grab().
+    cv::Mat left_img;
+    cv::Mat right_img;
+
     bool m_opened = false;
     bool m_has_images = false;
 };
