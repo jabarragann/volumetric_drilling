@@ -14,8 +14,12 @@
 #include "camera_interface_factory.h"
 
 #include "ros_stereo_camera_interface.h"
-#include "zed_camera_interface.h"
 #include "decklink_camera_interface.h"
+#ifdef WITH_ZED
+#include "zed_camera_interface.h"
+#endif
+
+#include <iostream>
 
 std::unique_ptr<StereoCameraInterface> create_stereo_camera_interface(const StereoCameraConfig &config)
 {
@@ -25,7 +29,13 @@ std::unique_ptr<StereoCameraInterface> create_stereo_camera_interface(const Ster
     }
     if (config.video_source == "zed")
     {
+#ifdef WITH_ZED
         return std::make_unique<ZedCameraInterface>();
+#else
+        std::cerr << "ERROR! video_source 'zed' requires the sim_assisted_nav plugin "
+                     "to be built with -DWITH_ZED=ON (ZED SDK + CUDA)." << std::endl;
+        return nullptr;
+#endif
     }
     if (config.video_source == "decklink")
     {

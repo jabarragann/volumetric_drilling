@@ -7,9 +7,10 @@ find_package(AMBF)
 find_package(Boost COMPONENTS program_options filesystem)
 find_package(OpenCV REQUIRED)
 
-## Needed for Zed Cam.
-find_package(ZED 4 QUIET)
-find_package(CUDA QUIET)
+## The ZED camera source for sim_assisted_nav is optional: it pulls in the ZED
+## SDK + CUDA, which are not available on every machine. Enable it explicitly
+## with -DWITH_ZED=ON (e.g. colcon build --cmake-args -DWITH_ZED=ON).
+option(WITH_ZED "Build the ZED camera source in sim_assisted_nav (needs ZED SDK + CUDA)" OFF)
 
 # Look for the catkin dependencies (ROS 1)
 set (ROS1_depends roscpp ambf_server volumetric_drilling_msgs geometry_msgs std_msgs sensor_msgs cv_bridge)
@@ -74,7 +75,7 @@ target_link_libraries(camera_hmd ${AMBF_LIBRARIES})
 set_property(TARGET camera_hmd PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 ## Ambf camera plugin - sim assisted nav
-add_library(sim_assisted_nav SHARED
+set(sim_assisted_nav_sources
     sim_assisted_nav/sim_assisted_nav.cpp
     sim_assisted_nav/sim_assisted_nav.h
     sim_assisted_nav/ros_interface.cpp
@@ -84,21 +85,30 @@ add_library(sim_assisted_nav SHARED
     sim_assisted_nav/camera_interfaces/stereo_camera_config.h
     sim_assisted_nav/camera_interfaces/ros_stereo_camera_interface.cpp
     sim_assisted_nav/camera_interfaces/ros_stereo_camera_interface.h
-    sim_assisted_nav/camera_interfaces/zed_camera_interface.cpp
-    sim_assisted_nav/camera_interfaces/zed_camera_interface.h
     sim_assisted_nav/camera_interfaces/decklink_camera_interface.cpp
     sim_assisted_nav/camera_interfaces/decklink_camera_interface.h
     sim_assisted_nav/camera_interfaces/camera_interface_factory.cpp
     sim_assisted_nav/camera_interfaces/camera_interface_factory.h)
+
+## The ZED camera source is compiled in only when WITH_ZED is enabled.
+if (WITH_ZED)
+    list(APPEND sim_assisted_nav_sources
+        sim_assisted_nav/camera_interfaces/zed_camera_interface.cpp
+        sim_assisted_nav/camera_interfaces/zed_camera_interface.h)
+endif()
+
+add_library(sim_assisted_nav SHARED ${sim_assisted_nav_sources})
 target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
 set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
-if (ZED_FOUND AND CUDA_FOUND)
+if (WITH_ZED)
+    find_package(ZED 4 REQUIRED)
+    find_package(CUDA REQUIRED)
+    ## WITH_ZED guards the ZED-specific code paths (e.g. in the camera factory).
+    target_compile_definitions(sim_assisted_nav PRIVATE WITH_ZED)
     target_include_directories(sim_assisted_nav PRIVATE ${ZED_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
     target_link_directories(sim_assisted_nav PRIVATE ${ZED_LIBRARY_DIR} ${CUDA_LIBRARY_DIRS})
     target_link_libraries(sim_assisted_nav ${ZED_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY})
-else()
-    message(WARNING "ZED SDK or CUDA not found - sim_assisted_nav will fail to link until they are installed.")
 endif()
 
 # Ambf camera plugin - Multiview plugin
