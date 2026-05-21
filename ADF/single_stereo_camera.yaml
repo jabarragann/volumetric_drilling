@@ -131,7 +131,7 @@ stereoLR:
   # sim_assisted_nav_plugin_config: # Decklink SDI capture cards (direct GStreamer)
   #   video_source: decklink # ros, zed or decklink
   #   format: RGB
-  #   color_conversion: false
+  #   color_conversion: true 
   #   left_device: 0
   #   right_device: 1
    
