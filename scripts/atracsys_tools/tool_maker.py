@@ -15,6 +15,7 @@
 
 import sys
 import argparse
+from pathlib import Path
 import rospy
 import numpy as np
 import json
@@ -28,7 +29,7 @@ if sys.version_info.major < 3:
 
 
 # create subscription with callback to handle marker messages
-def get_pose_data(ros_topic, expected_marker_count):
+def get_pose_data(ros_topic, expected_marker_count, z_max_val):
     records = []
     collecting = False
     reference = []
@@ -54,7 +55,7 @@ def get_pose_data(ros_topic, expected_marker_count):
         ## Distance filter.
         record_raw = []
         for marker in msg.poses:
-            if marker.position.z < 1.200:
+            if marker.position.z < z_max_val:
                 record_raw.append((marker.position.x, marker.position.y, marker.position.z))
                 
         record = np.array(record_raw)
@@ -200,7 +201,28 @@ if __name__ == "__main__":
         help="number of markers on the tool. Used to filter messages with incorrect number of markers",
     )
     parser.add_argument(
-        "-o", "--output", type=str, required=True, help="output file name"
+        "-o",
+        "--output-dir",
+        type=str,
+        required=True,
+        help="directory to write the generated tool geometry file into",
+    )
+    parser.add_argument(
+        "-m",
+        "--marker-name",
+        type=str,
+        required=True,
+        help="marker name used to build the output filename",
+    )
+    parser.add_argument(
+        "-i", "--id", type=int, required=True, help="marker geometry id"
+    )
+    parser.add_argument(
+        "-z",
+        "--z-max-val",
+        type=float,
+        required=True,
+        help="filter values whose z component is higher than this value",
     )
 
     # optional arguments
@@ -209,9 +231,6 @@ if __name__ == "__main__":
         "--planar",
         action="store_true",
         help="indicates all markers lie in a plane",
-    )
-    parser.add_argument(
-        "-i", "--id", type=int, required=False, help="specify optional id"
     )
     parser.add_argument(
         "-u",
@@ -229,10 +248,16 @@ if __name__ == "__main__":
     minimum_records_required = 10
 
     # create the callback that will collect data
-    records = get_pose_data(args.topic, args.number_of_markers)
+    records = get_pose_data(args.topic, args.number_of_markers, args.z_max_val)
     if len(records) < minimum_records_required:
         sys.exit("Not enough records ({} minimum)".format(minimum_records_required))
 
     points = process_marker_records(records, args.planar)
     points = convert_units(points, args.units)
-    write_data(points, args.id, args.output)
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file_name = output_dir / "marker_geometry_id{:02d}_{}.json".format(
+        args.id, args.marker_name
+    )
+    write_data(points, args.id, str(output_file_name))
