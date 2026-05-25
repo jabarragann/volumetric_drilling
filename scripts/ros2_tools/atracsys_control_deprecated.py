@@ -10,10 +10,22 @@ import rclpy
 
 ## TODO: Avoid hard coding the CSV file path
 
-# CSV_FILE = (
-#     here() / "resources/ros2_test_assets/phantom01/atracsys_touching_surface.csv"
-# )  
-CSV_FILE ="/home/juan95/research/discovery_grant/saint_2026/experiments/drilling-pilot-2026-03-13/recordings/drilling_02.csv" 
+""" 
+Run env with saved assets with cmd below.
+Note: As this script replaces the functionality of the tf plugin, do not include
+ --tf_list argument in the launch command.
+
+```
+ambf_simulator --launch_file launch.yaml \
+               -l 8,13 --mute true --nt 1
+```
+
+"""
+
+CSV_FILE = (
+    here() / "resources/ros2_test_assets/phantom01/motions/atracsys_touching_surface.csv"
+)  
+# CSV_FILE ="/home/juan95/research/discovery_grant/saint_2026/experiments/drilling-pilot-2026-03-13/recordings/drilling_02.csv" 
 APPLY_PERIOD = 0.01  # 100 ms
 
 def pose_to_matrix(pose: Pose):
