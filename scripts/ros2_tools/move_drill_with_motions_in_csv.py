@@ -8,6 +8,7 @@ from geometry_msgs.msg import Pose
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from pyprojroot.here import here # type: ignore
+from tqdm import tqdm
 import argparse
 import rclpy
 
@@ -126,45 +127,42 @@ def main(args):
     # Read CSV and apply poses
     # -------------------------
     with open(args.csv_file, "r") as f:
-        reader = csv.reader(f)
+        rows = [
+            row for row in csv.reader(f)
+            if row and row[0].strip().lower() != "x"
+        ]
 
-        for row in reader:
-            # Skip empty lines
-            if not row:
-                continue
+    print(f"Loaded {len(rows)} pose entries from {args.csv_file}")
 
-            # Skip header if present
-            if row[0].strip().lower() == "x":
-                continue
+    for row in tqdm(rows, desc="Applying poses", unit="pose"):
+        x, y, z, rx, ry, rz, rw = map(float, row)
 
-            x, y, z, rx, ry, rz, rw = map(float, row)
+        body_pose = Pose()
 
-            body_pose = Pose()
+        # Position
+        body_pose.position.x = x
+        body_pose.position.y = y
+        body_pose.position.z = z
 
-            # Position
-            body_pose.position.x = x
-            body_pose.position.y = y
-            body_pose.position.z = z
+        # Orientation (quaternion)
+        body_pose.orientation.x = rx
+        body_pose.orientation.y = ry
+        body_pose.orientation.z = rz
+        body_pose.orientation.w = rw
 
-            # Orientation (quaternion)
-            body_pose.orientation.x = rx
-            body_pose.orientation.y = ry
-            body_pose.orientation.z = rz
-            body_pose.orientation.w = rw
+        world_T_marker = pose_to_matrix(body_pose)
+        world_T_tip = world_T_marker @ marker_T_tip
+        world_T_body = world_T_tip @ tip_T_body
 
-            world_T_marker = pose_to_matrix(body_pose)
-            world_T_tip = world_T_marker @ marker_T_tip
-            world_T_body = world_T_tip @ tip_T_body
+        tip_final_pose = matrix_to_pose(world_T_tip)
+        body_final_pose = matrix_to_pose(world_T_body)
 
-            tip_final_pose = matrix_to_pose(world_T_tip)
-            body_final_pose = matrix_to_pose(world_T_body)
+        # Apply to both handles
+        drill_body_handle.set_pose(body_final_pose)
+        drill_tip_handle.set_pose(tip_final_pose)
+        drill_marker_handle.set_pose(body_pose)
 
-            # Apply to both handles
-            drill_body_handle.set_pose(body_final_pose)
-            drill_tip_handle.set_pose(tip_final_pose)
-            drill_marker_handle.set_pose(body_pose)
-
-            time.sleep(APPLY_PERIOD)
+        time.sleep(APPLY_PERIOD)
 
     client.clean_up()
     rclpy.shutdown()
