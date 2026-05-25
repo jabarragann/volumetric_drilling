@@ -34,6 +34,8 @@ pip install transforms3d
 pip install h5py
 pip install typed-argument-parser
 pip install pyprojroot
+pip install pynrrd
+pip install tqdm
 ```
 
 Then to activate add an activation script
