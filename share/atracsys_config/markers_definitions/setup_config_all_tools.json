@@ -1,0 +1,22 @@
+{
+    "tools":
+    [
+        {
+            "name": "ndi_black", 
+            "json-file": "marker_geometry_id04_ndi_black.json"
+        },
+        {
+            "name": "drill_three_spheres",
+            "json-file":"marker_geometry_id05_drill_three_spheres.json"
+        },
+        {
+            "name": "drill_four_spheres",
+            "json-file":"marker_geometry_id06_drill_four_spheres.json"
+        },
+        {
+            "name": "tower",
+            "json-file":"marker_geometry_id07_tower.json"
+        }
+    ]
+
+}
