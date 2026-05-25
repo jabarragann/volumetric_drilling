@@ -654,12 +654,20 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             char date[20];
             std::time_t t = std::time(nullptr);
             std::strftime(date, sizeof date, "%Y-%m-%d_%H%M%S", std::localtime(&t));
-            
+           
+            // If any folder doesn't exist the code will not save the images.
             mode_t mode = 0755; // Permissions: rwxr-xr-x (owner: read, write, execute; group, others: read, execute)
-            string dir_name = ("temp/intermediate_volumes/" + volumeName + "/" + date);
+            string dir_name = ("resources/intermediate_volumes/" + volumeName + "/" + date);
+            mkdir("resources/", mode);
             mkdir("resources/intermediate_volumes/", mode);
             mkdir(("resources/intermediate_volumes/" + volumeName).c_str(), mode);
             mkdir(dir_name.c_str(), mode);
+
+            struct stat st;
+            if (stat(dir_name.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
+                cerr << "ERROR! Output directory was not created: " << dir_name << endl;
+                return;
+            }
 
             // Loop through each Z-slice and save it as a 2D image
             for (int z = 0; z < sizeZ; z++){
