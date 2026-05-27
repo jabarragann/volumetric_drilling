@@ -60,6 +60,27 @@ BODY drill_body_2mm:
     linear: 0.04
   visible: true
   collision groups: []
+  ### If this collision shape is not specified, ambf will fail to load the body.
+  ### Launch with 
+  ### ambf_simulator -a ./ADF/drills/drills_in_si_units/2mm_drill_in_real_units.yaml 
+  ### Comment the block below to create the segmentation fault.
+  collision shape: CAPSULE
+  collision geometry:
+    axis: X
+    height: 0.49371
+    radius: 0.03447
+  collision offset:
+    position:
+      x: 0.24859
+      y: -1.0e-05
+      z: -0.01538
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  ### 
+  ###
+  ###
   use material: false
   color components:
     ambient:
@@ -112,7 +133,7 @@ BODY drill_empty_reference:
 
 BODY drill_tip:
   name: drill_tip
-  mesh: drill_tip.OBJ
+  mesh: ""
   collision mesh type: CONVEX_HULL
   mass: 0.0
   collision margin: 0.001
