@@ -61,7 +61,7 @@ def matrix_to_pose(T: np.ndarray) -> Pose:
     pose.orientation.w = float(q[3])
     return pose
 
-def load_tf_config(tf_config_path):
+def load_tf_config(tf_config_path, drill_size_override=None):
     path = Path(tf_config_path)
     if not path.is_file():
         raise FileNotFoundError(f"tf_config not found: {path}")
@@ -85,21 +85,27 @@ def load_tf_config(tf_config_path):
     drill_block = cfg.get("TF drill_tip-drill_body")
     if drill_block is None:
         raise KeyError("Missing 'TF drill_tip-drill_body' in tf_config")
-    drill_body_name = drill_block["child"]
 
-    match = re.match(r"drill_body_(\d+)mm$", drill_body_name)
-    if not match:
-        raise ValueError(
-            f"Unexpected drill body name '{drill_body_name}'; "
-            "expected pattern 'drill_body_<N>mm'"
-        )
-    drill_size = int(match.group(1))
+    if drill_size_override is not None:
+        drill_size = drill_size_override
+        drill_body_name = f"drill_body_{drill_size}mm"
+    else:
+        drill_body_name = drill_block["child"]
+        match = re.match(r"drill_body_(\d+)mm$", drill_body_name)
+        if not match:
+            raise ValueError(
+                f"Unexpected drill body name '{drill_body_name}'; "
+                "expected pattern 'drill_body_<N>mm'"
+            )
+        drill_size = int(match.group(1))
 
     return marker_T_tip, drill_body_name, drill_size
 
 
 def main(args):
-    marker_T_tip, drill_body_name, drill_size = load_tf_config(args.tf_config)
+    marker_T_tip, drill_body_name, drill_size = load_tf_config(
+        args.tf_config, drill_size_override=args.drill_size
+    )
     print(f"Loaded tf_config: drill={drill_body_name} (size={drill_size}mm)")
 
     client = Client("client")
@@ -182,6 +188,13 @@ if __name__ == "__main__":
         type=str,
         default=DEFAULT_CSV_FILE,
         help="Path to CSV with marker poses (x,y,z,rx,ry,rz,rw per row).",
+    )
+    parser.add_argument(
+        "--drill-size",
+        type=int,
+        choices=[1, 2, 4, 6],
+        default=None,
+        help="Drill size in mm. Overrides the drill body declared in tf_config.yaml.",
     )
     args, unknown = parser.parse_known_args()
 
