@@ -6,8 +6,13 @@
             "json-file": "marker_geometry_id00_bowl.json"
         },
         {
+            "name": "pointer_tool",
+            "json-file": "marker_geometry_id08_pointer_tool.json",
+            "reference": "bowl_marker"
+        },
+        {
             "name": "drill_marker",
-            "json-file": "marker_geometry_id07_drill_three_spheres.json",
+            "json-file": "marker_geometry_id05_drill_three_spheres.json",
             "reference": "bowl_marker"
         }
 
