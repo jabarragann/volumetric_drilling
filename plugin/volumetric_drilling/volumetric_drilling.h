@@ -83,6 +83,8 @@ protected:
 
     void publishDrillTipLocationInsideVolume();
 
+    void saveIntermediateVolumes();
+
 private:
     cVoxelObject *m_voxelObj;
 

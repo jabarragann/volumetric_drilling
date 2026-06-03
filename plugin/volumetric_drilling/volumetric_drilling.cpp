@@ -95,7 +95,8 @@ bool Transform2VolumeCoordinates::get_index_location_of_drill_tip(cVector3d &dri
 
 afVolmetricDrillingPlugin::afVolmetricDrillingPlugin()
 {
-    m_simAssistedNavRosInterface = SimulationAssistedNavRosInterface();
+    // m_simAssistedNavRosInterface is default-constructed as a member; reassigning here
+    // would dangle the subscriber's `this` after the temporary is destroyed.
 }
 
 int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_afWorld)
@@ -541,6 +542,62 @@ void afVolmetricDrillingPlugin::publishDrillTipLocationInsideVolume()
     m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
 }
 
+void afVolmetricDrillingPlugin::saveIntermediateVolumes()
+{
+    chai3d::cImagePtr multiImage = m_voxelObj->m_texture->m_image;
+
+    // Get the dimensions of the volumetric data
+    int sizeX = multiImage->getWidth();
+    int sizeY = multiImage->getHeight();
+    int sizeZ = multiImage->getImageCount(); // Slices along Z;
+    string volumeName = m_volumeObject->getName();
+    char date[20];
+    std::time_t t = std::time(nullptr);
+    std::strftime(date, sizeof date, "%Y-%m-%d_%H%M%S", std::localtime(&t));
+
+    // If any folder doesn't exist the code will not save the images.
+    mode_t mode = 0755; // Permissions: rwxr-xr-x (owner: read, write, execute; group, others: read, execute)
+    string dir_name = ("resources/intermediate_volumes/" + volumeName + "/" + date);
+    mkdir("resources/", mode);
+    mkdir("resources/intermediate_volumes/", mode);
+    mkdir(("resources/intermediate_volumes/" + volumeName).c_str(), mode);
+    mkdir(dir_name.c_str(), mode);
+
+    struct stat st;
+    if (stat(dir_name.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
+        cerr << "ERROR! Output directory was not created: " << dir_name << endl;
+        return;
+    }
+
+    // Loop through each Z-slice and save it as a 2D image
+    for (int z = 0; z < sizeZ; z++){
+        // Create a new cImage to hold the 2D slice
+        chai3d::cImage* imageSlice = new chai3d::cImage();
+        imageSlice->allocate(sizeX, sizeY, GL_RGBA);
+
+        // Copy the voxel data for the current slice into the new 2D image
+        for (int y = 0; y < sizeY; y++){
+            for (int x = 0; x < sizeX; x++){
+                // Get the color of the voxel at (x, y, z)
+                chai3d::cColorb color;
+                multiImage->getVoxelColor(x, y, z, color);
+                // Assign the color to the corresponding pixel in the slice image
+                imageSlice->setPixelColor(x, y, color);
+            }
+        }
+
+        // Construct a filename for the slice (e.g., "slice_000.png")
+        std::string filename = dir_name + "/plane00" + std::to_string(z) + ".png";
+
+        // Save the 2D image to a file
+        bool success = chai3d::cSaveFilePNG(imageSlice, filename);
+
+        // Clean up the temporary image
+        delete imageSlice;
+    }
+    cout << "INFO! SAVED INTERMIDIATE VOLUME SLICES in " << dir_name << endl;
+}
+
 void afVolmetricDrillingPlugin::initializeLabels()
 {
     // create a font
@@ -644,58 +701,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         }
         // option - save the intermidiate volumes 
         else if (a_key == GLFW_KEY_L) {
-            chai3d::cImagePtr multiImage = m_voxelObj->m_texture->m_image;
-
-            // Get the dimensions of the volumetric data
-            int sizeX = multiImage->getWidth();
-            int sizeY = multiImage->getHeight();
-            int sizeZ = multiImage->getImageCount(); // Slices along Z;
-            string volumeName = m_volumeObject->getName();
-            char date[20];
-            std::time_t t = std::time(nullptr);
-            std::strftime(date, sizeof date, "%Y-%m-%d_%H%M%S", std::localtime(&t));
-           
-            // If any folder doesn't exist the code will not save the images.
-            mode_t mode = 0755; // Permissions: rwxr-xr-x (owner: read, write, execute; group, others: read, execute)
-            string dir_name = ("resources/intermediate_volumes/" + volumeName + "/" + date);
-            mkdir("resources/", mode);
-            mkdir("resources/intermediate_volumes/", mode);
-            mkdir(("resources/intermediate_volumes/" + volumeName).c_str(), mode);
-            mkdir(dir_name.c_str(), mode);
-
-            struct stat st;
-            if (stat(dir_name.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
-                cerr << "ERROR! Output directory was not created: " << dir_name << endl;
-                return;
-            }
-
-            // Loop through each Z-slice and save it as a 2D image
-            for (int z = 0; z < sizeZ; z++){
-                // Create a new cImage to hold the 2D slice
-                chai3d::cImage* imageSlice = new chai3d::cImage();
-                imageSlice->allocate(sizeX, sizeY, GL_RGBA);
-
-                // Copy the voxel data for the current slice into the new 2D image
-                for (int y = 0; y < sizeY; y++){
-                    for (int x = 0; x < sizeX; x++){
-                        // Get the color of the voxel at (x, y, z)
-                        chai3d::cColorb color;
-                        multiImage->getVoxelColor(x, y, z, color);
-                        // Assign the color to the corresponding pixel in the slice image
-                        imageSlice->setPixelColor(x, y, color);
-                    }
-                }
-
-                // Construct a filename for the slice (e.g., "slice_000.png")
-                std::string filename = dir_name + "/plane00" + std::to_string(z) + ".png";
-
-                // Save the 2D image to a file
-                bool success = chai3d::cSaveFilePNG(imageSlice, filename);
-
-                // Clean up the temporary image
-                delete imageSlice;
-            }
-            cout << "INFO! SAVED INTERMIDIATE VOLUME SLICES in " << dir_name << endl;
+            saveIntermediateVolumes();
         }
         // toggles size of drill burr/tip tool cursor
         else if (a_key == GLFW_KEY_N)
