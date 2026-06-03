@@ -33,6 +33,8 @@ void HmdRosInterface::init()
     ros_node_handle = afROSNode::getNodeAndRegister("sim_assisted_nav");
 
     ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Float32), HmdRosInterface>(window_disparity_sub, ros_node_handle, "/sim_assisted_nav/small_window_disparity", 2, &HmdRosInterface::window_disparity_callback, this);
+
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Bool), HmdRosInterface>(show_small_window_sub, ros_node_handle, "/sim_assisted_nav/show_small_window", 2, &HmdRosInterface::show_small_window_callback, this);
 }
 
 #if AMBF_ROS1
@@ -40,9 +42,19 @@ void HmdRosInterface::window_disparity_callback(const std_msgs::Float32 &msg)
 {
     window_disparity = msg.data;
 }
+
+void HmdRosInterface::show_small_window_callback(const std_msgs::Bool &msg)
+{
+    show_small_window = msg.data;
+}
 #elif AMBF_ROS2
 void HmdRosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     window_disparity = msg->data;
+}
+
+void HmdRosInterface::show_small_window_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    show_small_window = msg->data;
 }
 #endif

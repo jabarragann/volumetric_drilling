@@ -226,6 +226,9 @@ void afCameraHMD::updateHMDParams()
     // Additional parameters
     glUniform1f(glGetUniformLocation(id, "small_window_disparity"), ros_interface.window_disparity);
 
+    // Toggle the small picture-over-picture windows on/off (bool uniform set via int).
+    glUniform1i(glGetUniformLocation(id, "show_small_window"), ros_interface.show_small_window ? 1 : 0);
+
     glUniform1i(glGetUniformLocation(id, "window_width"), m_width);
     glUniform1i(glGetUniformLocation(id, "window_height"), m_height);
 }

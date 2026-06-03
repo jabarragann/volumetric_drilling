@@ -32,6 +32,9 @@ uniform sampler2D rosImageTexture;
 uniform sampler2D frameBufferTexture;
 // distance of small window from the center. Value between [0.0, 0.2]
 uniform float small_window_disparity = 0.1;
+// Toggles the small picture-over-picture windows. When false, only the
+// rosImageTexture is displayed.
+uniform bool show_small_window = true;
 uniform int window_width = 1920;
 uniform int window_height = 1043;
 
@@ -90,7 +93,8 @@ void main()
     rectMin.x += offset;
     rectMax.x += offset;
 
-    if (output_loc.x >= rectMin.x && output_loc.x <= rectMax.x &&
+    if (show_small_window &&
+        output_loc.x >= rectMin.x && output_loc.x <= rectMax.x &&
         output_loc.y >= rectMin.y && output_loc.y <= rectMax.y)
     {
         // gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green color
