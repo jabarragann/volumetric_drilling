@@ -77,6 +77,10 @@ protected:
     // keeping the camera position and look-at target fixed.
     void rotateCameraUpVector(double a_angleRad);
 
+    // Print the main camera's current pose (location, look at, up) in the
+    // world.yaml format so it can be copied directly into the ADF file.
+    void printCameraPose();
+
     void makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number = -1);
 
     void updateButtons();

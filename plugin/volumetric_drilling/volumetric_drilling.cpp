@@ -485,6 +485,23 @@ void afVolmetricDrillingPlugin::rotateCameraUpVector(double a_angleRad)
                           newUp);
 }
 
+void afVolmetricDrillingPlugin::printCameraPose()
+{
+    if (!m_mainCamera)
+    {
+        return;
+    }
+
+    cVector3d location = m_mainCamera->getLocalPos();
+    cVector3d lookAt = m_mainCamera->getTargetPosLocal();
+    cVector3d up = m_mainCamera->getUpVector();
+
+    cout << endl;
+    cout << "  location: {x: " << location.x() << ", y: " << location.y() << ", z: " << location.z() << " }" << endl;
+    cout << "  look at: { x: " << lookAt.x() << ", y: " << lookAt.y() << ", z: " << lookAt.z() << " }" << endl;
+    cout << "  up: { x: " << up.x() << ", y: " << up.y() << ", z: " << up.z() << " }" << endl;
+}
+
 void afVolmetricDrillingPlugin::makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number)
 {
     int count;
@@ -890,9 +907,6 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             cerr << "INFO! SMALL WINDOW " << (m_simAssistedNavRosInterface.show_small_window ? "ON" : "OFF") << endl;
         }
 
-        //********************************/
-        // CAMERA up-vector roll
-        //********************************/
 
         // Rotate camera up vector counter-clockwise about the look axis
         else if (a_key == GLFW_KEY_SEMICOLON) // ;
@@ -904,7 +918,14 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         {
             rotateCameraUpVector(cDegToRad(-1.0));
         }
+        // Print current camera pose in world.yaml format
+        else if (a_key == GLFW_KEY_P) // p
+        {
+            printCameraPose();
+        }
 
+        //********************************/
+        // Finish sim-assisted nav keyboard shortcuts 
         //********************************/
 
 
