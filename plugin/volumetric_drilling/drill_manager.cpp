@@ -121,7 +121,8 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager
             Drill *drill = new Drill();
             drill->m_name = drillName;
             drill->m_rigidBody = drillRB;
-            drill->m_burr_diameter = drillTypes[i] * m_units_mmToSim;
+            // drill->m_burr_diameter = drillTypes[i] * m_units_mmToSim;
+            drill->m_burr_diameter = 1.2 * m_units_mmToSim;
             drill->setVoxelRemvalThreshold(voxelRemovalThresholds[i]);
             m_drills.push_back(drill);
         }
