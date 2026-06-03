@@ -462,6 +462,29 @@ void afVolmetricDrillingPlugin::sliceVolume(int axisIdx, double delta)
     cerr << "> " << delta_dir_str << " Volume size along " << axis_str << " axis.                            \r";
 }
 
+void afVolmetricDrillingPlugin::rotateCameraUpVector(double a_angleRad)
+{
+    if (!m_mainCamera)
+    {
+        return;
+    }
+
+    // Roll about the camera look axis keeps the position and look-at target
+    // unchanged while rotating the up vector by a_angleRad.
+    cVector3d lookAxis = m_mainCamera->getLookVector();
+    cVector3d up = m_mainCamera->getUpVector();
+
+    cMatrix3d rot;
+    rot.setAxisAngleRotationRad(lookAxis, a_angleRad);
+
+    cVector3d newUp;
+    rot.mulr(up, newUp);
+
+    m_mainCamera->setView(m_mainCamera->getLocalPos(),
+                          m_mainCamera->getTargetPosLocal(),
+                          newUp);
+}
+
 void afVolmetricDrillingPlugin::makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number)
 {
     int count;
@@ -865,6 +888,21 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             msg.data = m_simAssistedNavRosInterface.show_small_window;
             m_simAssistedNavRosInterface.show_small_window_pub->publish(msg);
             cerr << "INFO! SMALL WINDOW " << (m_simAssistedNavRosInterface.show_small_window ? "ON" : "OFF") << endl;
+        }
+
+        //********************************/
+        // CAMERA up-vector roll
+        //********************************/
+
+        // Rotate camera up vector counter-clockwise about the look axis
+        else if (a_key == GLFW_KEY_SEMICOLON) // ;
+        {
+            rotateCameraUpVector(cDegToRad(1.0));
+        }
+        // Rotate camera up vector clockwise about the look axis
+        else if (a_key == GLFW_KEY_APOSTROPHE) // '
+        {
+            rotateCameraUpVector(cDegToRad(-1.0));
         }
 
         //********************************/

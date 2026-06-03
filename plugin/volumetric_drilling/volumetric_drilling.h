@@ -73,6 +73,10 @@ public:
 protected:
     void sliceVolume(int axisIdx, double delta);
 
+    // Rotate the main camera's up vector about its look axis by a_angleRad,
+    // keeping the camera position and look-at target fixed.
+    void rotateCameraUpVector(double a_angleRad);
+
     void makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number = -1);
 
     void updateButtons();
