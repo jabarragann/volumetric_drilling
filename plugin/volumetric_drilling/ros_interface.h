@@ -57,6 +57,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <std_msgs/ColorRGBA.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Bool.h>
 #include <volumetric_drilling_msgs/Voxels.h>
 #include <volumetric_drilling_msgs/DrillSize.h>
 #include <volumetric_drilling_msgs/VolumeInfo.h>
@@ -68,6 +69,7 @@
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "std_msgs/msg/color_rgba.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "volumetric_drilling_msgs/msg/voxels.hpp"
 #include "volumetric_drilling_msgs/msg/drill_size.hpp"
 #include "volumetric_drilling_msgs/msg/volume_info.hpp"
@@ -134,10 +136,15 @@ public:
     ambf_ral::node_ptr_t m_rosNode;
 
     float window_disparity = 0.1;
+    // Tracks whether the small picture-over-picture windows are shown. Toggled
+    // via keyboard and published to the sim_assisted_nav shader.
+    bool show_small_window = true;
 #if AMBF_ROS1
     std::shared_ptr<ros::Publisher> small_window_disparity_pub;
+    std::shared_ptr<ros::Publisher> show_small_window_pub;
 #elif AMBF_ROS2
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr small_window_disparity_pub;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr show_small_window_pub;
 #endif
 
     // rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr manual_slices_sub;

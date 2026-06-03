@@ -233,4 +233,7 @@ SimulationAssistedNavRosInterface::SimulationAssistedNavRosInterface(std::string
     ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Float32)>
     (small_window_disparity_pub, m_rosNode, a_namespace + "/" + "small_window_disparity", 5, true);
 
+    ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Bool)>
+    (show_small_window_pub, m_rosNode, a_namespace + "/" + "show_small_window", 5, true);
+
 }

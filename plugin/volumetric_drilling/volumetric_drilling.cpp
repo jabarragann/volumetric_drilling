@@ -798,6 +798,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
     }
     else
     {
+        //********************************/
         // SIM-ASSISTED keyboard shortcuts
         //********************************/
 
@@ -812,6 +813,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.window_disparity;
             m_simAssistedNavRosInterface.small_window_disparity_pub -> publish(msg);
+            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
         }
         // Decrease disparity of small window
         else if (a_key == GLFW_KEY_RIGHT_BRACKET) // ]
@@ -824,8 +826,24 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.window_disparity;
             m_simAssistedNavRosInterface.small_window_disparity_pub->publish(msg);
+            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
         }
+        // Toggle the small window on/off
+        else if (a_key == GLFW_KEY_BACKSLASH) // backslash
+        {
+            m_simAssistedNavRosInterface.show_small_window = !m_simAssistedNavRosInterface.show_small_window;
+#if AMBF_ROS1
+            std_msgs::Bool msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Bool msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.show_small_window;
+            m_simAssistedNavRosInterface.show_small_window_pub->publish(msg);
+            cerr << "INFO! SMALL WINDOW " << (m_simAssistedNavRosInterface.show_small_window ? "ON" : "OFF") << endl;
+        }
+
         //********************************/
+
 
         // option - reduce size along X axis
         else if (a_key == GLFW_KEY_4)
