@@ -102,7 +102,18 @@ afVolmetricDrillingPlugin::afVolmetricDrillingPlugin()
 int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_afWorld)
 {
     p_opt::options_description cmd_opts("drilling_simulator Command Line Options");
-    cmd_opts.add_options()("info", "Show Info")("nt", p_opt::value<int>()->default_value(8), "Number Tool Cursors to Load. Default 8")("ds", p_opt::value<float>()->default_value(0.026), "Offset between shaft tool cursors. Default 0.026")("vm", p_opt::value<string>()->default_value("00ShinyWhite.jpg"), "Volume's Matcap Filename (Should be placed in the ./resources/matcap/ folder)")("dm", p_opt::value<string>()->default_value("dark_metal_brushed.jpg"), "Drill's Matcap Filename (Should be placed in ./resources/matcap/ folder)")("fp", p_opt::value<string>()->default_value("/dev/input/js0"), "Footpedal joystick input file description E.g. /dev/input/js0)")("mute", p_opt::value<bool>()->default_value(false), "Mute")("gcdr", p_opt::value<double>()->default_value(30.0), "Gaze Calibration Marker Motion Duration");
+    // clang-format off
+    cmd_opts.add_options()
+        ("info", "Show Info")
+        ("nt", p_opt::value<int>()->default_value(8), "Number Tool Cursors to Load. Default 8")
+        ("ds", p_opt::value<float>()->default_value(0.026), "Offset between shaft tool cursors. Default 0.026")
+        ("vm", p_opt::value<string>()->default_value("00ShinyWhite.jpg"), "Volume's Matcap Filename (Should be placed in the ./resources/matcap/ folder)")
+        ("dm", p_opt::value<string>()->default_value("dark_metal_brushed.jpg"), "Drill's Matcap Filename (Should be placed in ./resources/matcap/ folder)")
+        ("fp", p_opt::value<string>()->default_value("/dev/input/js0"), "Footpedal joystick input file description E.g. /dev/input/js0)")
+        ("mute", p_opt::value<bool>()->default_value(false), "Mute")
+        ("gcdr", p_opt::value<double>()->default_value(30.0), "Gaze Calibration Marker Motion Duration")
+        ("hmd_window_disp", p_opt::value<float>()->default_value(0.1), "Initial disparity of the HMD sim-assisted-nav small window. Default 0.1");
+    // clang-format on
 
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).allow_unregistered().run(), var_map);
@@ -119,6 +130,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
 
     string volume_matcap = var_map["vm"].as<string>();
     string footpedal_fd = var_map["fp"].as<string>();
+
+    m_simAssistedNavRosInterface.window_disparity = var_map["hmd_window_disp"].as<float>();
 
     m_zeroColor = cColorb(0x00, 0x00, 0x00, 0x00);
 
@@ -243,6 +256,18 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     // Drill related pointers
     m_drillTipPtr = m_worldPtr->getRigidBody("drill_tip");
     m_drillReferencePtr = m_worldPtr->getRigidBody("drill_empty_reference");
+
+    // Publish the initial small window disparity (set via --hmd_window_disp) so
+    // the sim_assisted_nav shader starts with the requested value. The publisher
+    // is latched, so late-joining subscribers still receive this value.
+#if AMBF_ROS1
+    std_msgs::Float32 disp_msg;
+#elif AMBF_ROS2
+    std_msgs::msg::Float32 disp_msg;
+#endif
+    disp_msg.data = m_simAssistedNavRosInterface.window_disparity;
+    m_simAssistedNavRosInterface.small_window_disparity_pub->publish(disp_msg);
+    cerr << "INFO! INITIAL WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
 
     return 1;
 }
