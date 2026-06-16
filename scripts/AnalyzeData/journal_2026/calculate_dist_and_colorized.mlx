@@ -1,0 +1,16 @@
+<!DOCTYPE FilterScript>
+<FilterScript>
+ <filter name="Distance from Reference Mesh">
+  <Param name="MeasureMesh" description="Measured Mesh/PointCloud" type="RichMesh" value="1" tooltip="The Mesh/Pointcloud that is measured, vertex by vertex, computing distance from the REFERENCE mesh/pointcloud."/>
+  <Param name="RefMesh" description="Reference Mesh/PointCloud" type="RichMesh" value="0" tooltip="The Mesh/Pointcloud that is used as a reference, to measure distance from."/>
+  <Param name="SignedDist" description="Compute Signed Distance" type="RichBool" value="false" tooltip="If TRUE, the distance is signed; if FALSE, it will compute the distance absolute value."/>
+  <Param name="MaxDist" description="Max Distance [abs]" type="RichAbsPerc" value="34.2103" tooltip="Search is interrupted when nothing is found within this distance range [+maxDistance -maxDistance]." max="34.2103" min="0"/>
+ </filter>
+ <filter name="Colorize by vertex Quality">
+  <Param name="minVal" description="Min" type="RichFloat" value="0" tooltip="The value that will be mapped with the lower end of the scale (red)"/>
+  <Param name="maxVal" description="Max" type="RichFloat" value="2" tooltip="The value that will be mapped with the upper end of the scale (blue)"/>
+  <Param name="perc" description="Percentile Crop [0..100]" type="RichDynamicFloat" value="0" tooltip="If not zero this value will be used for a percentile cropping of the quality values.&lt;br> If this parameter is set to a value &lt;i>P&lt;/i> then the two values &lt;i>V_min,V_max&lt;/i> for which &lt;i>P&lt;/i>% of the vertices have a quality &lt;b>lower or greater&lt;/b> than &lt;i>V_min,V_max&lt;/i> are used as min/max values for clamping.&lt;br>&lt;br> The automated percentile cropping is very useful for automatically discarding outliers." max="100" min="0"/>
+  <Param name="zeroSym" description="Zero Symmetric" type="RichBool" value="false" tooltip="If true the min max range will be enlarged to be symmetric (so that green is always Zero)"/>
+  <Param enum_val3="Cividis" name="colorMap" description="Color Map" enum_val5="RdPu" enum_val4="Turbo" enum_val1="Viridis" type="RichEnum" value="4" tooltip="The color map to use. RGB is the VCGLib default, other colormaps are sampled from Matplotlib &lt;a href=&quot;https://matplotlib.org&quot;>https://matplotlib.org&lt;/a>" enum_cardinality="6" enum_val0="RGB" enum_val2="Plasma"/>
+ </filter>
+</FilterScript>
