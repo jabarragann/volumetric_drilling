@@ -38,13 +38,15 @@ uniform bool show_small_window = true;
 // Offset of the small window from its default horizontal/vertical position.
 uniform float small_window_horizontal_offset = 0.00;
 uniform float small_window_vertical_offset = 0.00;
-uniform int window_width = 1920;
-uniform int window_height = 1043;
+
+// Goovis pro window size
+uniform int window_width = 2560;
+uniform int window_height = 1440;
 
 
 // CONFIG PARAMETERS
 float small_window_y_pos = 0.60;
-float small_window_height = 0.38;
+float small_window_height = 0.30;
 
 // Adjust the small window's width to ensure it is always square
 float aspect_ratio = float(window_width) / float(window_height);
