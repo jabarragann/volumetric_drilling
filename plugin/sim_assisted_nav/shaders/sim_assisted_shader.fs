@@ -35,6 +35,9 @@ uniform float small_window_disparity = 0.1;
 // Toggles the small picture-over-picture windows. When false, only the
 // rosImageTexture is displayed.
 uniform bool show_small_window = true;
+// Offset of the small window from its default horizontal/vertical position.
+uniform float small_window_horizontal_offset = 0.00;
+uniform float small_window_vertical_offset = 0.00;
 uniform int window_width = 1920;
 uniform int window_height = 1043;
 
@@ -42,8 +45,6 @@ uniform int window_height = 1043;
 // CONFIG PARAMETERS
 float small_window_y_pos = 0.60;
 float small_window_height = 0.38;
-float small_window_horizontal_offset = -0.10;
-float small_window_vertical_offset = -0.10;
 
 // Adjust the small window's width to ensure it is always square
 float aspect_ratio = float(window_width) / float(window_height);

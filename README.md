@@ -164,6 +164,10 @@ Sim-assisted navigation shortcuts (no modifier keys):
 | `;` | Rotate camera up vector counter-clockwise about the look axis |
 | `'` | Rotate camera up vector clockwise about the look axis |
 | `/` | Print current camera pose in `world.yaml` format |
+| `Ctrl+W` | Move small window up (increase vertical offset) |
+| `Ctrl+S` | Move small window down (decrease vertical offset) |
+| `Ctrl+A` | Move small window left (decrease horizontal offset) |
+| `Ctrl+D` | Move small window right (increase horizontal offset) |
 
 Drill control shortcuts:
 

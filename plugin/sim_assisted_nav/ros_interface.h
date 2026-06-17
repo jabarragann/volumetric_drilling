@@ -49,10 +49,12 @@
 #include <ros/ros.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
+#include <geometry_msgs/Point.h>
 #elif AMBF_ROS2
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/bool.hpp>
+#include <geometry_msgs/msg/point.hpp>
 #endif
 
 class HmdRosInterface
@@ -66,13 +68,17 @@ public:
 #if AMBF_ROS1
     std::shared_ptr<ros::Subscriber> window_disparity_sub;
     std::shared_ptr<ros::Subscriber> show_small_window_sub;
+    std::shared_ptr<ros::Subscriber> small_window_offset_sub;
 #elif AMBF_ROS2
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr show_small_window_sub;
+    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr small_window_offset_sub;
 #endif
 
     // Shader uniform variables updated via ROS subscription
     float window_disparity = 0.1;
+    float small_window_horizontal_offset = 0.00;
+    float small_window_vertical_offset = 0.00;
     // Toggles the small picture-over-picture windows on/off. When false only
     // the rosImageTexture is shown.
     bool show_small_window = true;
@@ -80,8 +86,10 @@ public:
 #if AMBF_ROS1
     void window_disparity_callback(const std_msgs::Float32 &msg);
     void show_small_window_callback(const std_msgs::Bool &msg);
+    void small_window_offset_callback(const geometry_msgs::Point &msg);
 #elif AMBF_ROS2
     void window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void show_small_window_callback(const std_msgs::msg::Bool::SharedPtr msg);
+    void small_window_offset_callback(const geometry_msgs::msg::Point::SharedPtr msg);
 #endif
 };

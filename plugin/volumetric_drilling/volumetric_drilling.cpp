@@ -691,36 +691,76 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 {
     if (a_mods == GLFW_MOD_CONTROL)
     {
-
         double rate = m_drillManager.m_drillRate;
-        // controls linear motion of tool
+
+        //********************************/
+        // Sim-assisted nav: small window position (Ctrl+W/A/S/D)
+        //********************************/
+        const float offset_step = 0.01f;
         if (a_key == GLFW_KEY_W)
         {
-
-            cVector3d dir = m_mainCamera->getUpVector() * rate;
-            m_drillManager.incrementDevicePos(dir);
+            m_simAssistedNavRosInterface.small_window_vertical_offset += offset_step;
+#if AMBF_ROS1
+            geometry_msgs::Point msg;
+#elif AMBF_ROS2
+            geometry_msgs::msg::Point msg;
+#endif
+            msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
+            msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
+            m_simAssistedNavRosInterface.small_window_offset_pub->publish(msg);
+            cerr << "INFO! SMALL WINDOW OFFSET (h, v): "
+                 << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
+                 << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
         }
-
-        else if (a_key == GLFW_KEY_D)
-        {
-
-            cVector3d dir = m_mainCamera->getRightVector() * rate;
-            m_drillManager.incrementDevicePos(dir);
-        }
-
         else if (a_key == GLFW_KEY_S)
         {
-
-            cVector3d dir = m_mainCamera->getUpVector() * rate;
-            m_drillManager.incrementDevicePos(-dir);
+            m_simAssistedNavRosInterface.small_window_vertical_offset -= offset_step;
+#if AMBF_ROS1
+            geometry_msgs::Point msg;
+#elif AMBF_ROS2
+            geometry_msgs::msg::Point msg;
+#endif
+            msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
+            msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
+            m_simAssistedNavRosInterface.small_window_offset_pub->publish(msg);
+            cerr << "INFO! SMALL WINDOW OFFSET (h, v): "
+                 << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
+                 << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
         }
-
         else if (a_key == GLFW_KEY_A)
         {
-
-            cVector3d dir = m_mainCamera->getRightVector() * rate;
-            m_drillManager.incrementDevicePos(-dir);
+            m_simAssistedNavRosInterface.small_window_horizontal_offset -= offset_step;
+#if AMBF_ROS1
+            geometry_msgs::Point msg;
+#elif AMBF_ROS2
+            geometry_msgs::msg::Point msg;
+#endif
+            msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
+            msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
+            m_simAssistedNavRosInterface.small_window_offset_pub->publish(msg);
+            cerr << "INFO! SMALL WINDOW OFFSET (h, v): "
+                 << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
+                 << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
         }
+        else if (a_key == GLFW_KEY_D)
+        {
+            m_simAssistedNavRosInterface.small_window_horizontal_offset += offset_step;
+#if AMBF_ROS1
+            geometry_msgs::Point msg;
+#elif AMBF_ROS2
+            geometry_msgs::msg::Point msg;
+#endif
+            msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
+            msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
+            m_simAssistedNavRosInterface.small_window_offset_pub->publish(msg);
+            cerr << "INFO! SMALL WINDOW OFFSET (h, v): "
+                 << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
+                 << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
+        }
+
+        //********************************/
+        // Finish sim-assisted nav keyboard shortcuts 
+        //********************************/
 
         else if (a_key == GLFW_KEY_K)
         {

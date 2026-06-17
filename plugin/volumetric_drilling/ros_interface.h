@@ -55,6 +55,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/Point.h>
 #include <std_msgs/ColorRGBA.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
@@ -67,6 +68,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "std_msgs/msg/color_rgba.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -136,15 +138,19 @@ public:
     ambf_ral::node_ptr_t m_rosNode;
 
     float window_disparity = 0.1;
+    float small_window_horizontal_offset = 0.00;
+    float small_window_vertical_offset = 0.00;
     // Tracks whether the small picture-over-picture windows are shown. Toggled
     // via keyboard and published to the sim_assisted_nav shader.
     bool show_small_window = true;
 #if AMBF_ROS1
     std::shared_ptr<ros::Publisher> small_window_disparity_pub;
     std::shared_ptr<ros::Publisher> show_small_window_pub;
+    std::shared_ptr<ros::Publisher> small_window_offset_pub;
 #elif AMBF_ROS2
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr small_window_disparity_pub;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr show_small_window_pub;
+    rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr small_window_offset_pub;
 #endif
 
     // rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr manual_slices_sub;

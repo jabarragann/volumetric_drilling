@@ -236,4 +236,7 @@ SimulationAssistedNavRosInterface::SimulationAssistedNavRosInterface(std::string
     ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Bool)>
     (show_small_window_pub, m_rosNode, a_namespace + "/" + "show_small_window", 5, true);
 
+    ambf_ral::create_publisher<AMBF_RAL_MSG(geometry_msgs, Point)>
+    (small_window_offset_pub, m_rosNode, a_namespace + "/" + "small_window_offset", 5, true);
+
 }
