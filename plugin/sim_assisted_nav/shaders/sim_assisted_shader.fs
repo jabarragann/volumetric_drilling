@@ -42,14 +42,22 @@ uniform int window_height = 1043;
 // CONFIG PARAMETERS
 float small_window_y_pos = 0.60;
 float small_window_height = 0.38;
+float small_window_horizontal_offset = -0.10;
+float small_window_vertical_offset = -0.10;
 
 // Adjust the small window's width to ensure it is always square
 float aspect_ratio = float(window_width) / float(window_height);
 float small_window_width = small_window_height / aspect_ratio;
 
 vec2 rect_size = vec2(small_window_width, small_window_height);
-vec2 left_small_window_pos = vec2(0.5 - rect_size.x - small_window_disparity, small_window_y_pos);
-vec2 right_small_window_pos = vec2(small_window_disparity, small_window_y_pos);
+
+float left_x_pos = 0.5 - rect_size.x - small_window_disparity + small_window_horizontal_offset;
+float right_x_pos = small_window_disparity + small_window_horizontal_offset;
+float left_y_pos = small_window_y_pos + small_window_vertical_offset;
+float right_y_pos = small_window_y_pos + small_window_vertical_offset;
+
+vec2 left_small_window_pos = vec2(left_x_pos, left_y_pos);
+vec2 right_small_window_pos = vec2(right_x_pos, right_y_pos);
 
 // OTHER PARAMETERS
 float offset;
