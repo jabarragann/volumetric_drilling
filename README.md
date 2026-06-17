@@ -153,12 +153,24 @@ Three files contain configure AMBF to mimick the real world setup: `world.yaml`,
 * `world.yaml`: specifies the location of the main camera. This has to change depending on which phantom is used.
 
 ## Keyboard shortcuts
-| #   | Keyboard | Description                                                                   |
-| --- | -------- | ----------------------------------------------------------------------------- |
-| 1   | `]`      | Increase disparity of small window                                            |
-| 2   | `[`      | Decrease disparity of small window                                            |
-| 3   | `t`      | Activate/deactivated drill as cursor                                          |
-| 4   | `Ctrl+O` | Update tool cursor based on drill empty reference (activate virtual drilling) |
+
+Sim-assisted navigation shortcuts (no modifier keys):
+
+| Key | Description |
+| --- | ----------- |
+| `[` | Increase disparity of the small stereo window |
+| `]` | Decrease disparity of the small stereo window |
+| `\` | Toggle small window on/off |
+| `;` | Rotate camera up vector counter-clockwise about the look axis |
+| `'` | Rotate camera up vector clockwise about the look axis |
+| `/` | Print current camera pose in `world.yaml` format |
+
+Drill control shortcuts:
+
+| Key | Description |
+| --- | ----------- |
+| `t` | Activate/deactivate drill as cursor |
+| `Ctrl+O` | Update tool cursor based on drill empty reference (activate virtual drilling) |
 
 ## Notes about functionality
 
