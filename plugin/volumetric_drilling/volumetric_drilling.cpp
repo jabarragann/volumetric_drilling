@@ -919,7 +919,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             rotateCameraUpVector(cDegToRad(-1.0));
         }
         // Print current camera pose in world.yaml format
-        else if (a_key == GLFW_KEY_P) // p
+        else if (a_key == GLFW_KEY_SLASH) // /
         {
             printCameraPose();
         }
