@@ -101,6 +101,16 @@ add_library(sim_assisted_nav SHARED ${sim_assisted_nav_sources})
 target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
 set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
+if (AMBF_ROS_VERSION EQUAL 2)
+    if (DEFINED ENV{ROS_DISTRO} AND "$ENV{ROS_DISTRO}" STREQUAL "jazzy")
+        target_compile_definitions(sim_assisted_nav PRIVATE CV_BRIDGE_HPP=1)
+    elseif (DEFINED ENV{ROS_DISTRO} AND "$ENV{ROS_DISTRO}" STREQUAL "humble")
+        # Humble ships cv_bridge/cv_bridge.h
+    else ()
+        message(STATUS "ROS_DISTRO='$ENV{ROS_DISTRO}': defaulting to cv_bridge/cv_bridge.h")
+    endif ()
+endif ()
+
 if (WITH_ZED)
     find_package(ZED 4 REQUIRED)
     find_package(CUDA REQUIRED)
