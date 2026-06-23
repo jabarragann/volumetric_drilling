@@ -176,6 +176,9 @@ Sim-assisted navigation shortcuts (no modifier keys):
 | `Ctrl+S` | Move small window down (decrease vertical offset) |
 | `Ctrl+A` | Move small window left (decrease horizontal offset) |
 | `Ctrl+D` | Move small window right (increase horizontal offset) |
+| `Ctrl+0` | Pin/unpin the multiview sagittal slice to a fixed layer |
+| `Ctrl+-` | Decrease the fixed sagittal slice index |
+| `Ctrl+=` | Increase the fixed sagittal slice index |
 
 Drill control shortcuts:
 

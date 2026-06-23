@@ -55,6 +55,18 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice(string slice_name, int slice_i
     array<int, NUM_OF_DIM> slice_strides = strides_map[slice_name];
     array<int, NUM_OF_DIM> slice_limits = limits_map[slice_name];
 
+    // Clamp the slice index to the volume bounds along the slicing axis to
+    // avoid reading outside raw_data (which would segfault). slice_limits[3]
+    // is the number of slices available for this orientation.
+    if (slice_idx < 0)
+    {
+        slice_idx = 0;
+    }
+    else if (slice_idx > slice_limits[3] - 1)
+    {
+        slice_idx = slice_limits[3] - 1;
+    }
+
     cImagePtr volume_slice = cImage::create();
     volume_slice->allocate(slice_limits[1], slice_limits[2], GL_RGBA, GL_UNSIGNED_BYTE);
 
@@ -101,6 +113,18 @@ unique_ptr<Slice2D> VolumeSlicer::create_2d_slice_reverse_y(string slice_name, i
 
     array<int, NUM_OF_DIM> slice_strides = strides_map[slice_name];
     array<int, NUM_OF_DIM> slice_limits = limits_map[slice_name];
+
+    // Clamp the slice index to the volume bounds along the slicing axis to
+    // avoid reading outside raw_data (which would segfault). slice_limits[3]
+    // is the number of slices available for this orientation.
+    if (slice_idx < 0)
+    {
+        slice_idx = 0;
+    }
+    else if (slice_idx > slice_limits[3] - 1)
+    {
+        slice_idx = slice_limits[3] - 1;
+    }
 
     cImagePtr volume_slice = cImage::create();
     volume_slice->allocate(slice_limits[1], slice_limits[2], GL_RGBA, GL_UNSIGNED_BYTE);

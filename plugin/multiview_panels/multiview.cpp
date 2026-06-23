@@ -106,24 +106,6 @@ void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objec
         {
             cerr << "Using default value of sagittal_rotation: " << sagittal_rotation << endl;
         }
-
-        try
-        {
-            fix_sagittal_slice = plugin_config["fix_sagittal_slice"].as<bool>();
-        }
-        catch (YAML::Exception &e)
-        {
-            cerr << "Using default value of fix_sagittal_slice: " << fix_sagittal_slice << endl;
-        }
-
-        try
-        {
-            fixed_sagittal_slice_value = plugin_config["fixed_sagittal_slice_value"].as<int>();
-        }
-        catch (YAML::Exception &e)
-        {
-            cerr << "Using default value of fixed_sagittal_slice_value: " << fixed_sagittal_slice_value << endl;
-        }
     }
 }
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -164,8 +146,10 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
               << m_alias_scaling
               << endl;
 
-    // ROS subscriber config
-    ros_interface.init(drill_loc_topic);
+    // ROS subscriber config. The sagittal-slice state is owned by the
+    // volumetric_drilling plugin, which publishes its initial value (latched)
+    // and updates it via keyboard shortcuts.
+    ros_interface.init(drill_loc_topic, fix_sagittal_slice_topic, fixed_sagittal_slice_value_topic);
 
     return 1;
 }
@@ -288,12 +272,19 @@ MultiviewRosInterface::~MultiviewRosInterface()
 {
 }
 
-void MultiviewRosInterface::init(const std::string &drill_loc_topic)
+void MultiviewRosInterface::init(const std::string &drill_loc_topic, const std::string &fix_sagittal_slice_topic,
+                                 const std::string &fixed_sagittal_slice_value_topic)
 {
     ros_node_handle = afROSNode::getNodeAndRegister("/multiview_panels");
 
     ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, PointStamped), MultiviewRosInterface>
         (drill_loc_subscriber, ros_node_handle, drill_loc_topic, 4, &MultiviewRosInterface::drill_location_callback, this);
+
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Bool), MultiviewRosInterface>
+        (fix_sagittal_slice_subscriber, ros_node_handle, fix_sagittal_slice_topic, 4, &MultiviewRosInterface::fix_sagittal_slice_callback, this);
+
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Int32), MultiviewRosInterface>
+        (fixed_sagittal_slice_value_subscriber, ros_node_handle, fixed_sagittal_slice_value_topic, 4, &MultiviewRosInterface::fixed_sagittal_slice_value_callback, this);
 }
 
 #if AMBF_ROS1
@@ -302,10 +293,26 @@ void MultiviewRosInterface::init(const std::string &drill_loc_topic)
     // drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
     drill_location = cVector3d(msg.point.x, msg.point.y, msg.point.z);
 }
+void MultiviewRosInterface::fix_sagittal_slice_callback(const std_msgs::Bool &msg)
+{
+    fix_sagittal_slice = msg.data;
+}
+void MultiviewRosInterface::fixed_sagittal_slice_value_callback(const std_msgs::Int32 &msg)
+{
+    fixed_sagittal_slice_value = msg.data;
+}
 #elif AMBF_ROS2
 void MultiviewRosInterface::drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
 {
     drill_location = cVector3d(msg->point.x, msg->point.y, msg->point.z);
+}
+void MultiviewRosInterface::fix_sagittal_slice_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    fix_sagittal_slice = msg->data;
+}
+void MultiviewRosInterface::fixed_sagittal_slice_value_callback(const std_msgs::msg::Int32::SharedPtr msg)
+{
+    fixed_sagittal_slice_value = msg->data;
 }
 #endif
 
@@ -342,11 +349,11 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
 
         // Pin the sagittal slice to a fixed layer when enabled; otherwise follow
         // the drill location along x.
-        int sagittal_idx = fix_sagittal_slice ? fixed_sagittal_slice_value : ros_interface.drill_location.x();
+        int sagittal_idx = ros_interface.fix_sagittal_slice ? ros_interface.fixed_sagittal_slice_value : ros_interface.drill_location.x();
         unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", sagittal_idx);
         // When pinned, the marker is the drill projected onto the fixed plane
         // rather than the true drill slice; use a lighter red to convey that.
-        cColorb sagittal_marker_color = fix_sagittal_slice ? cColorb(255, 120, 120) : cColorb(255, 0, 0);
+        cColorb sagittal_marker_color = ros_interface.fix_sagittal_slice ? cColorb(255, 120, 120) : cColorb(255, 0, 0);
         sagittal_slice->annotate(ros_interface.drill_location.y(), ros_interface.drill_location.z(), sagittal_marker_color);
         sagittal_slice->rotate(sagittal_rotation);
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
@@ -363,9 +370,9 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
 
         // When pinned, keep showing the fixed sagittal slice even though the
         // drill is out of volume. No annotation: the drill y/z are not valid.
-        if (fix_sagittal_slice)
+        if (ros_interface.fix_sagittal_slice)
         {
-            unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", fixed_sagittal_slice_value);
+            unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", ros_interface.fixed_sagittal_slice_value);
             sagittal_slice->rotate(sagittal_rotation);
             success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
             ct_sagittal_window->maximize_with_scale_factor();

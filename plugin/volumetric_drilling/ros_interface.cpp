@@ -239,4 +239,10 @@ SimulationAssistedNavRosInterface::SimulationAssistedNavRosInterface(std::string
     ambf_ral::create_publisher<AMBF_RAL_MSG(geometry_msgs, Point)>
     (small_window_offset_pub, m_rosNode, a_namespace + "/" + "small_window_offset", 5, true);
 
+    ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Bool)>
+    (fix_sagittal_slice_pub, m_rosNode, a_namespace + "/" + "fix_sagittal_slice", 5, true);
+
+    ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Int32)>
+    (fixed_sagittal_slice_value_pub, m_rosNode, a_namespace + "/" + "fixed_sagittal_slice_value", 5, true);
+
 }

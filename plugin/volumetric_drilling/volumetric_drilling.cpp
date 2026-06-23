@@ -112,7 +112,9 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         ("fp", p_opt::value<string>()->default_value("/dev/input/js0"), "Footpedal joystick input file description E.g. /dev/input/js0)")
         ("mute", p_opt::value<bool>()->default_value(false), "Mute")
         ("gcdr", p_opt::value<double>()->default_value(30.0), "Gaze Calibration Marker Motion Duration")
-        ("hmd_window_disp", p_opt::value<float>()->default_value(0.1), "Initial disparity of the HMD sim-assisted-nav small window. Default 0.1");
+        ("hmd_window_disp", p_opt::value<float>()->default_value(0.1), "Initial disparity of the HMD sim-assisted-nav small window. Default 0.1")
+        ("fix_sagittal_slice", p_opt::value<bool>()->default_value(false), "Pin the multiview sagittal slice to a fixed layer at startup. Default false")
+        ("sagittal_slice_idx", p_opt::value<int>()->default_value(70), "Initial fixed sagittal slice index. Default 70");
     // clang-format on
 
     p_opt::variables_map var_map;
@@ -132,6 +134,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     string footpedal_fd = var_map["fp"].as<string>();
 
     m_simAssistedNavRosInterface.window_disparity = var_map["hmd_window_disp"].as<float>();
+    m_simAssistedNavRosInterface.fix_sagittal_slice = var_map["fix_sagittal_slice"].as<bool>();
+    m_simAssistedNavRosInterface.fixed_sagittal_slice_value = var_map["sagittal_slice_idx"].as<int>();
 
     m_zeroColor = cColorb(0x00, 0x00, 0x00, 0x00);
 
@@ -268,6 +272,22 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     disp_msg.data = m_simAssistedNavRosInterface.window_disparity;
     m_simAssistedNavRosInterface.small_window_disparity_pub->publish(disp_msg);
     cerr << "INFO! INITIAL WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
+
+    // Publish the initial sagittal slice control so the multiview plugin starts
+    // in sync. Publishers are latched, so late-joining subscribers receive these.
+#if AMBF_ROS1
+    std_msgs::Bool fix_sagittal_msg;
+    std_msgs::Int32 fixed_sagittal_value_msg;
+#elif AMBF_ROS2
+    std_msgs::msg::Bool fix_sagittal_msg;
+    std_msgs::msg::Int32 fixed_sagittal_value_msg;
+#endif
+    fix_sagittal_msg.data = m_simAssistedNavRosInterface.fix_sagittal_slice;
+    m_simAssistedNavRosInterface.fix_sagittal_slice_pub->publish(fix_sagittal_msg);
+    fixed_sagittal_value_msg.data = m_simAssistedNavRosInterface.fixed_sagittal_slice_value;
+    m_simAssistedNavRosInterface.fixed_sagittal_slice_value_pub->publish(fixed_sagittal_value_msg);
+    cerr << "INFO! INITIAL SAGITTAL SLICE: fix=" << m_simAssistedNavRosInterface.fix_sagittal_slice
+         << " idx=" << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
 
     return 1;
 }
@@ -759,7 +779,51 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         }
 
         //********************************/
-        // Finish sim-assisted nav keyboard shortcuts 
+        // Sim-assisted nav: sagittal slice control (Ctrl+0 toggle, Ctrl+-/Ctrl+= step)
+        //********************************/
+        else if (a_key == GLFW_KEY_0)
+        {
+            m_simAssistedNavRosInterface.fix_sagittal_slice = !m_simAssistedNavRosInterface.fix_sagittal_slice;
+#if AMBF_ROS1
+            std_msgs::Bool msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Bool msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.fix_sagittal_slice;
+            m_simAssistedNavRosInterface.fix_sagittal_slice_pub->publish(msg);
+            cerr << "INFO! FIX SAGITTAL SLICE: " << m_simAssistedNavRosInterface.fix_sagittal_slice << endl;
+        }
+        else if (a_key == GLFW_KEY_MINUS)
+        {
+            m_simAssistedNavRosInterface.fixed_sagittal_slice_value -= 1;
+            if (m_simAssistedNavRosInterface.fixed_sagittal_slice_value < 0)
+            {
+                m_simAssistedNavRosInterface.fixed_sagittal_slice_value = 0;
+            }
+#if AMBF_ROS1
+            std_msgs::Int32 msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Int32 msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.fixed_sagittal_slice_value;
+            m_simAssistedNavRosInterface.fixed_sagittal_slice_value_pub->publish(msg);
+            cerr << "INFO! FIXED SAGITTAL SLICE IDX: " << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
+        }
+        else if (a_key == GLFW_KEY_EQUAL)
+        {
+            m_simAssistedNavRosInterface.fixed_sagittal_slice_value += 1;
+#if AMBF_ROS1
+            std_msgs::Int32 msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Int32 msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.fixed_sagittal_slice_value;
+            m_simAssistedNavRosInterface.fixed_sagittal_slice_value_pub->publish(msg);
+            cerr << "INFO! FIXED SAGITTAL SLICE IDX: " << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
+        }
+
+        //********************************/
+        // Finish sim-assisted nav keyboard shortcuts
         //********************************/
 
         else if (a_key == GLFW_KEY_K)

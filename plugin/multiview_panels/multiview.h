@@ -52,9 +52,13 @@
 #if AMBF_ROS1
 #include <ros/ros.h>
 #include <geometry_msgs/PointStamped.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #elif AMBF_ROS2
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/point_stamped.hpp>
+#include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/int32.hpp>
 #endif
 
 #include "volume_slicer.h"
@@ -71,19 +75,32 @@ class MultiviewRosInterface
 public:
     MultiviewRosInterface();
     ~MultiviewRosInterface();
-    void init(const std::string &drill_loc_topic);
+    void init(const std::string &drill_loc_topic, const std::string &fix_sagittal_slice_topic,
+              const std::string &fixed_sagittal_slice_value_topic);
 
     ambf_ral::node_ptr_t ros_node_handle;
 #if AMBF_ROS1
     // ros::Subscriber drill_loc_subscriber;
     std::shared_ptr<ros::Subscriber> drill_loc_subscriber;
+    std::shared_ptr<ros::Subscriber> fix_sagittal_slice_subscriber;
+    std::shared_ptr<ros::Subscriber> fixed_sagittal_slice_value_subscriber;
     // void drill_location_callback(const geometry_msgs::PointStampedConstPtr &msg);
     void drill_location_callback(const geometry_msgs::PointStamped& msg);
+    void fix_sagittal_slice_callback(const std_msgs::Bool& msg);
+    void fixed_sagittal_slice_value_callback(const std_msgs::Int32& msg);
 #elif AMBF_ROS2
     rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr drill_loc_subscriber;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr fix_sagittal_slice_subscriber;
+    rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr fixed_sagittal_slice_value_subscriber;
     void drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
+    void fix_sagittal_slice_callback(const std_msgs::msg::Bool::SharedPtr msg);
+    void fixed_sagittal_slice_value_callback(const std_msgs::msg::Int32::SharedPtr msg);
 #endif
     cVector3d drill_location;
+
+    // Sagittal slice control received from the volumetric_drilling plugin.
+    bool fix_sagittal_slice = false;
+    int fixed_sagittal_slice_value = 70;
 };
 
 class afCameraMultiview : public afObjectPlugin
@@ -161,6 +178,8 @@ protected:
 
     // Config strings
     string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";
+    string fix_sagittal_slice_topic = "/sim_assisted_nav/fix_sagittal_slice";
+    string fixed_sagittal_slice_value_topic = "/sim_assisted_nav/fixed_sagittal_slice_value";
     string out_of_volume_img_path = "out_of_volume.jpg";
     string background_img_path = "black_background.jpg";
 
@@ -172,11 +191,6 @@ protected:
     // values: 0, 90, 180, -90, -180 (positive = counter-clockwise). Will later
     // be driven by a keyboard shortcut.
     int sagittal_rotation = 0;
-
-    // When enabled, the sagittal slice is pinned to a fixed layer index instead
-    // of following the drill location along x.
-    bool fix_sagittal_slice = false;
-    int fixed_sagittal_slice_value = 70;
 
 protected:
     float m_viewport_scale[2];

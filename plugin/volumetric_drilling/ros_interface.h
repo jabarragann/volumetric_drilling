@@ -59,6 +59,7 @@
 #include <std_msgs/ColorRGBA.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #include <volumetric_drilling_msgs/Voxels.h>
 #include <volumetric_drilling_msgs/DrillSize.h>
 #include <volumetric_drilling_msgs/VolumeInfo.h>
@@ -72,6 +73,7 @@
 #include "std_msgs/msg/color_rgba.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/int32.hpp"
 #include "volumetric_drilling_msgs/msg/voxels.hpp"
 #include "volumetric_drilling_msgs/msg/drill_size.hpp"
 #include "volumetric_drilling_msgs/msg/volume_info.hpp"
@@ -143,14 +145,23 @@ public:
     // Tracks whether the small picture-over-picture windows are shown. Toggled
     // via keyboard and published to the sim_assisted_nav shader.
     bool show_small_window = true;
+
+    // Sagittal slice control for the multiview plugin. Toggled / stepped via
+    // keyboard and published for the multiview plugin to consume.
+    bool fix_sagittal_slice = false;
+    int fixed_sagittal_slice_value = 70;
 #if AMBF_ROS1
     std::shared_ptr<ros::Publisher> small_window_disparity_pub;
     std::shared_ptr<ros::Publisher> show_small_window_pub;
     std::shared_ptr<ros::Publisher> small_window_offset_pub;
+    std::shared_ptr<ros::Publisher> fix_sagittal_slice_pub;
+    std::shared_ptr<ros::Publisher> fixed_sagittal_slice_value_pub;
 #elif AMBF_ROS2
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr small_window_disparity_pub;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr show_small_window_pub;
     rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr small_window_offset_pub;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr fix_sagittal_slice_pub;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr fixed_sagittal_slice_value_pub;
 #endif
 
     // rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr manual_slices_sub;
