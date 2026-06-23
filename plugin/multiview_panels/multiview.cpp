@@ -471,11 +471,46 @@ SideViewWindow::SideViewWindow(string window_name, cCamera *camera, int m_width,
     update_panel_location(x_pos, y_pos);
 }
 
+void SideViewWindow::create_border(int thickness, cColorf color)
+{
+    border = new cMesh();
+
+    double d = c_viewpanel_dim;
+    double t = thickness;
+
+    // Each edge of the frame is a quad in panel pixel coordinates
+    // (origin at bottom-left, matching the cBitmap layout).
+    auto add_quad = [&](double x0, double y0, double x1, double y1)
+    {
+        int v0 = border->newVertex(x0, y0, 0.0);
+        int v1 = border->newVertex(x1, y0, 0.0);
+        int v2 = border->newVertex(x1, y1, 0.0);
+        int v3 = border->newVertex(x0, y1, 0.0);
+        border->newTriangle(v0, v1, v2);
+        border->newTriangle(v0, v2, v3);
+        border->m_vertices->setColor(v0, color);
+        border->m_vertices->setColor(v1, color);
+        border->m_vertices->setColor(v2, color);
+        border->m_vertices->setColor(v3, color);
+    };
+
+    add_quad(0, 0, d, t);     // bottom
+    add_quad(0, d - t, d, d); // top
+    add_quad(0, 0, t, d);     // left
+    add_quad(d - t, 0, d, d); // right
+
+    border->setUseVertexColors(true);
+    border->setUseMaterial(false);
+
+    camera->m_frontLayer->addChild(border);
+}
+
 SideViewWindow::~SideViewWindow()
 {
 
     // cout << "Destroying Side view window " << window_name << endl;
     delete panel;
+    delete border;
 
     // This will trigger a seg fault
     // delete camera;
@@ -504,6 +539,10 @@ CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_
     camera->m_frontLayer->addChild(ctslice_cbitmap);
 
     update_ct_slice_size(m_width, m_height);
+
+    // Gray frame to clearly separate the 2D views. Added last so it
+    // renders on top of the slice bitmap.
+    create_border(6, cColorf(0.5f, 0.5f, 0.5f));
 }
 
 void CtSliceSideWindow::maximize_with_scale_factor()

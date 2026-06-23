@@ -183,6 +183,7 @@ protected:
     cFrameBufferPtr buffer;
     cViewPanel *panel;
     cCamera *camera;
+    cMesh *border = nullptr;
     int m_width;
     int m_height;
     int m_alias_scaling;
@@ -192,6 +193,9 @@ public:
     SideViewWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling);
     ~SideViewWindow();
     cViewPanel *get_panel() { return panel; }
+
+    // Draw a frame around the panel to visually separate the views.
+    void create_border(int thickness, cColorf color);
     void render_view() { buffer->renderView(); }
     void update_window_size(int width, int height)
     {
