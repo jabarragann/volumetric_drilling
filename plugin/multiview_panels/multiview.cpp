@@ -442,6 +442,13 @@ void afCameraMultiview::init_multi_view_panels()
     main_cam->m_frontLayer->addChild(ct_axial_window->get_panel());
     main_cam->m_frontLayer->addChild(ct_coronal_window->get_panel());
     main_cam->m_frontLayer->addChild(ct_sagittal_window->get_panel());
+
+    // Slicer-style colored frames around the 2D views: axial (top-left) = red,
+    // coronal (bottom-left) = green, sagittal (bottom-right) = yellow.
+    int border_thickness = 4;
+    ct_axial_window->create_border(border_thickness, cColorf(1.0f, 0.0f, 0.0f));
+    ct_coronal_window->create_border(border_thickness, cColorf(0.0f, 1.0f, 0.0f));
+    ct_sagittal_window->create_border(border_thickness, cColorf(1.0f, 1.0f, 0.0f));
 }
 
 void afCameraMultiview::init_volume_slicer()
@@ -559,10 +566,6 @@ CtSliceSideWindow::CtSliceSideWindow(string window_name, cCamera *camera, int m_
     camera->m_frontLayer->addChild(ctslice_cbitmap);
 
     update_ct_slice_size(m_width, m_height);
-
-    // Gray frame to clearly separate the 2D views. Added last so it
-    // renders on top of the slice bitmap.
-    create_border(6, cColorf(0.5f, 0.5f, 0.5f));
 }
 
 void CtSliceSideWindow::maximize_with_scale_factor()
