@@ -89,6 +89,23 @@ void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objec
         {
             cerr << "Using default value of slice_zoom: " << slice_zoom << endl;
         }
+
+        try
+        {
+            sagittal_rotation = plugin_config["sagittal_rotation"].as<int>();
+            // Only multiples of 90 in {0, 90, 180, -90, -180} are supported.
+            if (sagittal_rotation != 0 && sagittal_rotation != 90 && sagittal_rotation != 180 &&
+                sagittal_rotation != -90 && sagittal_rotation != -180)
+            {
+                cerr << "Invalid sagittal_rotation " << sagittal_rotation
+                     << " (allowed: 0, 90, 180, -90, -180). Using 0." << endl;
+                sagittal_rotation = 0;
+            }
+        }
+        catch (YAML::Exception &e)
+        {
+            cerr << "Using default value of sagittal_rotation: " << sagittal_rotation << endl;
+        }
     }
 }
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -307,6 +324,7 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
 
         unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", ros_interface.drill_location.x());
         sagittal_slice->annotate(ros_interface.drill_location.y(), ros_interface.drill_location.z());
+        sagittal_slice->rotate(sagittal_rotation);
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
         ct_sagittal_window->maximize_with_scale_factor();
     }

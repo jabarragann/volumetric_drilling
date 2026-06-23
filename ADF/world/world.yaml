@@ -113,7 +113,7 @@ main_camera:
       # Probably because of multiple nodes with same name.
       {
         name: multiview_plugin,
-        filename: "libmultiview.so", # Changed plugin name to prevent loading it
+        filename: "libmultiview.so2", # Changed plugin name to prevent loading it
         path: "build/simulation_assisted_navigation_framework/",
       }
     ]
@@ -121,7 +121,9 @@ main_camera:
     render_to_frame_buffer: false
     # Center-crop zoom for the 2D CT slices. Range (0.5, 1]: 1.0 shows the full
     # slice, 0.5 shows only the centered half (2x zoom) to better see segmentations.
-    slice_zoom: 0.5
+    slice_zoom: 0.65
+    # In-plane rotation of the sagittal slice, in degrees. Allowed: 0, 90, 180, -90, -180.
+    sagittal_rotation: -90
 
 cameraL:
   namespace: cameras/

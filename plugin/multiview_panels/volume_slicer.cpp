@@ -249,6 +249,58 @@ void Slice2D::annotate(int x, int y, cColorb marker_color)
     // draw_circle(x, y, marker_size - 2, marker_color);
 }
 
+void Slice2D::rotate(int degrees)
+{
+    // Normalize to one of {0, 90, 180, 270}. Positive = counter-clockwise.
+    int deg = ((degrees % 360) + 360) % 360;
+    if (deg == 0)
+    {
+        return;
+    }
+
+    int W = volume_slice->getWidth();
+    int H = volume_slice->getHeight();
+
+    cImagePtr rotated = cImage::create();
+    cColorb c;
+
+    if (deg == 180)
+    {
+        rotated->allocate(W, H, GL_RGBA, GL_UNSIGNED_BYTE);
+        for (int y = 0; y < H; y++)
+        {
+            for (int x = 0; x < W; x++)
+            {
+                volume_slice->getPixelColor(x, y, c);
+                rotated->setPixelColor(W - 1 - x, H - 1 - y, c);
+            }
+        }
+    }
+    else // 90 (CCW) or 270 (CW). Width and height swap.
+    {
+        rotated->allocate(H, W, GL_RGBA, GL_UNSIGNED_BYTE);
+        for (int y = 0; y < H; y++)
+        {
+            for (int x = 0; x < W; x++)
+            {
+                volume_slice->getPixelColor(x, y, c);
+                if (deg == 90)
+                {
+                    rotated->setPixelColor(y, W - 1 - x, c);
+                }
+                else // 270 == -90
+                {
+                    rotated->setPixelColor(H - 1 - y, x, c);
+                }
+            }
+        }
+    }
+
+    volume_slice = rotated;
+    slice_width = volume_slice->getWidth();
+    slice_height = volume_slice->getHeight();
+}
+
 /*
  * Chat gpt generated Bresenham's circle drawing algorithm
  * https://en.wikipedia.org/wiki/Midpoint_circle_algorithm

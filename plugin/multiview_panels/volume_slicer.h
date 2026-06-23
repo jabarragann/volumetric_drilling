@@ -36,6 +36,11 @@ public:
     void annotate(int x, int y, cColorb marker_color = cColorb(255, 0, 0));
 
     void draw_circle(int center_x, int center_y, int radius, cColorb color = cColorb(255, 0, 0));
+
+    // Rotate the slice in place by a multiple of 90 degrees (e.g. 90, 180,
+    // -90, -180). Positive angles are counter-clockwise. Dimensions swap for
+    // +/-90. The annotation marker rotates together with the slice.
+    void rotate(int degrees);
 };
 
 class VolumeSlicer

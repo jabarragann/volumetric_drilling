@@ -168,6 +168,11 @@ protected:
     // slice, 0.5 shows only the centered half (2x zoom), etc.
     float slice_zoom = 1.0;
 
+    // In-plane rotation applied to the sagittal slice, in degrees. Allowed
+    // values: 0, 90, 180, -90, -180 (positive = counter-clockwise). Will later
+    // be driven by a keyboard shortcut.
+    int sagittal_rotation = 0;
+
 protected:
     float m_viewport_scale[2];
     float m_distortion_coeffs[4];
