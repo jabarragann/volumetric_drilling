@@ -80,6 +80,9 @@ stereoLR:
 
   multiview_plugin_config:
     render_to_frame_buffer: true
+    # Center-crop zoom for the 2D CT slices. Range (0.5, 1]: 1.0 shows the full
+    # slice, 0.5 shows only the centered half (2x zoom) to better see segmentations.
+    slice_zoom: 0.5 
 
   ### CONFIG OPTIONS FOR SIM ASSISTED NAV PLUGIN
 

@@ -74,6 +74,21 @@ void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objec
             cerr << "multiview_plugin_config has some errors" << endl;
             cerr << "Using default value of render_to_frame_buffer: " << render_to_frame_buffer << endl;
         }
+
+        try
+        {
+            slice_zoom = plugin_config["slice_zoom"].as<float>();
+            // Valid range is (0, 1]: 1.0 shows the full slice, 0.5 shows the
+            // centered half. Clamp to the documented range to keep behavior sane.
+            if (slice_zoom > 1.0f)
+                slice_zoom = 1.0f;
+            if (slice_zoom < 0.5f)
+                slice_zoom = 0.5f;
+        }
+        catch (YAML::Exception &e)
+        {
+            cerr << "Using default value of slice_zoom: " << slice_zoom << endl;
+        }
     }
 }
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -138,6 +153,11 @@ void afCameraMultiview::graphicsUpdate()
         ct_axial_window->scale_factor = scale_factor;
         ct_coronal_window->scale_factor = scale_factor;
         ct_sagittal_window->scale_factor = scale_factor;
+
+        // Apply the configured center-crop zoom to all 2D slice panels.
+        ct_axial_window->zoom_factor = slice_zoom;
+        ct_coronal_window->zoom_factor = slice_zoom;
+        ct_sagittal_window->zoom_factor = slice_zoom;
 
         // total_slices = volume_slices_ptr->getImageCount();
         // volume_slices_ptr->selectImage(0);
@@ -550,13 +570,21 @@ void CtSliceSideWindow::maximize_with_scale_factor()
     int new_width = ctslice_cbitmap->getWidth();
     int new_height = ctslice_cbitmap->getHeight();
 
-    if (scale_factor > 0)
+    // Combine the fit-to-panel scale with the center-crop zoom. Dividing by
+    // zoom_factor (in (0, 1]) enlarges the slice so only its centered region
+    // stays within the panel; the overflow is clipped by the panel
+    // framebuffer, which is exactly the desired center crop.
+    float effective_scale = scale_factor;
+    if (zoom_factor > 0)
+        effective_scale = scale_factor / zoom_factor;
+
+    if (effective_scale > 0)
     {
-        new_width = ctslice_cbitmap->getWidth() * scale_factor;
-        new_height = ctslice_cbitmap->getHeight() * scale_factor;
+        new_width = ctslice_cbitmap->getWidth() * effective_scale;
+        new_height = ctslice_cbitmap->getHeight() * effective_scale;
     }
 
-    // Center slice
+    // Center slice (offsets go negative when zoomed; overflow is clipped)
     float x_offset = (c_viewpanel_dim - new_width) / 2;
     float y_offset = (c_viewpanel_dim - new_height) / 2;
 

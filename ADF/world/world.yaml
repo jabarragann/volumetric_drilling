@@ -113,12 +113,15 @@ main_camera:
       # Probably because of multiple nodes with same name.
       {
         name: multiview_plugin,
-        filename: "libmultiview.so2", # Had typo to avoid loading the plugin
+        filename: "libmultiview.so", # Changed plugin name to prevent loading it
         path: "build/simulation_assisted_navigation_framework/",
       }
     ]
   multiview_plugin_config:
-    render_to_frame_buffer: false 
+    render_to_frame_buffer: false
+    # Center-crop zoom for the 2D CT slices. Range (0.5, 1]: 1.0 shows the full
+    # slice, 0.5 shows only the centered half (2x zoom) to better see segmentations.
+    slice_zoom: 0.5
 
 cameraL:
   namespace: cameras/

@@ -164,6 +164,10 @@ protected:
     string out_of_volume_img_path = "out_of_volume.jpg";
     string background_img_path = "black_background.jpg";
 
+    // Center-crop zoom for the 2D slices. Range (0, 1]: 1.0 shows the full
+    // slice, 0.5 shows only the centered half (2x zoom), etc.
+    float slice_zoom = 1.0;
+
 protected:
     float m_viewport_scale[2];
     float m_distortion_coeffs[4];
@@ -216,6 +220,10 @@ class CtSliceSideWindow : public SideViewWindow
 
 public:
     float scale_factor = -1.0;
+
+    // Center-crop zoom factor in (0, 1]. 1.0 shows the full slice; smaller
+    // values enlarge the slice so only its centered region stays in the panel.
+    float zoom_factor = 1.0;
 
     CtSliceSideWindow(string window_name, cCamera *camera, int m_width, int m_height, int pos_x, int pos_y, int m_alias_scaling,
                       cImagePtr white_brackground_img, cImagePtr out_of_volume_img);
