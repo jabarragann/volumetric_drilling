@@ -113,7 +113,7 @@ main_camera:
       # Probably because of multiple nodes with same name.
       {
         name: multiview_plugin,
-        filename: "libmultiview.so2", # Changed plugin name to prevent loading it
+        filename: "libmultiview.so", # Changed plugin name to prevent loading it
         path: "build/simulation_assisted_navigation_framework/",
       }
     ]
@@ -124,6 +124,9 @@ main_camera:
     slice_zoom: 0.65
     # In-plane rotation of the sagittal slice, in degrees. Allowed: 0, 90, 180, -90, -180.
     sagittal_rotation: -90
+    # Pin the sagittal slice to a fixed layer index (ignores drill x) when enabled.
+    fix_sagittal_slice: false 
+    fixed_sagittal_slice_value: 70
 
 cameraL:
   namespace: cameras/

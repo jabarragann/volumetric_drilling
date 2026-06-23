@@ -173,6 +173,11 @@ protected:
     // be driven by a keyboard shortcut.
     int sagittal_rotation = 0;
 
+    // When enabled, the sagittal slice is pinned to a fixed layer index instead
+    // of following the drill location along x.
+    bool fix_sagittal_slice = false;
+    int fixed_sagittal_slice_value = 70;
+
 protected:
     float m_viewport_scale[2];
     float m_distortion_coeffs[4];

@@ -106,6 +106,24 @@ void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objec
         {
             cerr << "Using default value of sagittal_rotation: " << sagittal_rotation << endl;
         }
+
+        try
+        {
+            fix_sagittal_slice = plugin_config["fix_sagittal_slice"].as<bool>();
+        }
+        catch (YAML::Exception &e)
+        {
+            cerr << "Using default value of fix_sagittal_slice: " << fix_sagittal_slice << endl;
+        }
+
+        try
+        {
+            fixed_sagittal_slice_value = plugin_config["fixed_sagittal_slice_value"].as<int>();
+        }
+        catch (YAML::Exception &e)
+        {
+            cerr << "Using default value of fixed_sagittal_slice_value: " << fixed_sagittal_slice_value << endl;
+        }
     }
 }
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -322,8 +340,14 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
         ct_coronal_window->maximize_with_scale_factor();
 
-        unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", ros_interface.drill_location.x());
-        sagittal_slice->annotate(ros_interface.drill_location.y(), ros_interface.drill_location.z());
+        // Pin the sagittal slice to a fixed layer when enabled; otherwise follow
+        // the drill location along x.
+        int sagittal_idx = fix_sagittal_slice ? fixed_sagittal_slice_value : ros_interface.drill_location.x();
+        unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", sagittal_idx);
+        // When pinned, the marker is the drill projected onto the fixed plane
+        // rather than the true drill slice; use a lighter red to convey that.
+        cColorb sagittal_marker_color = fix_sagittal_slice ? cColorb(255, 120, 120) : cColorb(255, 0, 0);
+        sagittal_slice->annotate(ros_interface.drill_location.y(), ros_interface.drill_location.z(), sagittal_marker_color);
         sagittal_slice->rotate(sagittal_rotation);
         success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
         ct_sagittal_window->maximize_with_scale_factor();
@@ -337,8 +361,20 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         success = ct_coronal_window->update_ct_slice(out_of_volume_img);
         ct_coronal_window->maximize_slice_when_out_of_volume();
 
-        success = ct_sagittal_window->update_ct_slice(out_of_volume_img);
-        ct_sagittal_window->maximize_slice_when_out_of_volume();
+        // When pinned, keep showing the fixed sagittal slice even though the
+        // drill is out of volume. No annotation: the drill y/z are not valid.
+        if (fix_sagittal_slice)
+        {
+            unique_ptr<Slice2D> sagittal_slice = volume_slicer->create_2d_slice("yz", fixed_sagittal_slice_value);
+            sagittal_slice->rotate(sagittal_rotation);
+            success = ct_sagittal_window->update_ct_slice(sagittal_slice->volume_slice);
+            ct_sagittal_window->maximize_with_scale_factor();
+        }
+        else
+        {
+            success = ct_sagittal_window->update_ct_slice(out_of_volume_img);
+            ct_sagittal_window->maximize_slice_when_out_of_volume();
+        }
     }
 }
 

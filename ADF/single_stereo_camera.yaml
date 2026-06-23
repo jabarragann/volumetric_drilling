@@ -84,7 +84,10 @@ stereoLR:
     # slice, 0.5 shows only the centered half (2x zoom) to better see segmentations.
     slice_zoom: 0.65
     # In-plane rotation of the sagittal slice, in degrees. Allowed: 0, 90, 180, -90, -180.
-    sagittal_rotation: -90 
+    sagittal_rotation: -90
+    # Pin the sagittal slice to a fixed layer index (ignores drill x) when enabled.
+    fix_sagittal_slice: true 
+    fixed_sagittal_slice_value: 70
 
   ### CONFIG OPTIONS FOR SIM ASSISTED NAV PLUGIN
 
