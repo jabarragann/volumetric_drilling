@@ -114,7 +114,9 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         ("gcdr", p_opt::value<double>()->default_value(30.0), "Gaze Calibration Marker Motion Duration")
         ("hmd_window_disp", p_opt::value<float>()->default_value(0.1), "Initial disparity of the HMD sim-assisted-nav small window. Default 0.1")
         ("fix_sagittal_slice", p_opt::value<bool>()->default_value(false), "Pin the multiview sagittal slice to a fixed layer at startup. Default false")
-        ("sagittal_slice_idx", p_opt::value<int>()->default_value(70), "Initial fixed sagittal slice index. Default 70");
+        ("sagittal_slice_idx", p_opt::value<int>()->default_value(70), "Initial fixed sagittal slice index. Default 70")
+        ("hmd_window_offset_h", p_opt::value<float>()->default_value(0.0), "Initial horizontal offset of the HMD sim-assisted-nav small window. Default 0.0")
+        ("hmd_window_offset_v", p_opt::value<float>()->default_value(0.0), "Initial vertical offset of the HMD sim-assisted-nav small window. Default 0.0");
     // clang-format on
 
     p_opt::variables_map var_map;
@@ -136,6 +138,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_simAssistedNavRosInterface.window_disparity = var_map["hmd_window_disp"].as<float>();
     m_simAssistedNavRosInterface.fix_sagittal_slice = var_map["fix_sagittal_slice"].as<bool>();
     m_simAssistedNavRosInterface.fixed_sagittal_slice_value = var_map["sagittal_slice_idx"].as<int>();
+    m_simAssistedNavRosInterface.small_window_horizontal_offset = var_map["hmd_window_offset_h"].as<float>();
+    m_simAssistedNavRosInterface.small_window_vertical_offset = var_map["hmd_window_offset_v"].as<float>();
 
     m_zeroColor = cColorb(0x00, 0x00, 0x00, 0x00);
 
@@ -288,6 +292,20 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_simAssistedNavRosInterface.fixed_sagittal_slice_value_pub->publish(fixed_sagittal_value_msg);
     cerr << "INFO! INITIAL SAGITTAL SLICE: fix=" << m_simAssistedNavRosInterface.fix_sagittal_slice
          << " idx=" << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
+
+    // Publish the initial small window offset (set via --hmd_window_offset_h/v)
+    // so the sim_assisted_nav shader starts with the requested value. Latched.
+#if AMBF_ROS1
+    geometry_msgs::Point offset_msg;
+#elif AMBF_ROS2
+    geometry_msgs::msg::Point offset_msg;
+#endif
+    offset_msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
+    offset_msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
+    m_simAssistedNavRosInterface.small_window_offset_pub->publish(offset_msg);
+    cerr << "INFO! INITIAL SMALL WINDOW OFFSET (h, v): "
+         << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
+         << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
 
     return 1;
 }
