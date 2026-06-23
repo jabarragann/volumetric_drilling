@@ -1,5 +1,13 @@
 # Simulation assisted navigation 
 
+## TODO:
+* Make it full screen and show it in the right screen of the goovis.
+* change size and also adjust disparity to maintain visual comfort.
+* Add visualization parameters to gui. Call saint with proper parameters after fixing them.
+  * disparity
+  * location of window size
+  * size of small window.
+* Rotating 2D planes to match microscope view.
 
 - [ROS2 documentation](#ros2-documentation)
   - [Python venv setup](#python-venv-setup)

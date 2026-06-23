@@ -40,13 +40,13 @@ uniform float small_window_horizontal_offset = 0.00;
 uniform float small_window_vertical_offset = 0.00;
 
 // Goovis pro window size
-uniform int window_width = 2560;
-uniform int window_height = 1440;
+int window_width = 2560; // 
+int window_height = 720; // goovis screen width is half in 3D mode (1440/2);
 
 
 // CONFIG PARAMETERS
 float small_window_y_pos = 0.60;
-float small_window_height = 0.30;
+float small_window_height = 0.40;
 
 // Adjust the small window's width to ensure it is always square
 float aspect_ratio = float(window_width) / float(window_height);
@@ -111,7 +111,7 @@ void main()
         // gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green color
         vec2 output_loc2 = remap_little_window(output_loc, rectMin, rectMax);
         // gl_FragColor = texture2D(frameBufferTexture, output_loc2); 
-        gl_FragColor = mix(texture2D(frameBufferTexture, output_loc2), texture2D(rosImageTexture, output_loc), 0.3);
+        gl_FragColor = mix(texture2D(frameBufferTexture, output_loc2), texture2D(rosImageTexture, output_loc), 0.1);
     }
     else
     {

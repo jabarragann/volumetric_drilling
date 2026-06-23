@@ -104,12 +104,12 @@ stereoLR:
   #   left_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
   #   right_rostopic: /zed/zed_node/rgb/color/rect/image/compressed
   
-  sim_assisted_nav_plugin_config: # Mock OR microscope (compressed ROS topics)
-    video_source: ros # ros, zed or decklink
-    format: RGB
-    color_conversion: true
-    left_rostopic: /decklink_left/camera/image_raw/compressed
-    right_rostopic: /decklink_right/camera/image_raw/compressed
+  # sim_assisted_nav_plugin_config: # Mock OR microscope (compressed ROS topics)
+  #   video_source: ros # ros, zed or decklink
+  #   format: RGB
+  #   color_conversion: true
+  #   left_rostopic: /decklink_left/camera/image_raw/compressed
+  #   right_rostopic: /decklink_right/camera/image_raw/compressed
 
   # sim_assisted_nav_plugin_config: # Mock OR microscope (raw ROS topics)
   #   video_source: ros # ros, zed or decklink
@@ -128,10 +128,10 @@ stereoLR:
 
   ### DECKLINK
 
-  # sim_assisted_nav_plugin_config: # Decklink SDI capture cards (direct GStreamer)
-  #   video_source: decklink # ros, zed or decklink
-  #   format: RGB
-  #   color_conversion: true 
-  #   left_device: 0
-  #   right_device: 1
+  sim_assisted_nav_plugin_config: # Decklink SDI capture cards (direct GStreamer)
+    video_source: decklink # ros, zed or decklink
+    format: RGB
+    color_conversion: true 
+    left_device: 0
+    right_device: 1
    

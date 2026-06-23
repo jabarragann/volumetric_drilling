@@ -232,7 +232,7 @@ void Slice2D::save_to_file(string filename)
 void Slice2D::annotate(int x, int y, cColorb marker_color)
 {
     float voxel_size = 0.35; // From Loop-x
-    int drill_radius = 1;
+    int drill_radius = 4;
     // int drill_radius = 14;
 
     int marker_size_in_voxels = int(drill_radius / voxel_size);
