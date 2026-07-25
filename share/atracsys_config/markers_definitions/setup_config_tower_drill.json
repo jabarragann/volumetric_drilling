@@ -12,7 +12,7 @@
         },
         {
             "name": "drill_marker",
-            "json-file": "marker_geometry_id05_drill_three_spheres.json",
+            "json-file": "marker_geometry_id06_drill_four_spheres.json",
             "reference": "tower_marker"
         }
 
