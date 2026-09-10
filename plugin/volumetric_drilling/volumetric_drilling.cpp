@@ -45,6 +45,9 @@
 
 #include "volumetric_drilling.h"
 #include <boost/program_options.hpp>
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -116,7 +119,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         ("fix_sagittal_slice", p_opt::value<bool>()->default_value(false), "Pin the multiview sagittal slice to a fixed layer at startup. Default false")
         ("sagittal_slice_idx", p_opt::value<int>()->default_value(70), "Initial fixed sagittal slice index. Default 70")
         ("hmd_window_offset_h", p_opt::value<float>()->default_value(0.0), "Initial horizontal offset of the HMD sim-assisted-nav small window. Default 0.0")
-        ("hmd_window_offset_v", p_opt::value<float>()->default_value(0.0), "Initial vertical offset of the HMD sim-assisted-nav small window. Default 0.0");
+        ("hmd_window_offset_v", p_opt::value<float>()->default_value(0.0), "Initial vertical offset of the HMD sim-assisted-nav small window. Default 0.0")
+        ("cpf", p_opt::value<string>()->default_value(""), "Path to a YAML file with the main_camera pose (location / look at / up). Overrides the pose from world.yaml, including the Ctrl+V reset pose. If empty or the file is missing, world.yaml is used.");
     // clang-format on
 
     p_opt::variables_map var_map;
@@ -167,6 +171,14 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     {
         cerr << "INFO! FAILED TO LOAD main_camera, taking the first camera from world " << endl;
         m_mainCamera = m_worldPtr->getCameras()[0];
+    }
+
+    // Optionally override the main camera pose (and its Ctrl+V reset pose) from
+    // a user-supplied YAML file. No-op when --cpf is not given.
+    string camera_pose_file = var_map["cpf"].as<string>();
+    if (!camera_pose_file.empty())
+    {
+        overrideMainCameraPoseFromFile(camera_pose_file);
     }
 
     // if (m_stereoCamera){
@@ -523,7 +535,7 @@ void afVolmetricDrillingPlugin::rotateCameraUpVector(double a_angleRad)
                           newUp);
 }
 
-void afVolmetricDrillingPlugin::printCameraPose()
+void afVolmetricDrillingPlugin::writeMainCameraPoseYaml(std::ostream &os)
 {
     if (!m_mainCamera)
     {
@@ -534,10 +546,110 @@ void afVolmetricDrillingPlugin::printCameraPose()
     cVector3d lookAt = m_mainCamera->getTargetPosLocal();
     cVector3d up = m_mainCamera->getUpVector();
 
+    // Match the world.yaml key style so the block can be pasted straight into
+    // an ADF file or reused as a --cpf input.
+    std::ios_base::fmtflags saved_flags(os.flags());
+    std::streamsize saved_precision = os.precision();
+    os << std::setprecision(12);
+
+    os << "main_camera:" << "\n";
+    os << "  location: {x: " << location.x() << ", y: " << location.y() << ", z: " << location.z() << " }\n";
+    os << "  look at: { x: " << lookAt.x() << ", y: " << lookAt.y() << ", z: " << lookAt.z() << " }\n";
+    os << "  up: { x: " << up.x() << ", y: " << up.y() << ", z: " << up.z() << " }\n";
+
+    os.flags(saved_flags);
+    os.precision(saved_precision);
+}
+
+void afVolmetricDrillingPlugin::printCameraPose()
+{
+    if (!m_mainCamera)
+    {
+        return;
+    }
+
     cout << endl;
-    cout << "  location: {x: " << location.x() << ", y: " << location.y() << ", z: " << location.z() << " }" << endl;
-    cout << "  look at: { x: " << lookAt.x() << ", y: " << lookAt.y() << ", z: " << lookAt.z() << " }" << endl;
-    cout << "  up: { x: " << up.x() << ", y: " << up.y() << ", z: " << up.z() << " }" << endl;
+    writeMainCameraPoseYaml(cout);
+
+    // Also dump the pose to a file that can be fed straight back via --cpf.
+    const string out_path = "main_camera_info.yaml";
+    std::ofstream fout(out_path);
+    if (fout.good())
+    {
+        writeMainCameraPoseYaml(fout);
+        cout << "INFO! Wrote main camera pose to " << out_path << endl;
+    }
+    else
+    {
+        cerr << "WARNING! Could not write main camera pose to " << out_path << endl;
+    }
+}
+
+void afVolmetricDrillingPlugin::overrideMainCameraPoseFromFile(const std::string &file_path)
+{
+    if (!m_mainCamera)
+    {
+        cerr << "WARNING! Cannot apply --cpf camera pose: no main camera. "
+                "Using the pose from world.yaml." << endl;
+        return;
+    }
+
+    std::ifstream fin(file_path);
+    if (!fin.good())
+    {
+        cerr << "WARNING! --cpf camera pose file '" << file_path
+             << "' not found. Using the pose from world.yaml." << endl;
+        return;
+    }
+    fin.close();
+
+    try
+    {
+        YAML::Node root = YAML::LoadFile(file_path);
+
+        // Accept either a top-level `main_camera:` block (as written by the '/'
+        // key) or the location / look at / up keys directly at the doc root.
+        YAML::Node main_camera_node = root["main_camera"];
+        YAML::Node pose = main_camera_node.IsDefined() ? main_camera_node : root;
+
+        if (!pose["location"] || !pose["look at"] || !pose["up"])
+        {
+            cerr << "WARNING! --cpf file '" << file_path
+                 << "' must define 'location', 'look at' and 'up'. "
+                    "Using the pose from world.yaml." << endl;
+            return;
+        }
+
+        auto read_vec = [](const YAML::Node &n)
+        {
+            return cVector3d(n["x"].as<double>(), n["y"].as<double>(), n["z"].as<double>());
+        };
+
+        cVector3d location = read_vec(pose["location"]);
+        cVector3d lookAt = read_vec(pose["look at"]);
+        cVector3d up = read_vec(pose["up"]);
+
+        // setView returns false for a degenerate pose (location == look at, or
+        // a zero up vector); leave the world.yaml pose untouched in that case.
+        if (!m_mainCamera->setView(location, lookAt, up))
+        {
+            cerr << "WARNING! --cpf file '" << file_path
+                 << "' has a degenerate pose. Using the pose from world.yaml." << endl;
+            return;
+        }
+
+        // afWorld::resetCameras() (Ctrl+V) restores every camera to its initial
+        // transform, so point that at this pose too.
+        m_mainCamera->setInitialTransform(m_mainCamera->getLocalTransform());
+
+        cout << "INFO! main_camera pose overridden from --cpf file " << file_path << endl;
+        writeMainCameraPoseYaml(cout);
+    }
+    catch (const YAML::Exception &e)
+    {
+        cerr << "WARNING! Failed to parse --cpf file '" << file_path << "': "
+             << e.what() << ". Using the pose from world.yaml." << endl;
+    }
 }
 
 void afVolmetricDrillingPlugin::printSaintKeyboardShortcuts()

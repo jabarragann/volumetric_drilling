@@ -50,6 +50,8 @@
 #include "drill_manager.h"
 #include "memory"
 #include "ros_interface.h"
+#include <iosfwd>
+#include <string>
 
 using namespace std;
 using namespace ambf;
@@ -78,8 +80,18 @@ protected:
     void rotateCameraUpVector(double a_angleRad);
 
     // Print the main camera's current pose (location, look at, up) in the
-    // world.yaml format so it can be copied directly into the ADF file.
+    // world.yaml format so it can be copied directly into the ADF file, and
+    // also write it to ./main_camera_info.yaml (reusable as a --cpf input).
     void printCameraPose();
+
+    // Stream the main camera's current pose as a `main_camera:` YAML block
+    // (location / look at / up) to os, matching the world.yaml key style.
+    void writeMainCameraPoseYaml(std::ostream &os);
+
+    // Override the main camera pose (and its Ctrl+V reset pose) with the
+    // location / look at / up read from file_path. If the file is missing or
+    // malformed, the pose from world.yaml is kept.
+    void overrideMainCameraPoseFromFile(const std::string &file_path);
 
     // Print a summary of the SAINT / sim-assisted-nav keyboard shortcuts to
     // the terminal. Bound to '?'.
