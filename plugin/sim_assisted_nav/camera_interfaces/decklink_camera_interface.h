@@ -28,11 +28,18 @@ public:
     DecklinkCameraInterface(int left_device, int right_device);
     ~DecklinkCameraInterface() override;
 
+    // Opens the Decklink pipelines behind a watchdog. If no capture hardware
+    // responds (no card / driver, or no SDI signal) it logs a warning, marks
+    // the source unavailable, and still returns true so the plugin keeps
+    // running; grab() then permanently reports "no frames".
     bool init() override;
     bool grab() override;
     bool has_received_stereo_images() const override;
     const cv::Mat &left_image() const override;
     const cv::Mat &right_image() const override;
+
+    // True once init() has concluded there is no usable Decklink source.
+    bool is_unavailable() const { return m_unavailable; }
 
     void close();
 
@@ -51,4 +58,9 @@ private:
 
     bool m_opened = false;
     bool m_has_images = false;
+
+    // Set when the pipelines could not be opened within the watchdog timeout
+    // (or a fast pre-check found no Decklink device). Once set, init() and
+    // grab() short-circuit so the missing hardware never stalls the sim again.
+    bool m_unavailable = false;
 };

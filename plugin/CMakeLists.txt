@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(AMBF)
 find_package(Boost COMPONENTS program_options filesystem)
 find_package(OpenCV REQUIRED)
+## std::thread in sim_assisted_nav's Decklink watchdog needs pthread.
+find_package(Threads REQUIRED)
 
 ## The ZED camera source for sim_assisted_nav is optional: it pulls in the ZED
 ## SDK + CUDA, which are not available on every machine. Enable it explicitly
@@ -98,7 +100,7 @@ if (WITH_ZED)
 endif()
 
 add_library(sim_assisted_nav SHARED ${sim_assisted_nav_sources})
-target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(sim_assisted_nav ${AMBF_LIBRARIES} ${OpenCV_LIBRARIES} Threads::Threads)
 set_property(TARGET sim_assisted_nav PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 if (AMBF_ROS_VERSION EQUAL 2)
