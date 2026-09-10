@@ -885,7 +885,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
             msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
             m_simAssistedNavRosInterface.small_window_offset_pub->publish(msg);
-            cerr << "INFO! SMALL WINDOW OFFSET (h, v): "
+            cout << "INFO! SMALL WINDOW OFFSET (h, v): "
                  << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
                  << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
         }
@@ -915,7 +915,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
             msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
             m_simAssistedNavRosInterface.small_window_offset_pub->publish(msg);
-            cerr << "INFO! SMALL WINDOW OFFSET (h, v): "
+            cout << "INFO! SMALL WINDOW OFFSET (h, v): "
                  << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
                  << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
         }
@@ -930,7 +930,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             msg.x = m_simAssistedNavRosInterface.small_window_horizontal_offset;
             msg.y = m_simAssistedNavRosInterface.small_window_vertical_offset;
             m_simAssistedNavRosInterface.small_window_offset_pub->publish(msg);
-            cerr << "INFO! SMALL WINDOW OFFSET (h, v): "
+            cout << "INFO! SMALL WINDOW OFFSET (h, v): "
                  << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
                  << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
         }
@@ -949,7 +949,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.window_disparity;
             m_simAssistedNavRosInterface.small_window_disparity_pub->publish(msg);
-            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
+            cout << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
         }
         else if (a_key == GLFW_KEY_RIGHT_BRACKET) // Ctrl + ]
         {
@@ -961,7 +961,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.window_disparity;
             m_simAssistedNavRosInterface.small_window_disparity_pub->publish(msg);
-            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
+            cout << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
         }
         else if (a_key == GLFW_KEY_BACKSLASH) // Ctrl + backslash
         {
@@ -973,7 +973,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.show_small_window;
             m_simAssistedNavRosInterface.show_small_window_pub->publish(msg);
-            cerr << "INFO! SMALL WINDOW " << (m_simAssistedNavRosInterface.show_small_window ? "ON" : "OFF") << endl;
+            cout << "INFO! SMALL WINDOW " << (m_simAssistedNavRosInterface.show_small_window ? "ON" : "OFF") << endl;
         }
 
         //********************************/
@@ -989,7 +989,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.fix_sagittal_slice;
             m_simAssistedNavRosInterface.fix_sagittal_slice_pub->publish(msg);
-            cerr << "INFO! FIX SAGITTAL SLICE: " << m_simAssistedNavRosInterface.fix_sagittal_slice << endl;
+            cout << "INFO! FIX SAGITTAL SLICE: " << m_simAssistedNavRosInterface.fix_sagittal_slice << endl;
         }
         else if (a_key == GLFW_KEY_MINUS)
         {
@@ -1005,7 +1005,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.fixed_sagittal_slice_value;
             m_simAssistedNavRosInterface.fixed_sagittal_slice_value_pub->publish(msg);
-            cerr << "INFO! FIXED SAGITTAL SLICE IDX: " << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
+            cout << "INFO! FIXED SAGITTAL SLICE IDX: " << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
         }
         else if (a_key == GLFW_KEY_EQUAL)
         {
@@ -1017,7 +1017,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
 #endif
             msg.data = m_simAssistedNavRosInterface.fixed_sagittal_slice_value;
             m_simAssistedNavRosInterface.fixed_sagittal_slice_value_pub->publish(msg);
-            cerr << "INFO! FIXED SAGITTAL SLICE IDX: " << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
+            cout << "INFO! FIXED SAGITTAL SLICE IDX: " << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
         }
 
         //********************************/
