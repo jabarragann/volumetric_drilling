@@ -540,6 +540,33 @@ void afVolmetricDrillingPlugin::printCameraPose()
     cout << "  up: { x: " << up.x() << ", y: " << up.y() << ", z: " << up.z() << " }" << endl;
 }
 
+void afVolmetricDrillingPlugin::printSaintKeyboardShortcuts()
+{
+    cout << "\n";
+    cout << "============ SAINT / sim-assisted-nav keyboard shortcuts ============\n";
+    cout << " HMD small window:\n";
+    cout << "   Ctrl + [    Increase small-window disparity  (+0.0015)\n";
+    cout << "   Ctrl + ]    Decrease small-window disparity  (-0.0015)\n";
+    cout << "   Ctrl + \\    Toggle small window on / off\n";
+    cout << "   Ctrl + W    Move small window up     (+0.01)\n";
+    cout << "   Ctrl + S    Move small window down   (-0.01)\n";
+    cout << "   Ctrl + A    Move small window left   (-0.01)\n";
+    cout << "   Ctrl + D    Move small window right  (+0.01)\n";
+    cout << "\n";
+    cout << " Multiview sagittal slice:\n";
+    cout << "   Ctrl + 0    Toggle fixed sagittal slice on / off\n";
+    cout << "   Ctrl + -    Fixed sagittal slice index  -1\n";
+    cout << "   Ctrl + =    Fixed sagittal slice index  +1\n";
+    cout << "\n";
+    cout << " Main camera:\n";
+    cout << "   ;           Roll camera up-vector counter-clockwise  (1 deg)\n";
+    cout << "   '           Roll camera up-vector clockwise          (1 deg)\n";
+    cout << "   /           Print current camera pose (world.yaml format)\n";
+    cout << "   ?           Print this menu\n";
+    cout << "===================================================================\n";
+    cout << endl;
+}
+
 void afVolmetricDrillingPlugin::makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number)
 {
     int count;
@@ -797,6 +824,47 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         }
 
         //********************************/
+        // Sim-assisted nav: HMD small window disparity / visibility
+        // (Ctrl+[ increase, Ctrl+] decrease, Ctrl+\ toggle)
+        //********************************/
+        else if (a_key == GLFW_KEY_LEFT_BRACKET) // Ctrl + [
+        {
+            m_simAssistedNavRosInterface.window_disparity += 0.0015;
+#if AMBF_ROS1
+            std_msgs::Float32 msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Float32 msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.window_disparity;
+            m_simAssistedNavRosInterface.small_window_disparity_pub->publish(msg);
+            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
+        }
+        else if (a_key == GLFW_KEY_RIGHT_BRACKET) // Ctrl + ]
+        {
+            m_simAssistedNavRosInterface.window_disparity -= 0.0015;
+#if AMBF_ROS1
+            std_msgs::Float32 msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Float32 msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.window_disparity;
+            m_simAssistedNavRosInterface.small_window_disparity_pub->publish(msg);
+            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
+        }
+        else if (a_key == GLFW_KEY_BACKSLASH) // Ctrl + backslash
+        {
+            m_simAssistedNavRosInterface.show_small_window = !m_simAssistedNavRosInterface.show_small_window;
+#if AMBF_ROS1
+            std_msgs::Bool msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Bool msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.show_small_window;
+            m_simAssistedNavRosInterface.show_small_window_pub->publish(msg);
+            cerr << "INFO! SMALL WINDOW " << (m_simAssistedNavRosInterface.show_small_window ? "ON" : "OFF") << endl;
+        }
+
+        //********************************/
         // Sim-assisted nav: sagittal slice control (Ctrl+0 toggle, Ctrl+-/Ctrl+= step)
         //********************************/
         else if (a_key == GLFW_KEY_0)
@@ -989,49 +1057,8 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         // SIM-ASSISTED keyboard shortcuts
         //********************************/
 
-        // Increase disparity of small window
-        if (a_key == GLFW_KEY_LEFT_BRACKET) // [
-        {
-            m_simAssistedNavRosInterface.window_disparity += 0.0015;
-#if AMBF_ROS1
-            std_msgs::Float32 msg;
-#elif AMBF_ROS2
-            std_msgs::msg::Float32 msg;
-#endif
-            msg.data = m_simAssistedNavRosInterface.window_disparity;
-            m_simAssistedNavRosInterface.small_window_disparity_pub -> publish(msg);
-            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
-        }
-        // Decrease disparity of small window
-        else if (a_key == GLFW_KEY_RIGHT_BRACKET) // ]
-        {
-            m_simAssistedNavRosInterface.window_disparity -= 0.0015;
-#if AMBF_ROS1
-            std_msgs::Float32 msg;
-#elif AMBF_ROS2
-            std_msgs::msg::Float32 msg;
-#endif
-            msg.data = m_simAssistedNavRosInterface.window_disparity;
-            m_simAssistedNavRosInterface.small_window_disparity_pub->publish(msg);
-            cerr << "INFO! WINDOW DISPARITY " << m_simAssistedNavRosInterface.window_disparity << endl;
-        }
-        // Toggle the small window on/off
-        else if (a_key == GLFW_KEY_BACKSLASH) // backslash
-        {
-            m_simAssistedNavRosInterface.show_small_window = !m_simAssistedNavRosInterface.show_small_window;
-#if AMBF_ROS1
-            std_msgs::Bool msg;
-#elif AMBF_ROS2
-            std_msgs::msg::Bool msg;
-#endif
-            msg.data = m_simAssistedNavRosInterface.show_small_window;
-            m_simAssistedNavRosInterface.show_small_window_pub->publish(msg);
-            cerr << "INFO! SMALL WINDOW " << (m_simAssistedNavRosInterface.show_small_window ? "ON" : "OFF") << endl;
-        }
-
-
         // Rotate camera up vector counter-clockwise about the look axis
-        else if (a_key == GLFW_KEY_SEMICOLON) // ;
+        if (a_key == GLFW_KEY_SEMICOLON) // ;
         {
             rotateCameraUpVector(cDegToRad(1.0));
         }
@@ -1039,6 +1066,12 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         else if (a_key == GLFW_KEY_APOSTROPHE) // '
         {
             rotateCameraUpVector(cDegToRad(-1.0));
+        }
+        // Print the SAINT / sim-assisted-nav keyboard shortcut summary.
+        // '?' is Shift+'/', so it must be checked before the plain '/' case.
+        else if (a_key == GLFW_KEY_SLASH && (a_mods & GLFW_MOD_SHIFT)) // ?
+        {
+            printSaintKeyboardShortcuts();
         }
         // Print current camera pose in world.yaml format
         else if (a_key == GLFW_KEY_SLASH) // /

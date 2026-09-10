@@ -81,6 +81,10 @@ protected:
     // world.yaml format so it can be copied directly into the ADF file.
     void printCameraPose();
 
+    // Print a summary of the SAINT / sim-assisted-nav keyboard shortcuts to
+    // the terminal. Bound to '?'.
+    void printSaintKeyboardShortcuts();
+
     void makeVRWindowFullscreen(afCameraPtr vrCam, int monitor_number = -1);
 
     void updateButtons();
