@@ -1,24 +1,30 @@
+<!--toc:start-->
+- [Simulation assisted navigation](#simulation-assisted-navigation)
+  - [Important respositories](#important-respositories)
+  - [ROS2 documentation](#ros2-documentation)
+    - [Colcon workspace setup](#colcon-workspace-setup)
+    - [Python venv setup](#python-venv-setup)
+  - [Installation](#installation)
+    - [0. Install AMBF simulator](#0-install-ambf-simulator)
+    - [1. Compile and setup external plugins](#1-compile-and-setup-external-plugins)
+    - [2. Compile internal plugins](#2-compile-internal-plugins)
+  - [Usage](#usage)
+  - [Running registration pipeline](#running-registration-pipeline)
+  - [Important configurations](#important-configurations)
+  - [Keyboard shortcuts](#keyboard-shortcuts)
+  - [Notes about functionality](#notes-about-functionality)
+<!--toc:end-->
+
 # Simulation assisted navigation 
 
-## TODO:
-* Make it full screen and show it in the right screen of the goovis.
-* change size and also adjust disparity to maintain visual comfort.
-* Add visualization parameters to gui. Call saint with proper parameters after fixing them.
-  * disparity
-  * location of window size
-  * size of small window.
-* Rotating 2D planes to match microscope view.
+## Important respositories
 
-- [ROS2 documentation](#ros2-documentation)
-  - [Python venv setup](#python-venv-setup)
-  - [Colcon workspace setup](#colcon-workspace-setup)
-- [Installation](#installation)
-  - [0. Install AMBF simulator](#0-install-ambf-simulator)
-  - [1. Compile and setup external plugins](#1-compile-and-setup-external-plugins)
-- [Usage](#usage)
+- [nrrd_to_adf](https://github.com/hisashiishida/nrrd_to_adf.git): Tools to export nrrd to ambf. Select **devel** branch.
+- [saint_automation_tools](https://github.com/jabarragann/Saint-analysis-utils/tree/main): GUI to launch saint. 
 
 ## ROS2 documentation
 [Back to Top](#simulation-assisted-navigation)
+
 
 ### Colcon workspace setup
 
