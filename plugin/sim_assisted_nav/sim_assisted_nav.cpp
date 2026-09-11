@@ -58,6 +58,10 @@ afCameraHMD::afCameraHMD()
     m_width = 2880;
     m_height = 1600;
     m_alias_scaling = 1.0;
+
+    // Hardcoded for testing; will be driven by a ROS topic once integrated
+    // with the rest of the system.
+    m_display_mode = NavDisplayMode::MODE_2D;
 }
 
 int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -88,15 +92,32 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
     string file_path = __FILE__;
     g_current_filepath = file_path.substr(0, file_path.rfind("/"));
 
-    afShaderAttributes shaderAttribs;
-    shaderAttribs.m_shaderDefined = true;
-    shaderAttribs.m_vtxFilepath = g_current_filepath + "/shaders/sim_assisted_shader.vs";
-    shaderAttribs.m_fragFilepath = g_current_filepath + "/shaders/sim_assisted_shader.fs";
+    // Compile both the 3D (stereo picture-over-picture) and 2D (single
+    // full-width eye) fragment shaders up front. Only one is bound to the quad
+    // mesh at a time (see setDisplayMode()); keeping both compiled lets us
+    // swap between them at runtime with no recompilation, e.g. from a future
+    // ROS mode topic.
+    afShaderAttributes shaderAttribs3D;
+    shaderAttribs3D.m_shaderDefined = true;
+    shaderAttribs3D.m_vtxFilepath = g_current_filepath + "/shaders/sim_assisted_shader.vs";
+    shaderAttribs3D.m_fragFilepath = g_current_filepath + "/shaders/sim_assisted_shader_3d.fs";
 
-    m_shaderPgm = afShaderUtils::createFromAttribs(&shaderAttribs, m_camera->getName(), "SIM_ASSISTED_CAM");
-    if (!m_shaderPgm)
+    m_shaderPgm3D = afShaderUtils::createFromAttribs(&shaderAttribs3D, m_camera->getName(), "SIM_ASSISTED_CAM_3D");
+    if (!m_shaderPgm3D)
     {
-        cerr << "ERROR! FAILED TO LOAD SHADER PGM \n";
+        cerr << "ERROR! FAILED TO LOAD 3D SHADER PGM \n";
+        return -1;
+    }
+
+    afShaderAttributes shaderAttribs2D;
+    shaderAttribs2D.m_shaderDefined = true;
+    shaderAttribs2D.m_vtxFilepath = g_current_filepath + "/shaders/sim_assisted_shader.vs";
+    shaderAttribs2D.m_fragFilepath = g_current_filepath + "/shaders/sim_assisted_shader_2d.fs";
+
+    m_shaderPgm2D = afShaderUtils::createFromAttribs(&shaderAttribs2D, m_camera->getName(), "SIM_ASSISTED_CAM_2D");
+    if (!m_shaderPgm2D)
+    {
+        cerr << "ERROR! FAILED TO LOAD 2D SHADER PGM \n";
         return -1;
     }
 
@@ -149,7 +170,8 @@ int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAtt
 
     m_quadMesh->setUseTexture(true);
 
-    m_quadMesh->setShaderProgram(m_shaderPgm);
+    // Binds m_shaderPgm3D or m_shaderPgm2D to m_quadMesh depending on m_display_mode.
+    setDisplayMode(m_display_mode);
     m_quadMesh->setShowEnabled(true);
 
     m_vrWorld = new cWorld();
@@ -210,6 +232,15 @@ bool afCameraHMD::close()
     // GL/ROS context is still valid, rather than at process exit.
     m_camera_interface.reset();
     return true;
+}
+
+void afCameraHMD::setDisplayMode(NavDisplayMode mode)
+{
+    m_display_mode = mode;
+    m_shaderPgm = (mode == NavDisplayMode::MODE_3D) ? m_shaderPgm3D : m_shaderPgm2D;
+    m_quadMesh->setShaderProgram(m_shaderPgm);
+    cerr << "INFO! sim_assisted_nav display mode: "
+         << (mode == NavDisplayMode::MODE_3D ? "3D" : "2D") << endl;
 }
 
 void afCameraHMD::updateHMDParams()
@@ -386,29 +417,42 @@ void afCameraHMD::update_textures_for_headset()
         return;
     }
 
-    // m_concat_img must be a member: chai3d's setData stores the pointer without
-    // copying, so the buffer backing it must outlive this function.
-    cv::hconcat(left_img, right_img, m_concat_img);
-    cv::flip(m_concat_img, m_concat_img, 0);
+    // m_output_img must be a member: chai3d's setData stores the pointer
+    // without copying, so the buffer backing it must outlive this function.
+    if (m_display_mode == NavDisplayMode::MODE_3D)
+    {
+        // Picture-over-picture: left+right eyes side by side, one per half of
+        // the window (see sim_assisted_shader_3d.fs).
+        cv::hconcat(left_img, right_img, m_output_img);
+    }
+    else
+    {
+        // Single eye stretched across the full window width (see
+        // sim_assisted_shader_2d.fs). right_img is still grabbed above (the
+        // camera interface always produces a stereo pair) but unused here.
+        m_output_img = left_img;
+    }
+
+    cv::flip(m_output_img, m_output_img, 0);
 
     if (stereo_cam_info->convert_from_RGB2BGR)
     {
         // This is required for zed mini.
-        cv::cvtColor(m_concat_img, m_concat_img, cv::COLOR_RGB2BGR);
+        cv::cvtColor(m_output_img, m_output_img, cv::COLOR_RGB2BGR);
     }
 
     // Initialize chai ROS texture.
-    int ros_image_size = m_concat_img.cols * m_concat_img.rows * m_concat_img.elemSize();
+    int ros_image_size = m_output_img.cols * m_output_img.rows * m_output_img.elemSize();
     int texture_image_size = m_hmdImageTexture->m_image->getWidth() * m_hmdImageTexture->m_image->getHeight() * m_hmdImageTexture->m_image->getBytesPerPixel();
 
     if (ros_image_size != texture_image_size)
     {
         cout << "INITILIZE rosImageTexture" << endl;
         m_hmdImageTexture->m_image->erase();
-        m_hmdImageTexture->m_image->allocate(m_concat_img.cols, m_concat_img.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
+        m_hmdImageTexture->m_image->allocate(m_output_img.cols, m_output_img.rows, stereo_cam_info->pixel_format_gl, GL_UNSIGNED_BYTE);
     }
 
-    m_hmdImageTexture->m_image->setData(m_concat_img.data, ros_image_size);
+    m_hmdImageTexture->m_image->setData(m_output_img.data, ros_image_size);
     m_hmdImageTexture->markForUpdate();
 }
 

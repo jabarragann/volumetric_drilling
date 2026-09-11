@@ -52,6 +52,17 @@
 using namespace std;
 using namespace ambf;
 
+// Selects which fragment shader (and which camera image layout) feeds the HMD
+// quad. MODE_3D concatenates left+right eyes side by side (picture-over-picture,
+// see sim_assisted_shader_3d.fs); MODE_2D shows a single eye stretched across the
+// full window width (see sim_assisted_shader_2d.fs). Both shader programs are
+// compiled up front in init() so switching modes is just swapping a pointer.
+enum class NavDisplayMode
+{
+    MODE_3D,
+    MODE_2D
+};
+
 class afCameraHMD : public afObjectPlugin
 {
 public:
@@ -68,6 +79,12 @@ public:
 
     void create_stereo_cam_info_from_yaml(string cam_name, const afBaseObjectAttribsPtr a_objectAttribs);
 
+    // Switch between the 3D (stereo picture-over-picture) and 2D (single full-
+    // width eye) shaders. Both are precompiled, so this only swaps which one is
+    // bound to the quad mesh -- no shader recompilation happens here. This is
+    // the hook a future ROS mode topic will call.
+    void setDisplayMode(NavDisplayMode mode);
+
     std::unique_ptr<StereoCameraConfig> stereo_cam_info;
     HmdRosInterface ros_interface;
     std::unique_ptr<StereoCameraInterface> m_camera_interface;
@@ -76,7 +93,9 @@ public:
     int clipsize = 0.3;
 
     cTexture2dPtr m_hmdImageTexture;
-    cv::Mat m_concat_img;
+    // Holds the image uploaded to m_hmdImageTexture: left+right concatenated in
+    // MODE_3D, or just the left eye in MODE_2D.
+    cv::Mat m_output_img;
 
     void assignGLFWCallbacks();
     void windowSizeCallback(GLFWwindow *window_ptr, int width, int height);
@@ -89,7 +108,16 @@ protected:
     int m_width;
     int m_height;
     int m_alias_scaling;
+
+    // Hardcoded to MODE_2D for now, for testing; will be driven by a ROS topic
+    // once integrated with the rest of the system.
+    NavDisplayMode m_display_mode = NavDisplayMode::MODE_2D;
+
+    // The shader currently bound to m_quadMesh (one of the two below); kept
+    // separate from them so updateHMDParams() doesn't need to know the mode.
     cShaderProgramPtr m_shaderPgm;
+    cShaderProgramPtr m_shaderPgm3D;
+    cShaderProgramPtr m_shaderPgm2D;
 };
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraHMD)
