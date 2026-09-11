@@ -37,6 +37,8 @@ void HmdRosInterface::init()
     ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Bool), HmdRosInterface>(show_small_window_sub, ros_node_handle, "/sim_assisted_nav/show_small_window", 2, &HmdRosInterface::show_small_window_callback, this);
 
     ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, Point), HmdRosInterface>(small_window_offset_sub, ros_node_handle, "/sim_assisted_nav/small_window_offset", 2, &HmdRosInterface::small_window_offset_callback, this);
+
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Bool), HmdRosInterface>(display_mode_3d_sub, ros_node_handle, "/sim_assisted_nav/display_mode_3d", 2, &HmdRosInterface::display_mode_3d_callback, this);
 }
 
 #if AMBF_ROS1
@@ -55,6 +57,11 @@ void HmdRosInterface::small_window_offset_callback(const geometry_msgs::Point &m
     small_window_horizontal_offset = msg.x;
     small_window_vertical_offset = msg.y;
 }
+
+void HmdRosInterface::display_mode_3d_callback(const std_msgs::Bool &msg)
+{
+    display_mode_3d = msg.data;
+}
 #elif AMBF_ROS2
 void HmdRosInterface::window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -70,5 +77,10 @@ void HmdRosInterface::small_window_offset_callback(const geometry_msgs::msg::Poi
 {
     small_window_horizontal_offset = msg->x;
     small_window_vertical_offset = msg->y;
+}
+
+void HmdRosInterface::display_mode_3d_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    display_mode_3d = msg->data;
 }
 #endif

@@ -109,9 +109,10 @@ protected:
     int m_height;
     int m_alias_scaling;
 
-    // Hardcoded to MODE_2D for now, for testing; will be driven by a ROS topic
-    // once integrated with the rest of the system.
-    NavDisplayMode m_display_mode = NavDisplayMode::MODE_2D;
+    // Defaults to 3D; ros_interface.display_mode_3d (polled each frame in
+    // graphicsUpdate()) can switch this to MODE_2D at runtime, e.g. via
+    // Ctrl+9 in the volumetric_drilling plugin.
+    NavDisplayMode m_display_mode = NavDisplayMode::MODE_3D;
 
     // The shader currently bound to m_quadMesh (one of the two below); kept
     // separate from them so updateHMDParams() doesn't need to know the mode.

@@ -319,6 +319,18 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
          << m_simAssistedNavRosInterface.small_window_horizontal_offset << ", "
          << m_simAssistedNavRosInterface.small_window_vertical_offset << endl;
 
+    // Publish the initial HMD display mode so the sim_assisted_nav shader
+    // starts in sync (defaults to 3D). Latched, so late-joining subscribers
+    // still receive this value.
+#if AMBF_ROS1
+    std_msgs::Bool display_mode_msg;
+#elif AMBF_ROS2
+    std_msgs::msg::Bool display_mode_msg;
+#endif
+    display_mode_msg.data = m_simAssistedNavRosInterface.display_mode_3d;
+    m_simAssistedNavRosInterface.display_mode_3d_pub->publish(display_mode_msg);
+    cerr << "INFO! INITIAL DISPLAY MODE: " << (m_simAssistedNavRosInterface.display_mode_3d ? "3D" : "2D") << endl;
+
     return 1;
 }
 
@@ -670,6 +682,9 @@ void afVolmetricDrillingPlugin::printSaintKeyboardShortcuts()
     cout << "   Ctrl + -    Fixed sagittal slice index  -1\n";
     cout << "   Ctrl + =    Fixed sagittal slice index  +1\n";
     cout << "\n";
+    cout << " HMD display mode:\n";
+    cout << "   Ctrl + 9    Toggle 2D / 3D display mode\n";
+    cout << "\n";
     cout << " Main camera:\n";
     cout << "   ;           Roll camera up-vector counter-clockwise  (1 deg)\n";
     cout << "   '           Roll camera up-vector clockwise          (1 deg)\n";
@@ -1018,6 +1033,23 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
             msg.data = m_simAssistedNavRosInterface.fixed_sagittal_slice_value;
             m_simAssistedNavRosInterface.fixed_sagittal_slice_value_pub->publish(msg);
             cout << "INFO! FIXED SAGITTAL SLICE IDX: " << m_simAssistedNavRosInterface.fixed_sagittal_slice_value << endl;
+        }
+
+        //********************************/
+        // Sim-assisted nav: display mode toggle (Ctrl+9 toggles 2D/3D)
+        //********************************/
+        else if (a_key == GLFW_KEY_9)
+        {
+            m_simAssistedNavRosInterface.display_mode_3d = !m_simAssistedNavRosInterface.display_mode_3d;
+#if AMBF_ROS1
+            std_msgs::Bool msg;
+#elif AMBF_ROS2
+            std_msgs::msg::Bool msg;
+#endif
+            msg.data = m_simAssistedNavRosInterface.display_mode_3d;
+            m_simAssistedNavRosInterface.display_mode_3d_pub->publish(msg);
+            cerr << "INFO! SIM-ASSISTED NAV DISPLAY MODE: "
+                 << (m_simAssistedNavRosInterface.display_mode_3d ? "3D" : "2D") << endl;
         }
 
         //********************************/

@@ -59,9 +59,9 @@ afCameraHMD::afCameraHMD()
     m_height = 1600;
     m_alias_scaling = 1.0;
 
-    // Hardcoded for testing; will be driven by a ROS topic once integrated
-    // with the rest of the system.
-    m_display_mode = NavDisplayMode::MODE_2D;
+    // 3D (stereo picture-over-picture) is the default; ros_interface.display_mode_3d
+    // (see graphicsUpdate()) can switch it to 2D at runtime.
+    m_display_mode = NavDisplayMode::MODE_3D;
 }
 
 int afCameraHMD::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -191,6 +191,16 @@ void afCameraHMD::graphicsUpdate()
     //     makeFullScreen();
     //     first_time = false;
     // }
+
+    // Pick up display-mode changes published over ROS (e.g. Ctrl+9 in the
+    // volumetric_drilling plugin). Only swap when it actually changed: the
+    // swap itself is cheap, but doing it unconditionally would rebind the
+    // shader (and log) every frame.
+    NavDisplayMode desired_mode = ros_interface.display_mode_3d ? NavDisplayMode::MODE_3D : NavDisplayMode::MODE_2D;
+    if (desired_mode != m_display_mode)
+    {
+        setDisplayMode(desired_mode);
+    }
 
     update_textures_for_headset();
 

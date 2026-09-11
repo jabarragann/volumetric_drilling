@@ -69,10 +69,12 @@ public:
     std::shared_ptr<ros::Subscriber> window_disparity_sub;
     std::shared_ptr<ros::Subscriber> show_small_window_sub;
     std::shared_ptr<ros::Subscriber> small_window_offset_sub;
+    std::shared_ptr<ros::Subscriber> display_mode_3d_sub;
 #elif AMBF_ROS2
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr window_disparity_sub;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr show_small_window_sub;
     rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr small_window_offset_sub;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr display_mode_3d_sub;
 #endif
 
     // Shader uniform variables updated via ROS subscription
@@ -82,14 +84,20 @@ public:
     // Toggles the small picture-over-picture windows on/off. When false only
     // the rosImageTexture is shown.
     bool show_small_window = true;
+    // Selects the HMD display mode: true for 3D (stereo picture-over-picture),
+    // false for 2D (single full-width eye). Polled once per frame in
+    // afCameraHMD::graphicsUpdate() to swap the active shader program.
+    bool display_mode_3d = true;
 
 #if AMBF_ROS1
     void window_disparity_callback(const std_msgs::Float32 &msg);
     void show_small_window_callback(const std_msgs::Bool &msg);
     void small_window_offset_callback(const geometry_msgs::Point &msg);
+    void display_mode_3d_callback(const std_msgs::Bool &msg);
 #elif AMBF_ROS2
     void window_disparity_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void show_small_window_callback(const std_msgs::msg::Bool::SharedPtr msg);
     void small_window_offset_callback(const geometry_msgs::msg::Point::SharedPtr msg);
+    void display_mode_3d_callback(const std_msgs::msg::Bool::SharedPtr msg);
 #endif
 };

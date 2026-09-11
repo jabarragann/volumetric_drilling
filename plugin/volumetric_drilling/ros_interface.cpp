@@ -245,4 +245,7 @@ SimulationAssistedNavRosInterface::SimulationAssistedNavRosInterface(std::string
     ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Int32)>
     (fixed_sagittal_slice_value_pub, m_rosNode, a_namespace + "/" + "fixed_sagittal_slice_value", 5, true);
 
+    ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Bool)>
+    (display_mode_3d_pub, m_rosNode, a_namespace + "/" + "display_mode_3d", 5, true);
+
 }
