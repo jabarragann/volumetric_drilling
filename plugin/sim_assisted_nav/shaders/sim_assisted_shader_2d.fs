@@ -4,20 +4,9 @@
 // show/hide) behave identically in both modes.
 //
 // IMPORTANT parameters:
-// * small_window_disparity: distance of the small window's left edge from the
-//   left edge of the screen.
+// * small_window_disparity: shifts the window's left edge, same as in 3D mode
+//   (see small_window_x_pos below -- its resting position isn't 0).
 // * rect_size: size of the small window.
-//
-//  (0,1)                                            (1,1)
-// +--------------------------------------------------+
-// |     +----------+                                 |
-// |     |          |                                 |
-// |     |          |<--- small_window_disparity      |
-// |     |          |                                 |
-// |     +----------+                                 |
-// |                                                   |
-// +--------------------------------------------------+
-//  (0,0)                                            (1,0)
 
 #version 120
 
@@ -49,9 +38,14 @@ float small_window_width = small_window_height / aspect_ratio;
 
 vec2 rect_size = vec2(small_window_width, small_window_height);
 
-// Same placement formula used for the right-eye window in 3D mode, now
-// applied once across the full [0,1] width instead of a screen half.
-float small_window_x_pos = small_window_disparity + small_window_horizontal_offset;
+// Match the 3D shader's left-eye window position. There, the window's left
+// edge sits at left_x_pos_3d within the [0, 0.5] half-width the left eye is
+// drawn into; scaling that by 2 places it at the same relative spot within
+// this shader's full [0, 1] width (e.g. 0.3 of 0.5 in 3D -> 0.6 of 1.0 here).
+// Not an exact visual match (rect_size below isn't rescaled the same way),
+// but close enough to feel consistent between modes.
+float left_x_pos_3d = 0.5 - rect_size.x - small_window_disparity + small_window_horizontal_offset;
+float small_window_x_pos = 2.0 * left_x_pos_3d;
 vec2 small_window_pos = vec2(small_window_x_pos, small_window_y_pos + small_window_vertical_offset);
 
 float remap(float t, float a, float b, float c, float d)
