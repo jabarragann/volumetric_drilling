@@ -22,7 +22,7 @@
 struct StereoCameraConfig
 {
     // Selects which StereoCameraInterface implementation to build.
-    std::string video_source; // "ros" | "zed" | "decklink"
+    std::string video_source; // "ros" | "zed" | "decklink" | "unixfd"
     std::string camera_name;
 
     // ROS source only.
@@ -32,6 +32,9 @@ struct StereoCameraConfig
     // Decklink source only.
     int left_device = -1;
     int right_device = -1;
+
+    // Unixfd source only: name of the running video_source to connect to.
+    std::string source_name;
 
     // Output texture format.
     std::string pixel_format;    // "RGB" | "RGBA"

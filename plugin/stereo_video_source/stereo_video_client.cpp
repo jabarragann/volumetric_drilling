@@ -56,10 +56,9 @@ bool StereoVideoClient::init(const std::string &name)
     }
     m_sink = gst_bin_get_by_name(GST_BIN(m_pipeline), "sink");
 
+    // Fails when no source is serving on the socket; callers report it.
     if (gst_element_set_state(m_pipeline, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
     {
-        cerr << "Could not connect to stereo video source '" << name << "' at "
-             << socket_path_for(name) << ". Is video_source running?" << endl;
         close();
         return false;
     }

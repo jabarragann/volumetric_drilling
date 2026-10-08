@@ -15,6 +15,7 @@
 // Several viewers can run at once. Press 'q' or ESC to quit.
 
 #include "stereo_video_client.h"
+#include "stereo_video_common.h"
 
 #include <boost/program_options.hpp>
 #include <opencv2/highgui.hpp>
@@ -56,6 +57,8 @@ int main(int argc, char **argv)
     stereo_video::StereoVideoClient client;
     if (!client.init(name))
     {
+        cerr << "Could not connect to stereo video source '" << name << "' at "
+             << stereo_video::socket_path_for(name) << ". Is video_source running?" << endl;
         return 1;
     }
 

@@ -18,6 +18,9 @@
 #ifdef WITH_ZED
 #include "zed_camera_interface.h"
 #endif
+#ifdef WITH_UNIXFD
+#include "decklink_unixfd_interface.h"
+#endif
 
 #include <iostream>
 
@@ -40,6 +43,17 @@ std::unique_ptr<StereoCameraInterface> create_stereo_camera_interface(const Ster
     if (config.video_source == "decklink")
     {
         return std::make_unique<DecklinkCameraInterface>(config.left_device, config.right_device);
+    }
+    if (config.video_source == "unixfd")
+    {
+#ifdef WITH_UNIXFD
+        return std::make_unique<DecklinkUnixfdInterface>(config.source_name);
+#else
+        std::cerr << "ERROR! video_source 'unixfd' requires the sim_assisted_nav plugin "
+                     "to be built with the GStreamer dev packages (libgstreamer1.0-dev "
+                     "libgstreamer-plugins-base1.0-dev)." << std::endl;
+        return nullptr;
+#endif
     }
     return nullptr;
 }

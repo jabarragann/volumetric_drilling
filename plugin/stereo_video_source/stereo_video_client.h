@@ -32,7 +32,7 @@ public:
     StereoVideoClient(const StereoVideoClient &) = delete;
     StereoVideoClient &operator=(const StereoVideoClient &) = delete;
 
-    // Connects to the source. Fails if the source is not running.
+    // Connects to the source. Silently returns false if the source is not running.
     bool init(const std::string &name = "camera");
 
     // Waits up to timeout_ms for the next frame. Returns false on timeout or

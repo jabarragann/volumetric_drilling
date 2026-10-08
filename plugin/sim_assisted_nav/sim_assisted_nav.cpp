@@ -310,13 +310,14 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
     }
 
     // Example yaml config
-    // video_source: ros          # ros, zed or decklink
+    // video_source: unixfd       # ros, zed, decklink or unixfd
     // format: RGB                # RGB or RGBA
     // color_conversion: false
     // left_rostopic: /stereo/left/image_raw    # video_source: ros only
     // right_rostopic: /stereo/right/image_raw  # video_source: ros only
     // left_device: 0             # video_source: decklink only
     // right_device: 1            # video_source: decklink only
+    // source_name: camera        # video_source: unixfd only (default: camera)
 
     try
     {
@@ -337,6 +338,10 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
             cfg->left_device = plugin_config["left_device"].as<int>();
             cfg->right_device = plugin_config["right_device"].as<int>();
         }
+        else if (cfg->video_source == "unixfd")
+        {
+            cfg->source_name = plugin_config["source_name"].as<string>("camera");
+        }
         // "zed" needs no source-specific keys.
 
         cfg->validate();
@@ -345,11 +350,12 @@ void afCameraHMD::create_stereo_cam_info_from_yaml(string cam_name, const afBase
     catch (YAML::Exception &e)
     {
         cerr << "sim_assisted_nav_plugin_config expects the following config fields " << endl;
-        cerr << "video_source (ros, zed or decklink)" << endl;
+        cerr << "video_source (ros, zed, decklink or unixfd)" << endl;
         cerr << "format" << endl;
         cerr << "color_conversion" << endl;
         cerr << "left_rostopic, right_rostopic (video_source: ros)" << endl;
         cerr << "left_device, right_device (video_source: decklink)" << endl;
+        cerr << "source_name (video_source: unixfd, optional)" << endl;
 
         throw runtime_error("Error in sim_assisted_nav_plugin_config");
     }

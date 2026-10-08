@@ -90,7 +90,7 @@ stereoLR:
 
   # video_source selects the camera interface. Only the keys for the chosen
   # source are read: ros -> left_rostopic/right_rostopic, decklink ->
-  # left_device/right_device, zed -> none.
+  # left_device/right_device, unixfd -> source_name, zed -> none.
 
 
   ### ZED DEVICES
@@ -133,10 +133,17 @@ stereoLR:
 
   ### DECKLINK
 
-  sim_assisted_nav_plugin_config: # Decklink SDI capture cards (direct GStreamer)
-    video_source: decklink # ros, zed or decklink
+  # sim_assisted_nav_plugin_config: # Decklink SDI capture cards (direct GStreamer, AMBF owns the cards)
+  #   video_source: decklink # ros, zed, decklink or unixfd
+  #   format: RGB
+  #   color_conversion: true 
+  #   left_device: 0
+  #   right_device: 1
+
+  # Decklink via the stereo video source (multi-client). Start `video_source` first.
+  sim_assisted_nav_plugin_config:
+    video_source: unixfd # ros, zed, decklink or unixfd
     format: RGB
-    color_conversion: true 
-    left_device: 0
-    right_device: 1
+    color_conversion: true
+    source_name: camera # must match `video_source --name` (default: camera)
    

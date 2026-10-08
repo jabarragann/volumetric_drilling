@@ -33,7 +33,8 @@ void StereoCameraConfig::validate()
         throw std::runtime_error("Pixel format not supported");
     }
 
-    if (video_source != "ros" && video_source != "zed" && video_source != "decklink")
+    if (video_source != "ros" && video_source != "zed" && video_source != "decklink" &&
+        video_source != "unixfd")
     {
         std::cerr << "ERROR! Video source " << video_source << " not supported. Check plugin config." << std::endl;
         throw std::runtime_error("Video source not supported");

@@ -9,6 +9,7 @@
     - [1. Compile and setup external plugins](#1-compile-and-setup-external-plugins)
     - [2. Compile internal plugins](#2-compile-internal-plugins)
   - [Usage](#usage)
+  - [Video pipeline](#video-pipeline)
   - [Running registration pipeline](#running-registration-pipeline)
   - [Important configurations](#important-configurations)
   - [Keyboard shortcuts](#keyboard-shortcuts)
@@ -161,6 +162,18 @@ ambf_simulator --launch_file launch.yaml -l 6,8,12 --tf_list share/plugin_config
 ```
 
 Use the `--nt 1` flag to only use the tool cursor in the burr. Also, use the keyboard shortcuts `<C-c>` to toggle visibility of the collision spheres and `<C-o>` update the collision's sphere.
+
+## Video pipeline
+
+Set `video_source` in `sim_assisted_nav_plugin_config` of `ADF/single_stereo_camera.yaml`:
+
+* `unixfd` (default): reads the Decklink cards through a separate `video_source` process that serves the video to any number of clients. **Launch the source before AMBF:**
+  ```
+  ros2 run simulation_assisted_navigation_framework video_source      # --help for options
+  ros2 run simulation_assisted_navigation_framework stereo_viewer     # optional, check the video
+  ```
+* `decklink`: AMBF opens the Decklink cards directly. No other process can use the cards.
+* `ros`: subscribes to left/right image topics.
 
 ## Running registration pipeline
 

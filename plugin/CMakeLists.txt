@@ -159,6 +159,13 @@ if (GST_FOUND)
     if (AMBF_ROS_VERSION EQUAL 2)
         install(TARGETS video_source stereo_viewer RUNTIME DESTINATION lib/${PROJECT_NAME})
     endif()
+
+    ## sim_assisted_nav client for the stereo video source (video_source: unixfd)
+    target_sources(sim_assisted_nav PRIVATE
+        sim_assisted_nav/camera_interfaces/decklink_unixfd_interface.cpp
+        sim_assisted_nav/camera_interfaces/decklink_unixfd_interface.h)
+    target_compile_definitions(sim_assisted_nav PRIVATE WITH_UNIXFD)
+    target_link_libraries(sim_assisted_nav stereo_video)
 else()
     message(WARNING "GStreamer dev packages not found: skipping stereo_video_source. "
                     "Install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev")
