@@ -123,6 +123,13 @@ if (WITH_ZED)
     target_link_libraries(sim_assisted_nav ${ZED_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY})
 endif()
 
+## Standalone Decklink capture test (no ROS / AMBF needed)
+add_executable(test_decklink
+    sim_assisted_nav/test_executables/test_decklink.cpp
+    sim_assisted_nav/camera_interfaces/decklink_camera_interface.cpp)
+target_include_directories(test_decklink PRIVATE sim_assisted_nav/camera_interfaces)
+target_link_libraries(test_decklink ${OpenCV_LIBRARIES} Threads::Threads)
+
 # Ambf camera plugin - Multiview plugin
 include_directories(multiview_panels)
 set(multiview_dir "multiview_panels")

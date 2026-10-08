@@ -17,6 +17,11 @@
 
 # Simulation assisted navigation 
 
+## Dependencies
+
+```
+sudo apt install gstreamer1.0-plugins-bad # Required to read decklink video
+```
 ## Important respositories
 
 - [nrrd_to_adf](https://github.com/hisashiishida/nrrd_to_adf.git): Tools to export nrrd to ambf. Select **devel** branch.
