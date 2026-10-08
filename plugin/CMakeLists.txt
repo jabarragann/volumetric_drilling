@@ -130,6 +130,40 @@ add_executable(test_decklink
 target_include_directories(test_decklink PRIVATE sim_assisted_nav/camera_interfaces)
 target_link_libraries(test_decklink ${OpenCV_LIBRARIES} Threads::Threads)
 
+## Stereo video source (1 capture process -> N clients over unixfd shared memory)
+## Needs: sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+##        gstreamer1.0-plugins-bad (decklinkvideosrc, unixfdsink/src at runtime)
+find_package(PkgConfig QUIET)
+if (PkgConfig_FOUND)
+    pkg_check_modules(GST IMPORTED_TARGET gstreamer-1.0 gstreamer-app-1.0 gio-unix-2.0)
+endif()
+
+if (GST_FOUND)
+    set(stereo_video_dir stereo_video_source)
+    add_library(stereo_video STATIC
+        ${stereo_video_dir}/stereo_video_common.h
+        ${stereo_video_dir}/stereo_video_source.cpp
+        ${stereo_video_dir}/stereo_video_source.h
+        ${stereo_video_dir}/stereo_video_client.cpp
+        ${stereo_video_dir}/stereo_video_client.h)
+    target_include_directories(stereo_video PUBLIC ${stereo_video_dir})
+    target_link_libraries(stereo_video PUBLIC PkgConfig::GST ${OpenCV_LIBRARIES})
+    set_property(TARGET stereo_video PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+    add_executable(video_source ${stereo_video_dir}/executables/video_source.cpp)
+    target_link_libraries(video_source stereo_video Boost::program_options)
+
+    add_executable(stereo_viewer ${stereo_video_dir}/executables/viewer.cpp)
+    target_link_libraries(stereo_viewer stereo_video Boost::program_options)
+
+    if (AMBF_ROS_VERSION EQUAL 2)
+        install(TARGETS video_source stereo_viewer RUNTIME DESTINATION lib/${PROJECT_NAME})
+    endif()
+else()
+    message(WARNING "GStreamer dev packages not found: skipping stereo_video_source. "
+                    "Install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev")
+endif()
+
 # Ambf camera plugin - Multiview plugin
 include_directories(multiview_panels)
 set(multiview_dir "multiview_panels")

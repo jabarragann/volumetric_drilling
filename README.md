@@ -20,8 +20,11 @@
 ## Dependencies
 
 ```
-sudo apt install gstreamer1.0-plugins-bad # Required to read decklink video
+sudo apt install gstreamer1.0-plugins-bad # Required to read decklink video (decklinkvideosrc, unixfdsink/unixfdsrc)
+sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev # Required to compile stereo_video_source
 ```
+
+The Decklink cards also need Blackmagic's [Desktop Video](https://www.blackmagicdesign.com/support/family/capture-and-playback) driver. Boost `program_options` and OpenCV are also required.
 ## Important respositories
 
 - [nrrd_to_adf](https://github.com/hisashiishida/nrrd_to_adf.git): Tools to export nrrd to ambf. Select **devel** branch.
