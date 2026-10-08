@@ -1,0 +1,31 @@
+{
+  "type": "dvrk_data:record@1.0.0",
+  "data_directory": ".",
+  "videos": [
+    {
+      "name": "stereo_microscope",
+      "gst_input": "unixfdsrc socket-path=/tmp/stereo_video_camera.socket",
+      "side_by_side": "LR",
+      "record": true,
+      "encoding": {
+        "bitrate_kbps": 20000
+      }
+    }
+  ],
+  "ros_topics": [
+    { "name": "/atracsys/drill_marker/local/measured_cp" },
+    { "name": "/atracsys/drill_marker/measured_cp" },
+    { "name": "/atracsys/drill_marker/period_statistics" },
+    { "name": "/atracsys/drill_marker/registration_error" },
+
+    { "name": "/atracsys/pointer_tool/local/measured_cp" },
+    { "name": "/atracsys/pointer_tool/measured_cp" },
+    { "name": "/atracsys/pointer_tool/period_statistics" },
+    { "name": "/atracsys/pointer_tool/registration_error" },
+
+    { "name": "/atracsys/tower_marker/local/measured_cp" },
+    { "name": "/atracsys/tower_marker/measured_cp" },
+    { "name": "/atracsys/tower_marker/period_statistics" },
+    { "name": "/atracsys/tower_marker/registration_error" }
+  ]
+}

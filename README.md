@@ -23,9 +23,12 @@
 ```
 sudo apt install gstreamer1.0-plugins-bad # Required to read decklink video (decklinkvideosrc, unixfdsink/unixfdsrc)
 sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev # Required to compile stereo_video_source
+sudo apt install libgtkmm-3.0-dev libjsoncpp-dev gstreamer1.0-plugins-ugly # Required by the data recorder (dvrk_data: GUI, config, x264enc)
 ```
 
 The Decklink cards also need Blackmagic's [Desktop Video](https://www.blackmagicdesign.com/support/family/capture-and-playback) driver. Boost `program_options` and OpenCV are also required.
+
+The data recorder and the Atracsys tracker are external repositories pinned in `vcs/external_tools.vcs`. From `saint_ws/src`: `vcs import < saint/volumetric_drilling_saint/vcs/external_tools.vcs`. See [plugin/data_recorder](plugin/data_recorder/README.md).
 ## Important respositories
 
 - [nrrd_to_adf](https://github.com/hisashiishida/nrrd_to_adf.git): Tools to export nrrd to ambf. Select **devel** branch.

@@ -1,0 +1,39 @@
+repositories:
+  # Pinned to specific commits: these repositories change often.
+  # Update a pin only after testing the new version.
+
+  ## Data recording
+  dvrk_data:
+    type: git
+    url: git@github.com:jhu-dvrk/dvrk_data.git
+    version: 3f1254d944301922598aa6acce2c16294bc57a97
+
+  ## Atracsys tracker
+  atracsys/cisst-saw/cisst:
+    type: git
+    url: https://github.com/jhu-cisst/cisst.git
+    version: 1abca8616b0cec0abf8a61f6c8da5fd067e87c09
+  atracsys/cisst-saw/cisstNetlib:
+    type: git
+    url: https://github.com/jhu-cisst/cisstNetlib.git
+    version: 0f0bac9de9b3187d5a688bad57f0deb7f957786d
+  atracsys/cisst-saw/cisst-ros:
+    type: git
+    url: https://github.com/jhu-cisst/cisst-ros.git
+    version: 7aeca1adf4e7a1ab1f6aeb2218896a1d4a4eb197
+  # TODO: THE LOCAL COPY OF SAWATRACSYSFUSIONTRACK HAS UNCOMMITTED CMAKE CHANGES
+  # (cisst_FOUND_AS_REQUIRED -> cisst_FOUND, cisst_target_link_libraries ->
+  # target_link_libraries) THAT THIS PIN DOES NOT INCLUDE. A FRESH IMPORT MAY NOT
+  # BUILD. PUSH THOSE CHANGES TO A FORK/BRANCH AND UPDATE THIS ENTRY.
+  atracsys/cisst-saw/sawAtracsysFusionTrack:
+    type: git
+    url: https://github.com/jhu-saw/sawAtracsysFusionTrack.git
+    version: d5c508a969f304cd944482cab85401ce4c0e2be9
+  atracsys/crtk/crtk_msgs:
+    type: git
+    url: https://github.com/collaborative-robotics/crtk_msgs.git
+    version: 14b04fcf0d5f3fe32d2b4d0dddd3d247a60e37c3
+  atracsys/crtk/crtk_python_client:
+    type: git
+    url: https://github.com/collaborative-robotics/crtk_python_client.git
+    version: c8e94ff2a335fd6bd50c835014581fdc6cc7f55f
