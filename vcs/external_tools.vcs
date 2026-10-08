@@ -5,7 +5,7 @@ repositories:
   ## Data recording
   dvrk_data:
     type: git
-    url: git@github.com:jhu-dvrk/dvrk_data.git
+    url: https://github.com/jhu-dvrk/dvrk_data.git
     version: 3f1254d944301922598aa6acce2c16294bc57a97
 
   ## Atracsys tracker
@@ -21,14 +21,11 @@ repositories:
     type: git
     url: https://github.com/jhu-cisst/cisst-ros.git
     version: 7aeca1adf4e7a1ab1f6aeb2218896a1d4a4eb197
-  # TODO: THE LOCAL COPY OF SAWATRACSYSFUSIONTRACK HAS UNCOMMITTED CMAKE CHANGES
-  # (cisst_FOUND_AS_REQUIRED -> cisst_FOUND, cisst_target_link_libraries ->
-  # target_link_libraries) THAT THIS PIN DOES NOT INCLUDE. A FRESH IMPORT MAY NOT
-  # BUILD. PUSH THOSE CHANGES TO A FORK/BRANCH AND UPDATE THIS ENTRY.
+  # Fork with CMake fixes for the cisst 1.5 API (not yet upstream in jhu-saw).
   atracsys/cisst-saw/sawAtracsysFusionTrack:
     type: git
-    url: https://github.com/jhu-saw/sawAtracsysFusionTrack.git
-    version: d5c508a969f304cd944482cab85401ce4c0e2be9
+    url: https://github.com/jabarragann/sawAtracsysFusionTrack.git
+    version: 1d44136dacbe61d8b3aa613bf08b009b3ffd57cc
   atracsys/crtk/crtk_msgs:
     type: git
     url: https://github.com/collaborative-robotics/crtk_msgs.git
