@@ -1,0 +1,9 @@
+repositories:
+  nrrd_to_adf:
+    type: git
+    url: git@github.com:hisashiishida/nrrd_to_adf.git
+    version: devel
+  Saint-analysis-utils:
+    type: git
+    url: git@github.com:jabarragann/Saint-analysis-utils.git
+    version: main

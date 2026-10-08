@@ -28,10 +28,12 @@
 
 ### Colcon workspace setup
 
+Two vcs files provide. One for c++ repositories and one for python repositories.
+
 ```
 mkdir src
 cd src
-vcs import --recursive --input https://raw.githubusercontent.com/jabarragann/volumetric_drilling/refs/heads/decklink-support/vcs/user.vcs
+vcs import --recursive --input https://raw.githubusercontent.com/jabarragann/volumetric_drilling/refs/heads/main/vcs/user.vcs
 ```
 
 ### Python venv setup
