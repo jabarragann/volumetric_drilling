@@ -106,6 +106,15 @@ void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objec
         {
             cerr << "Using default value of sagittal_rotation: " << sagittal_rotation << endl;
         }
+
+        try
+        {
+            require_tracking_status = plugin_config["require_tracking_status"].as<bool>();
+        }
+        catch (YAML::Exception &e)
+        {
+            cerr << "Using default value of require_tracking_status: " << require_tracking_status << endl;
+        }
     }
 }
 int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -133,6 +142,7 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     world_cam = m_camera->getInternalCamera();
 
     init_multi_view_panels();
+    init_no_tracking_overlay();
 
     // Use publishing frame buffer of current camera to pass rendered image to sim_assisted_nav plugin
     m_camera->m_frameBuffer = new cFrameBuffer();
@@ -149,7 +159,7 @@ int afCameraMultiview::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObj
     // ROS subscriber config. The sagittal-slice state is owned by the
     // volumetric_drilling plugin, which publishes its initial value (latched)
     // and updates it via keyboard shortcuts.
-    ros_interface.init(drill_loc_topic, fix_sagittal_slice_topic, fixed_sagittal_slice_value_topic);
+    ros_interface.init(drill_loc_topic, fix_sagittal_slice_topic, fixed_sagittal_slice_value_topic, tracking_valid_topic);
 
     return 1;
 }
@@ -188,6 +198,8 @@ void afCameraMultiview::graphicsUpdate()
     {
         update_ct_slices_with_drill_location();
     }
+
+    update_no_tracking_overlay();
 
     glfwMakeContextCurrent(m_camera->m_window);
 
@@ -273,7 +285,7 @@ MultiviewRosInterface::~MultiviewRosInterface()
 }
 
 void MultiviewRosInterface::init(const std::string &drill_loc_topic, const std::string &fix_sagittal_slice_topic,
-                                 const std::string &fixed_sagittal_slice_value_topic)
+                                 const std::string &fixed_sagittal_slice_value_topic, const std::string &tracking_valid_topic)
 {
     ros_node_handle = afROSNode::getNodeAndRegister("/multiview_panels");
 
@@ -285,6 +297,24 @@ void MultiviewRosInterface::init(const std::string &drill_loc_topic, const std::
 
     ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Int32), MultiviewRosInterface>
         (fixed_sagittal_slice_value_subscriber, ros_node_handle, fixed_sagittal_slice_value_topic, 4, &MultiviewRosInterface::fixed_sagittal_slice_value_callback, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Bool), MultiviewRosInterface>
+        (tracking_valid_subscriber, ros_node_handle, tracking_valid_topic, 4, &MultiviewRosInterface::tracking_valid_callback, this);
+}
+
+bool MultiviewRosInterface::is_tracking_lost(bool require_tracking_status) const
+{
+    if (!tracking_msg_received)
+    {
+        return require_tracking_status;
+    }
+
+    double msg_age = std::chrono::duration<double>(std::chrono::steady_clock::now() - last_tracking_msg_time).count();
+    if (msg_age > tracking_watchdog_s)
+    {
+        return true;
+    }
+
+    return !tracking_valid;
 }
 
 #if AMBF_ROS1
@@ -301,6 +331,13 @@ void MultiviewRosInterface::fixed_sagittal_slice_value_callback(const std_msgs::
 {
     fixed_sagittal_slice_value = msg.data;
 }
+
+void MultiviewRosInterface::tracking_valid_callback(const std_msgs::Bool &msg)
+{
+    tracking_valid = msg.data;
+    tracking_msg_received = true;
+    last_tracking_msg_time = std::chrono::steady_clock::now();
+}
 #elif AMBF_ROS2
 void MultiviewRosInterface::drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
 {
@@ -313,6 +350,13 @@ void MultiviewRosInterface::fix_sagittal_slice_callback(const std_msgs::msg::Boo
 void MultiviewRosInterface::fixed_sagittal_slice_value_callback(const std_msgs::msg::Int32::SharedPtr msg)
 {
     fixed_sagittal_slice_value = msg->data;
+}
+
+void MultiviewRosInterface::tracking_valid_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    tracking_valid = msg->data;
+    tracking_msg_received = true;
+    last_tracking_msg_time = std::chrono::steady_clock::now();
 }
 #endif
 
@@ -510,6 +554,34 @@ void afCameraMultiview::init_multi_view_panels()
     ct_axial_window->create_border(border_thickness, cColorf(1.0f, 0.0f, 0.0f));
     ct_coronal_window->create_border(border_thickness, cColorf(0.0f, 1.0f, 0.0f));
     ct_sagittal_window->create_border(border_thickness, cColorf(1.0f, 1.0f, 0.0f));
+}
+
+void afCameraMultiview::init_no_tracking_overlay()
+{
+    // Added after the view panels so it is drawn on top of all of them. Lives
+    // in main_cam, so it is visible in both render paths (frame buffer / window).
+    no_tracking_overlay = new cPanel();
+    no_tracking_overlay->setSize(m_width, m_height);
+    no_tracking_overlay->setLocalPos(0, 0);
+    no_tracking_overlay->setColor(cColorf(0.15f, 0.15f, 0.15f));
+    no_tracking_overlay->setTransparencyLevel(0.75);
+    no_tracking_overlay->setShowEnabled(false);
+    main_cam->m_frontLayer->addChild(no_tracking_overlay);
+
+    no_tracking_label = new cLabel(NEW_CFONTCALIBRI72());
+    no_tracking_label->m_fontColor.set(1.0f, 0.75f, 0.0f);
+    no_tracking_label->setText("NO TRACKING AVAILABLE");
+    no_tracking_label->setLocalPos((m_width - no_tracking_label->getWidth()) / 2.0,
+                                   (m_height - no_tracking_label->getHeight()) / 2.0);
+    no_tracking_label->setShowEnabled(false);
+    main_cam->m_frontLayer->addChild(no_tracking_label);
+}
+
+void afCameraMultiview::update_no_tracking_overlay()
+{
+    bool tracking_lost = ros_interface.is_tracking_lost(require_tracking_status);
+    no_tracking_overlay->setShowEnabled(tracking_lost);
+    no_tracking_label->setShowEnabled(tracking_lost);
 }
 
 void afCameraMultiview::init_volume_slicer()

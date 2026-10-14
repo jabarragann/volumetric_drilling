@@ -46,6 +46,7 @@
 #include <afFramework.h>
 #include "memory"
 #include "vector"
+#include <chrono>
 #include <ambf_server/ambf_ral_config.h>
 #include <ambf_server/ambf_ral.h>
 
@@ -76,7 +77,12 @@ public:
     MultiviewRosInterface();
     ~MultiviewRosInterface();
     void init(const std::string &drill_loc_topic, const std::string &fix_sagittal_slice_topic,
-              const std::string &fixed_sagittal_slice_value_topic);
+              const std::string &fixed_sagittal_slice_value_topic, const std::string &tracking_valid_topic);
+
+    // True when the navigation views should be grayed out. The validity
+    // decision (timeout / recover) is made by ambf_tf_plugin; this only adds a
+    // heartbeat watchdog in case that plugin stops publishing.
+    bool is_tracking_lost(bool require_tracking_status) const;
 
     ambf_ral::node_ptr_t ros_node_handle;
 #if AMBF_ROS1
@@ -84,23 +90,35 @@ public:
     std::shared_ptr<ros::Subscriber> drill_loc_subscriber;
     std::shared_ptr<ros::Subscriber> fix_sagittal_slice_subscriber;
     std::shared_ptr<ros::Subscriber> fixed_sagittal_slice_value_subscriber;
+    std::shared_ptr<ros::Subscriber> tracking_valid_subscriber;
     // void drill_location_callback(const geometry_msgs::PointStampedConstPtr &msg);
     void drill_location_callback(const geometry_msgs::PointStamped& msg);
     void fix_sagittal_slice_callback(const std_msgs::Bool& msg);
     void fixed_sagittal_slice_value_callback(const std_msgs::Int32& msg);
+    void tracking_valid_callback(const std_msgs::Bool& msg);
 #elif AMBF_ROS2
     rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr drill_loc_subscriber;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr fix_sagittal_slice_subscriber;
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr fixed_sagittal_slice_value_subscriber;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr tracking_valid_subscriber;
     void drill_location_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
     void fix_sagittal_slice_callback(const std_msgs::msg::Bool::SharedPtr msg);
     void fixed_sagittal_slice_value_callback(const std_msgs::msg::Int32::SharedPtr msg);
+    void tracking_valid_callback(const std_msgs::msg::Bool::SharedPtr msg);
 #endif
     cVector3d drill_location;
 
     // Sagittal slice control received from the volumetric_drilling plugin.
     bool fix_sagittal_slice = false;
     int fixed_sagittal_slice_value = 70;
+
+    // Tracking status received from ambf_tf_plugin.
+    bool tracking_msg_received = false;
+    bool tracking_valid = false;
+    std::chrono::steady_clock::time_point last_tracking_msg_time;
+    // No tracking message for this long means ambf_tf_plugin stopped
+    // publishing (its heartbeat is 20 Hz), so tracking is treated as lost.
+    const double tracking_watchdog_s = 0.5;
 };
 
 class afCameraMultiview : public afObjectPlugin
@@ -132,6 +150,10 @@ public:
 
     // Update CT slices based on drill location.
     void update_ct_slices_with_drill_location();
+
+    // Gray overlay + message shown on top of all panels when tracking is lost.
+    void init_no_tracking_overlay();
+    void update_no_tracking_overlay();
 
 protected:
     bool render_to_frame_buffer = true;
@@ -180,6 +202,11 @@ protected:
     string drill_loc_topic = "/ambf/env/plugin/volumetric_drilling/drill_location_in_volume";
     string fix_sagittal_slice_topic = "/sim_assisted_nav/fix_sagittal_slice";
     string fixed_sagittal_slice_value_topic = "/sim_assisted_nav/fixed_sagittal_slice_value";
+    // Published by ambf_tf_plugin when a transform in the tf config has a
+    // "tracking status" block. NOTE: this single topic assumes only ONE tracked
+    // tool (the drill / pointer marker); tracking more tools will require
+    // per-tool topics here and in ambf_tf_plugin.
+    string tracking_valid_topic = "/ambf/tf_plugin/tracking_valid";
     string out_of_volume_img_path = "out_of_volume.jpg";
     string background_img_path = "black_background.jpg";
 
@@ -191,6 +218,13 @@ protected:
     // values: 0, 90, 180, -90, -180 (positive = counter-clockwise). Will later
     // be driven by a keyboard shortcut.
     int sagittal_rotation = 0;
+
+    // When true, the views stay grayed out until the first tracking status
+    // message arrives (fail safe if ambf_tf_plugin is not loaded). When false,
+    // the overlay is only used once tracking status messages are received.
+    bool require_tracking_status = false;
+    cPanel *no_tracking_overlay = nullptr;
+    cLabel *no_tracking_label = nullptr;
 
 protected:
     float m_viewport_scale[2];

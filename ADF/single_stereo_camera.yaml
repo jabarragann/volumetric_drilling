@@ -85,6 +85,10 @@ stereoLR:
     slice_zoom: 0.65
     # In-plane rotation of the sagittal slice, in degrees. Allowed: 0, 90, 180, -90, -180.
     sagittal_rotation: -90
+    # Gray out the views with "NO TRACKING AVAILABLE" until ambf_tf_plugin
+    # publishes on /ambf/tf_plugin/tracking_valid (needs a "tracking status"
+    # block in the tf config). Set to false for simulation-only runs.
+    require_tracking_status: true
 
   ### CONFIG OPTIONS FOR SIM ASSISTED NAV PLUGIN
 
