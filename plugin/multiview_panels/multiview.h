@@ -214,10 +214,12 @@ protected:
     // slice, 0.5 shows only the centered half (2x zoom), etc.
     float slice_zoom = 1.0;
 
-    // In-plane rotation applied to the sagittal slice, in degrees. Allowed
-    // values: 0, 90, 180, -90, -180 (positive = counter-clockwise). Will later
-    // be driven by a keyboard shortcut.
-    int sagittal_rotation = 0;
+    // In-plane rotation applied to each slice, in degrees. Allowed values:
+    // 0, 90, 180, -90, -180 (positive = counter-clockwise). The drill marker
+    // rotates with the slice.
+    int axial_rotation = 0;    // red panel
+    int coronal_rotation = 0;  // green panel
+    int sagittal_rotation = 0; // yellow panel
 
     // When true, the views stay grayed out until the first tracking status
     // message arrives (fail safe if ambf_tf_plugin is not loaded). When false,

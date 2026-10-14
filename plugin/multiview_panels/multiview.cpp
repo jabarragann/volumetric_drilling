@@ -90,22 +90,27 @@ void afCameraMultiview::parse_plugin_config(const afBaseObjectAttribsPtr a_objec
             cerr << "Using default value of slice_zoom: " << slice_zoom << endl;
         }
 
-        try
+        // In-plane rotation of each slice. Only multiples of 90 in {0, 90, 180, -90, -180} are supported.
+        auto parse_rotation = [&plugin_config](const string &key, int &rotation)
         {
-            sagittal_rotation = plugin_config["sagittal_rotation"].as<int>();
-            // Only multiples of 90 in {0, 90, 180, -90, -180} are supported.
-            if (sagittal_rotation != 0 && sagittal_rotation != 90 && sagittal_rotation != 180 &&
-                sagittal_rotation != -90 && sagittal_rotation != -180)
+            try
             {
-                cerr << "Invalid sagittal_rotation " << sagittal_rotation
-                     << " (allowed: 0, 90, 180, -90, -180). Using 0." << endl;
-                sagittal_rotation = 0;
+                rotation = plugin_config[key].as<int>();
+                if (rotation != 0 && rotation != 90 && rotation != 180 && rotation != -90 && rotation != -180)
+                {
+                    cerr << "Invalid " << key << " " << rotation
+                         << " (allowed: 0, 90, 180, -90, -180). Using 0." << endl;
+                    rotation = 0;
+                }
             }
-        }
-        catch (YAML::Exception &e)
-        {
-            cerr << "Using default value of sagittal_rotation: " << sagittal_rotation << endl;
-        }
+            catch (YAML::Exception &e)
+            {
+                cerr << "Using default value of " << key << ": " << rotation << endl;
+            }
+        };
+        parse_rotation("axial_rotation", axial_rotation);
+        parse_rotation("coronal_rotation", coronal_rotation);
+        parse_rotation("sagittal_rotation", sagittal_rotation);
 
         try
         {
@@ -383,11 +388,13 @@ void afCameraMultiview::update_ct_slices_with_drill_location()
         unique_ptr<Slice2D> axial_slice = volume_slicer->create_2d_slice_reverse_y("xy", ros_interface.drill_location.z());
         int reverse_y_loc = axial_slice->slice_height - 1 - ros_interface.drill_location.y();
         axial_slice->annotate(ros_interface.drill_location.x(), reverse_y_loc);
+        axial_slice->rotate(axial_rotation);
         success = ct_axial_window->update_ct_slice(axial_slice->volume_slice);
         ct_axial_window->maximize_with_scale_factor();
 
         unique_ptr<Slice2D> coronal_slice = volume_slicer->create_2d_slice("xz", ros_interface.drill_location.y());
         coronal_slice->annotate(ros_interface.drill_location.x(), ros_interface.drill_location.z());
+        coronal_slice->rotate(coronal_rotation);
         success = ct_coronal_window->update_ct_slice(coronal_slice->volume_slice);
         ct_coronal_window->maximize_with_scale_factor();
 

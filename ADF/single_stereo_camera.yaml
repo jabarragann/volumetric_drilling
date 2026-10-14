@@ -83,8 +83,11 @@ stereoLR:
     # Center-crop zoom for the 2D CT slices. Range (0.5, 1]: 1.0 shows the full
     # slice, 0.5 shows only the centered half (2x zoom) to better see segmentations.
     slice_zoom: 0.65
-    # In-plane rotation of the sagittal slice, in degrees. Allowed: 0, 90, 180, -90, -180.
-    sagittal_rotation: -90
+    # In-plane rotation of the slices, in degrees (positive = counter-clockwise).
+    # Allowed: 0, 90, 180, -90, -180. Chosen to match the microscope view.
+    axial_rotation: 180    # red panel
+    coronal_rotation: -90  # green panel
+    sagittal_rotation: -90 # yellow panel
     # Gray out the views with "NO TRACKING AVAILABLE" until ambf_tf_plugin
     # publishes on /ambf/tf_plugin/tracking_valid (needs a "tracking status"
     # block in the tf config). Set to false for simulation-only runs.
