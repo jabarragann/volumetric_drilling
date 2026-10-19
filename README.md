@@ -20,6 +20,12 @@
 
 ## Dependencies
 
+To download other repositories with VCS files.
+```
+pip install vcs2l
+```
+
+Libraries to run saint.
 ```
 sudo apt install gstreamer1.0-plugins-bad # Required to read decklink video (decklinkvideosrc, unixfdsink/unixfdsrc)
 sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev # Required to compile stereo_video_source
