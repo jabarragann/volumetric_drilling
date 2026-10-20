@@ -53,6 +53,9 @@ Two vcs files provide. One for c++ repositories and one for python repositories.
 mkdir src
 cd src
 vcs import --recursive --input https://raw.githubusercontent.com/jabarragann/volumetric_drilling/refs/heads/main/vcs/user.vcs
+
+cd <path2pytho>/ #Not colcon space
+vcs import --recursive --input https://raw.githubusercontent.com/jabarragann/volumetric_drilling/refs/heads/main/vcs/python.vcs
 ```
 
 ### Python venv setup
