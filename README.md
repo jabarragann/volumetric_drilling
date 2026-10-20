@@ -1,14 +1,12 @@
 <!--toc:start-->
 - [Simulation assisted navigation](#simulation-assisted-navigation)
+- [Installation](#installation)
+  - [Dependencies](#dependencies)
   - [Important respositories](#important-respositories)
-  - [ROS2 documentation](#ros2-documentation)
-    - [Colcon workspace setup](#colcon-workspace-setup)
+  - [Colcon workspace setup](#colcon-workspace-setup)
+    - [Repositories](#repositories)
     - [Python venv setup](#python-venv-setup)
-  - [Installation](#installation)
-    - [0. Install AMBF simulator](#0-install-ambf-simulator)
-    - [1. Compile and setup external plugins](#1-compile-and-setup-external-plugins)
-    - [2. Compile internal plugins](#2-compile-internal-plugins)
-  - [Usage](#usage)
+- [Usage](#usage)
   - [Video pipeline](#video-pipeline)
   - [Running registration pipeline](#running-registration-pipeline)
   - [Important configurations](#important-configurations)
@@ -17,6 +15,8 @@
 <!--toc:end-->
 
 # Simulation assisted navigation 
+
+# Installation
 
 ## Dependencies
 
@@ -35,16 +35,17 @@ sudo apt install libgtkmm-3.0-dev libjsoncpp-dev gstreamer1.0-plugins-ugly # Req
 The Decklink cards also need Blackmagic's [Desktop Video](https://www.blackmagicdesign.com/support/family/capture-and-playback) driver. Boost `program_options` and OpenCV are also required.
 
 The data recorder and the Atracsys tracker are external repositories pinned in `vcs/external_tools.vcs`. From `saint_ws/src`: `vcs import < saint/volumetric_drilling_saint/vcs/external_tools.vcs`. See [plugin/data_recorder](plugin/data_recorder/README.md).
+
 ## Important respositories
 
 - [nrrd_to_adf](https://github.com/hisashiishida/nrrd_to_adf.git): Tools to export nrrd to ambf. Select **devel** branch.
 - [saint_automation_tools](https://github.com/jabarragann/Saint-analysis-utils/tree/main): GUI to launch saint. 
 
-## ROS2 documentation
+
+## Colcon workspace setup
 [Back to Top](#simulation-assisted-navigation)
 
-
-### Colcon workspace setup
+### Repositories
 
 Two vcs files provide. One for c++ repositories and one for python repositories.
 
@@ -80,88 +81,7 @@ source ${root_path}/ws_python_env/bin/activate
 ```
 
 
-## Installation
-[Back to Top](#simulation-assisted-navigation)
-
-### 0. Install AMBF simulator  
-Please install AMBF by following the instruction in the [official repository of the volumetric drilling](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master).
-
-### 1. Compile and setup external plugins 
-Compile and setup [CRTK plugin][crtkplug], [tf plugin][tfplug] and [registration plugin][regplug].  
-
-[camreg]: https://github.com/jabarragann/dvrk-camera-registration
-[crtkplug]: https://github.com/lcsr-ciis/ambf_crtk_plugin
-[tfplug]: https://github.com/LCSR-CIIS/ambf_tf_plugin.git
-[regplug]: https://github.com/LCSR-CIIS/ambf_registration_plugin.git
-
-<details>
-<summary>Instructions</summary>
-
-1. Start by cloning in a folder of your choice all the external plugins.
-
-```bash
-mkdir <your-external-plugin-folder>
-cd <your-external-plugin-folder>
-git clone https://github.com/LCSR-CIIS/ambf_registration_plugin.git
-git clone https://github.com/LCSR-CIIS/ambf_tf_plugin.git
-git clone https://github.com/LCSR-CIIS/ambf_crtk_plugin.git
-
-mkdir ambf_crtk_plugin/build ambf_registration_plugin/build ambf_tf_plugin/build
-```
-
-<details>
-  <summary>Git clone with SSH links</summary>
-
-  ```
-  cd your-external-plugin-folder
-  git clone git@github.com:LCSR-CIIS/ambf_registration_plugin.git
-  git clone git@github.com:LCSR-CIIS/ambf_tf_plugin.git
-  git clone git@github.com:LCSR-CIIS/ambf_crtk_plugin.git
-  ```
-
-</details>
-
-Then compile each plugin with 
-```bash
-cd <build-folder>
-cmake ..
-make -j8
-```
-
-2. Add a symbolic link to the `external-plugin-folder` inside the `this volumetric_drilling repo` root folder. This will enable the volumetric drillign to easily find the external plugins.
-
-```bash
-cd <fork-of-volumetric-drilling-repo>
-# Don't use relative links to specify the path to external plugins. ln will not work!
-ln -s <your-external-plugin-folder>/* plugins/external_plugins/ 
-```
-
-Your plugin folder should look like this after performing these steps:
-```
-plugins/
-├── camera_hmd
-├── multiview_panels
-├── sim_assisted_nav
-├── volumetric_drilling
-├── external_plugins
-    ├── ambf_crtk_plugin -> your_external_plugins/ambf_crtk_plugin
-    ├── ambf_registration_plugin -> your_external_plugins/ambf_registration_plugin
-    └── ambf_tf_plugin ->  your_external_plugins/ambf_tf_plugin
-```
-
-</details>
-
-### 2. Compile internal plugins
-
-Compile plugins inside the plugins folder with:
-```bash
-cd plugins
-mkdir build
-cmake ..
-make -j7
-```
-
-## Usage
+# Usage
 [Back to Top](#simulation-assisted-navigation)
 
 Launching full framework requires the tf_plugin to move the drill. Spacenave plugin can be addionally added to support spacenav control.
