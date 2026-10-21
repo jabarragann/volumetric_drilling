@@ -156,8 +156,10 @@ Drill control shortcuts:
 * Drill empty reference controls the slices.
 * When drill is as cursor is activated the drill reference body follows the drill tip.
 
+## List of related repositories
+* Saint phantoms: https://github.com/jabarragann/saint_phantoms/tree/main 
 
-# Documentation for Drilling simulator
+# Documentation for Drilling simulator - OLD
 [Back to Top](#simulation-assisted-navigation)
 
 For more information visit the [official repository](https://github.com/LCSR-SICKKIDS/volumetric_drilling/tree/master)
