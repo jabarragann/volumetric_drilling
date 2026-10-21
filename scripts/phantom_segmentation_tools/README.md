@@ -69,7 +69,10 @@ in the report.
 | File | Content |
 |---|---|
 | `<name>_ct.nrrd` | The CT |
-| `<name>_segmentation.seg.nrrd` | Slicer segmentation: `box`, `stone`, `left_allowed`, `left_forbidden`, `right_allowed`, `right_forbidden` (one layer each; allowed regions overlap) |
+| `<name>_all_combinations.seg.nrrd` | Slicer segmentation: `box`, `stone`, `left_allowed`, `left_forbidden`, `right_allowed`, `right_forbidden` (one layer each; allowed regions overlap) |
+| `<name>_box_dental.seg.nrrd` | `box`, `stone` |
+| `<name>_box_dental_left_path.seg.nrrd` | `box`, `left_allowed`, `left_forbidden` |
+| `<name>_box_dental_right_path.seg.nrrd` | `box`, `right_allowed`, `right_forbidden` |
 | `<name>_labels_<route>.nrrd` | Labelmap per route: 1 box, 2 forbidden, 3 allowed |
 | `<name>_transform.json`, `<name>_model_to_ct_LPS.txt` | 4×4 **model → CT** (LPS): `x_ct = M x_model`; also its inverse and the RAS matrix for Slicer's Transforms module |
 | `<name>_model_to_ct.h5` / `.tfm` | Same transform as an ITK file. ITK stores the resampling direction (CT point → model point), so in Slicer you **put model nodes under it** to move them into CT space |
