@@ -37,7 +37,7 @@ import SimpleITK as sitk
 import vtk
 from vtk.util import numpy_support as vnp
 from scipy import ndimage as ndi
-from scipy.signal import fftconvolve
+from scipy.signal import fftconvolve, find_peaks
 from scipy.spatial import cKDTree
 
 import matplotlib
@@ -55,6 +55,8 @@ SEG_FILES = {
 MODEL_STEP = 0.2       # mm, model-frame voxelisation grid
 ABOVE_RIM = 3.0        # mm of stone accepted above the rim
 BOX_DILATION = 1.0     # mm around the box mesh accepted as PLA
+DAMAGE_MIN_UL = 2.0    # PLA lost next to the drilled channel above this size (uL) raises the warning
+EMPTY_WARN_ML = 0.5    # empty space in the stone (below its top) that suggests a drilled scan
 SEG_COLORS = {
     "box": (0.85, 0.85, 0.80),
     "stone": (0.55, 0.65, 0.95),
@@ -62,6 +64,12 @@ SEG_COLORS = {
     "left_forbidden": (0.90, 0.30, 0.25),
     "right_allowed": (0.15, 0.60, 0.90),
     "right_forbidden": (0.95, 0.60, 0.15),
+    "drilled": (0.95, 0.95, 0.20),
+    "left_drilled_allowed": (0.40, 1.00, 0.50),
+    "left_drilled_forbidden": (1.00, 0.10, 0.60),
+    "right_drilled_allowed": (0.40, 0.85, 1.00),
+    "right_drilled_forbidden": (1.00, 0.35, 0.00),
+    "box_damage": (1.00, 0.00, 0.00),
 }
 
 
@@ -315,6 +323,12 @@ def write_markups(path, labels, pts, desc=None):
 # ----------------------------------------------------------------------------
 
 def find_thresholds(arr):
+    """air|PLA from a 3-class Otsu; PLA|stone halfway between the PLA and stone peaks.
+
+    The stone peak is the highest-intensity prominent peak of the smoothed log
+    histogram. After drilling, the channel walls add many partial-volume voxels
+    between PLA and stone, and Otsu's upper threshold would land inside them.
+    """
     vals = arr[arr > -1000].astype(np.float32)   # in field of view
     lo, hi = np.percentile(vals, [0.01, 99.99])
     v = np.clip(vals, lo, hi)
@@ -322,15 +336,22 @@ def find_thresholds(arr):
     f.SetNumberOfThresholds(2)
     f.SetNumberOfHistogramBins(256)
     f.Execute(sitk.GetImageFromArray(v.reshape(1, 1, -1)))
-    t_air, t_stone = sorted(f.GetThresholds())
+    t_air, t_otsu_hi = sorted(f.GetThresholds())
     hist, edges = np.histogram(v, bins=256)
     centres = 0.5 * (edges[1:] + edges[:-1])
+    lh = ndi.gaussian_filter1d(np.log1p(hist.astype(float)), 2)
+    peaks, _ = find_peaks(lh[:-3], prominence=0.3)
+    peaks = peaks[centres[peaks] > t_air]
+    if not len(peaks):
+        raise RuntimeError("no stone peak found in the histogram; pass --thresholds")
+    stone = float(centres[peaks[-1]])
 
     def mode(a, b):
         sel = (centres > a) & (centres < b)
         return float(centres[sel][np.argmax(hist[sel])])
-    modes = {"air": mode(lo, t_air), "pla": mode(t_air, t_stone), "stone": mode(t_stone, hi)}
-    return float(t_air), float(t_stone), modes, (hist, edges)
+    modes = {"air": mode(lo, t_air), "pla": mode(t_air, 0.5 * (t_air + stone)), "stone": stone}
+    t_stone = 0.5 * (modes["pla"] + modes["stone"])
+    return float(t_air), float(t_stone), modes, (hist, edges), float(t_otsu_hi)
 
 
 # ----------------------------------------------------------------------------
@@ -429,6 +450,20 @@ def rms_stats(r):
 # ----------------------------------------------------------------------------
 # Divot detection
 # ----------------------------------------------------------------------------
+
+def pocket_contrast(arr, geom, M, fid, normal, modes, depth=0.75, side=2.2):
+    """How much a divot pocket shows under pose M: 1 = air in the pocket, PLA beside it; 0 = no pocket.
+
+    Compares the CT 0.75 mm below the opening centre with points 2.2 mm to
+    either side along model y (inside the base margin or along the rim).
+    """
+    n = normal / np.linalg.norm(normal)
+    c = fid - depth * n
+    off = 0.25 * np.array([[0, 0, 0], [1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0]])
+    centre = sample_ct(arr, geom, apply(M, c + off)).mean()
+    ring = sample_ct(arr, geom, apply(M, c + np.array([[0, side, 0], [0, -side, 0]]))).mean()
+    return float(np.clip((ring - centre) / (modes["pla"] - modes["air"]), -1, 2))
+
 
 def detect_divot(arr, geom, M, fid, box_grid, box_occ, cav_fp, half=(3.5, 3.5, 2.5), search=(1.8, 1.8, 1.0),
                  step=0.1):
@@ -553,6 +588,10 @@ def main():
     ap.add_argument("--out", required=True, help="output folder")
     ap.add_argument("--ct-fiducials", help="optional .mrk.json with M-1..M-9 clicked in the CT "
                                            "(LPS or RAS; checked); replaces automatic divot detection")
+    ap.add_argument("--reference", help="after drilling only: output folder of the same phantom's pre-drilling "
+                                        "run (e.g. cad-registration/PL07_D00). Adds the drilled-stone segments "
+                                        "and the PLA damage check")
+    ap.add_argument("--strict", action="store_true", help="with --reference: exit with code 2 if PLA damage is found")
     ap.add_argument("--thresholds", nargs=2, type=float, metavar=("AIR_PLA", "PLA_STONE"),
                     help="override the histogram-derived thresholds")
     args = ap.parse_args()
@@ -641,11 +680,13 @@ def main():
     sitk.WriteImage(img if img.GetPixelID() == sitk.sitkInt16 else sitk.Cast(img, sitk.sitkInt16),
                     pre + "_ct.nrrd", True)
 
-    t_air, t_stone, modes, (hist, edges) = find_thresholds(arr)
+    t_air, t_stone, modes, (hist, edges), t_otsu_hi = find_thresholds(arr)
     if args.thresholds:
         t_air, t_stone = args.thresholds
-    rep["thresholds"] = {"air_pla": t_air, "pla_stone": t_stone, "modes": modes,
-                         "method": "override" if args.thresholds else "3-class Otsu, in-FOV voxels (> -1000)"}
+    rep["thresholds"] = {"air_pla": t_air, "pla_stone": t_stone, "modes": modes, "otsu_upper_for_reference": t_otsu_hi,
+                         "method": "override" if args.thresholds else
+                         "air|PLA: 3-class Otsu of in-FOV voxels (> -1000); PLA|stone: midpoint of the PLA and "
+                         "stone histogram peaks"}
     log(f"[thr] air|PLA {t_air:.0f}, PLA|stone {t_stone:.0f}; modes {', '.join(f'{k} {v:.0f}' for k, v in modes.items())}")
 
     # phantom mask: largest component above the air threshold, holes filled
@@ -677,8 +718,12 @@ def main():
     Ec = Ec * np.sign(np.linalg.det(Ec))
     # free stone space in the obstacle layer: decides between the near-symmetric poses
     layer = (zax > z_floor + 0.5) & (zax < obs_top - 0.5)
-    free_layer = cavity & ~occ_obs & layer[None, None, :]
-    obs_layer = occ_obs & layer[None, None, :]
+    # interiors only (1 mm in from every side), so blur at the edges doesn't count
+    xy = np.zeros((3, 3, 1), bool)
+    xy[:, :, 0] = True
+    n_er = int(round(1.0 / MODEL_STEP))
+    free_layer = ndi.binary_erosion(cavity & ~occ_obs, xy, iterations=n_er) & layer[None, None, :]
+    obs_layer = ndi.binary_erosion(occ_obs, xy, iterations=n_er) & layer[None, None, :]
     st_pts = geom.idx_to_phys(np.argwhere(stone_ct)[:, ::-1].astype(float))
 
     def obstacle_score(M):
@@ -710,23 +755,33 @@ def main():
                                        max_dist=(8.0, 4.0, 2.0))
             st = rms_stats(surface_residuals(M1, surf_m, surf_n, tree, tgt, tgt_n))
             sc = obstacle_score(M1)
+            # divots: the base has 3 at one end and 2 at the other, so a wrong pose
+            # leaves most base divots without a pocket; drilling can't change this
+            pk = [pocket_contrast(arr, geom, M1, f, n, modes) for f, n in zip(fid_m, fid_n)]
             cands.append({"signs": signs, "M": M1, "icp": st, "obstacle_score": sc[0],
-                          "free_filled": sc[1], "obstacle_stone": sc[2]})
+                          "free_filled": sc[1], "obstacle_stone": sc[2],
+                          "divot_pockets_mean": float(np.mean(pk)), "divot_pockets_found": int(np.sum(np.array(pk) > 0.5))})
             log(f"[init] signs {signs}: ICP rms {st['rms_mm']:.3f} mm ({st['n_matched']}/200 matched), "
-                f"obstacle layer: free filled {sc[1]:.2f}, obstacles with stone {sc[2]:.2f} -> score {sc[0]:+.2f}")
-        cands.sort(key=lambda c: -c["obstacle_score"])
-        best, second = cands[0], cands[1]
-        margin = best["obstacle_score"] - second["obstacle_score"]
-        log(f"[init] chose {best['signs']} (score margin {margin:.2f} over {second['signs']})")
-        if margin < 0.3:
-            raise RuntimeError("orientation is ambiguous (obstacle score margin < 0.3); "
-                               "annotate the divots and pass --ct-fiducials")
-        rep["init"] = {"method": "PCA (4 proper rotations) + ICP, chosen by obstacle-layer match",
+                f"obstacle cores: free filled {sc[1]:.2f}, obstacles with stone {sc[2]:.2f} -> score {sc[0]:+.2f}; "
+                f"divot pockets found {np.sum(np.array(pk) > 0.5)}/9 (contrast mean {np.mean(pk):.2f})")
+        by_div = sorted(cands, key=lambda c: -c["divot_pockets_mean"])
+        by_obs = sorted(cands, key=lambda c: -c["obstacle_score"])
+        best = by_div[0]
+        div_margin = by_div[0]["divot_pockets_mean"] - by_div[1]["divot_pockets_mean"]
+        obs_margin = by_obs[0]["obstacle_score"] - by_obs[1]["obstacle_score"]
+        agree = by_obs[0] is best
+        log(f"[init] divots choose {best['signs']} (contrast margin {div_margin:.2f}); obstacles choose "
+            f"{by_obs[0]['signs']} (margin {obs_margin:.2f}) -> {'agree' if agree else 'DISAGREE'}")
+        if not agree or div_margin < 0.3:
+            raise RuntimeError("orientation is ambiguous (divot and obstacle checks disagree, or divot contrast "
+                               "margin < 0.3); annotate the divots and pass --ct-fiducials")
+        rep["init"] = {"method": "PCA (4 proper rotations) + ICP; chosen by divot match, confirmed by the "
+                                 "obstacle-core match",
                        "candidates": [{k: (v.tolist() if isinstance(v, np.ndarray) else v)
                                        for k, v in c.items() if k != "M"} |
                                       {"rotation_from_chosen_deg": rot_angle_deg(c["M"][:3, :3] @ best["M"][:3, :3].T)}
-                                      for c in cands],
-                       "margin": margin}
+                                      for c in by_div],
+                       "divot_margin": div_margin, "obstacle_margin": obs_margin}
         M_init = best["M"]
 
     # ---- divots -------------------------------------------------------------
@@ -837,6 +892,74 @@ def main():
         segs[f"{r}_allowed"] = stone & region[r]
         segs[f"{r}_forbidden"] = stone & ~region[r]
 
+    # ---- after drilling: compare with the pre-drilling run ---------------------
+    damage_blobs = []
+    if args.reference:
+        ref = load_reference(args.reference, v)
+        # both runs are registered to the CAD: D01 voxel -> model -> D00 CT
+        v0 = sample_ct(ref["arr"], ref["geom"], apply(ref["M"], pts_mod)).reshape(shape)
+        th0 = ref["thresholds"]
+        stone0 = (v0 > th0["pla_stone"]) & stone_zone & ~box_m
+        drilled = ndi.binary_opening(stone0 & ~stone_int)
+        labs, _ = ndi.label(drilled)
+        cs_ = np.bincount(labs.ravel())
+        cs_[0] = 0
+        drilled = np.isin(labs, np.nonzero(cs_ >= 30)[0])
+        # PLA damage: material in D00, air in D01, inside the mesh and touching the
+        # drilled channel (lattice flicker elsewhere is ignored)
+        mat0 = v0 > 0.5 * (th0["modes"]["air"] + th0["modes"]["pla"])
+        mat1 = arr > 0.5 * (modes["air"] + modes["pla"])
+        # no opening: drill damage is often in the thin (~2 voxel) shells. Fragments
+        # within ~1 mm of each other count as one spot
+        lost = box_m & mat0 & ~mat1
+        near = ndi.binary_dilation(drilled, iterations=2)
+        labl, _ = ndi.label(ndi.binary_dilation(lost, iterations=1))
+        labl[~lost] = 0
+        hit = np.unique(labl[near & lost])
+        damage = np.zeros(shape, bool)
+        obs_near = ndi.binary_dilation(occ_obs, iterations=3)   # obstacle or within 0.6 mm of one
+        for h_ in hit[hit > 0]:
+            blob = labl == h_
+            c_m = pts_mod.reshape(shape + (3,))[blob].mean(0)
+            uL = float(blob.sum() * vv * 1000)
+            part = ("cavity floor" if c_m[2] < z_floor else
+                    "obstacle" if grid.sample(obs_near, c_m[None], order=0)[0] > 0.5 else "wall")
+            damage_blobs.append({"volume_uL": uL, "centre_model_mm": c_m.round(2).tolist(),
+                                 "centre_ct_lps": apply(M, c_m[None])[0].round(2).tolist(), "part": part,
+                                 "warning": uL >= DAMAGE_MIN_UL})
+            if uL >= DAMAGE_MIN_UL:
+                damage |= blob
+        damage_blobs.sort(key=lambda d: -d["volume_uL"])
+        box = box & ~damage
+        segs["box"] = box
+        segs["box_damage"] = damage
+        segs["drilled"] = drilled
+        for r in ROUTES:
+            segs[f"{r}_drilled_allowed"] = drilled & region[r]
+            segs[f"{r}_drilled_forbidden"] = drilled & ~region[r]
+        D = M @ inv(ref["M"])
+        warn = [d for d in damage_blobs if d["warning"]]
+        rep["reference"] = {"dir": os.path.abspath(args.reference), "name": ref["name"],
+                            "ref_ct_to_this_ct_LPS": D.tolist(), "rotation_deg": rot_angle_deg(D[:3, :3]),
+                            "ref_thresholds": th0}
+        rep["drilled_mL"] = {k: float(segs[k].sum() * vv) for k in
+                             ["drilled"] + [f"{r}_drilled_{a}" for r in ROUTES for a in ("allowed", "forbidden")]}
+        rep["pla_damage"] = {"detected": bool(warn), "min_blob_uL": DAMAGE_MIN_UL,
+                             "total_uL": float(sum(d["volume_uL"] for d in warn)), "blobs": damage_blobs}
+        log(f"[ref] {ref['name']} mapped through the CAD frame; drilled stone " + ", ".join(
+            f"{k} {x:.2f}" for k, x in rep["drilled_mL"].items()) + " mL")
+        if warn:
+            bar = "!" * 78
+            log(bar)
+            log(f"!!! WARNING: PLA DAMAGE DETECTED: {len(warn)} spot(s), {rep['pla_damage']['total_uL']:.1f} uL "
+                f"of PLA removed next to the drilled channel")
+            for d in warn:
+                log(f"!!!   {d['volume_uL']:6.1f} uL  {d['part']:<12} model {d['centre_model_mm']}  CT LPS {d['centre_ct_lps']}")
+            log("!!! These voxels are removed from 'box' and saved as segment 'box_damage'; see qa/*_damage.png")
+            log(bar)
+        else:
+            log(f"[ref] no PLA damage >= {DAMAGE_MIN_UL} uL next to the drilled channel")
+
     # fill level from the stone top in the model frame
     zs = zt[stone & xy_c]
     fill_top = float(np.percentile(zs, 99.5)) if len(zs) else None
@@ -862,15 +985,36 @@ def main():
     log("[seg] " + ", ".join(f"{k} {v:.2f}" for k, v in vol.items()))
     log(f"[seg] stone top at z = {fill_top:.2f} (rim {z_rim}); cavity net up to that level "
         f"{exp['cavity_net_to_fill_mL']:.2f} mL, full {exp['stone_full_fill_mL']:.2f} mL")
+    rep["warnings"] = []
+    if not args.reference and vol["voids_in_stone_below_top"] >= EMPTY_WARN_ML:
+        msg = (f"{vol['voids_in_stone_below_top']:.2f} mL of empty space in the stone (below its top): this looks "
+               f"like a drilled scan. Re-run with --reference <pre-drilling output folder> to get the drilled "
+               f"segments and the PLA damage check")
+        rep["warnings"].append(msg)
+        bar = "!" * 78
+        log(bar)
+        log(f"!!! WARNING: {msg}")
+        log(bar)
 
     # ---- outputs ----------------------------------------------------------------
-    for suffix, names in SEG_FILES.items():
+    seg_files = {k: list(names) for k, names in SEG_FILES.items()}
+    if args.reference:
+        seg_files["all_combinations"] += ["drilled"] + [f"{r}_drilled_{a}" for r in ROUTES
+                                                        for a in ("allowed", "forbidden")] + ["box_damage"]
+        seg_files["box_dental"] += ["drilled", "box_damage"]
+        for r in ROUTES:
+            seg_files[f"box_dental_{r}_path"] += [f"{r}_drilled_allowed", f"{r}_drilled_forbidden", "box_damage"]
+    for suffix, names in seg_files.items():
         write_seg_nrrd(f"{pre}_{suffix}.seg.nrrd", geom, {k: segs[k] for k in names}, args.name)
     for r in ROUTES:
         lm = np.zeros(shape, np.uint8)
         lm[box] = 1
         lm[segs[f"{r}_forbidden"]] = 2
         lm[segs[f"{r}_allowed"]] = 3
+        if args.reference:
+            lm[segs[f"{r}_drilled_forbidden"]] = 4
+            lm[segs[f"{r}_drilled_allowed"]] = 5
+            lm[segs["box_damage"]] = 6
         write_labelmap(f"{pre}_labels_{r}.nrrd", geom, lm, img)
     F = np.diag([-1, -1, 1, 1])
     tr = {"convention": "x_ct = M_model_to_ct @ x_model (homogeneous, mm). "
@@ -918,11 +1062,34 @@ def main():
     figs = qa_figures(qa, args.name, arr, geom, M, grid, occ_box, occ_obs, occ_route, segs, hist, edges,
                       t_air, t_stone, modes, iso_level, det, fid_labels, fid_m, ct_fid_pts, fre, r0, r1, z_floor,
                       z_rim, fill_top, zt, pts_mod, shape)
+    if args.reference:
+        figs.update(drilling_figures(qa, args.name, arr, geom, M, grid, occ_box, occ_route, segs, modes, ref,
+                                     damage_blobs, z_floor))
     rep["qa_figures"] = figs
     with open(pre + "_report.json", "w") as f:
         json.dump(rep, f, indent=2, default=lambda o: o.tolist() if isinstance(o, np.ndarray) else str(o))
     write_markdown(pre + "_report.md", rep, figs)
     log(f"[done] outputs in {out}")
+    if args.strict and rep.get("pla_damage", {}).get("detected"):
+        log("[strict] exiting with code 2 because PLA damage was detected")
+        sys.exit(2)
+
+
+def load_reference(ref_dir, version):
+    reps = [f for f in os.listdir(ref_dir) if f.endswith("_report.json")]
+    if len(reps) != 1:
+        raise RuntimeError(f"{ref_dir}: expected one *_report.json, found {len(reps)}")
+    with open(os.path.join(ref_dir, reps[0])) as f:
+        rr = json.load(f)
+    if rr["version"] != version:
+        raise RuntimeError(f"reference is phantom version {rr['version']}, this run is {version}")
+    if "reference" in rr:
+        raise RuntimeError("the reference must be a pre-drilling run (it was itself run with --reference)")
+    name = rr["name"]
+    img = sitk.ReadImage(os.path.join(ref_dir, f"{name}_ct.nrrd"))
+    return {"name": name, "arr": sitk.GetArrayFromImage(img).astype(np.float32), "geom": CTGeom(img),
+            "M": np.loadtxt(os.path.join(ref_dir, f"{name}_model_to_ct_LPS.txt")),
+            "thresholds": {"pla_stone": rr["thresholds"]["pla_stone"], "modes": rr["thresholds"]["modes"]}}
 
 
 # ----------------------------------------------------------------------------
@@ -1085,6 +1252,59 @@ def qa_figures(qa, name, arr, geom, M, grid, occ_box, occ_obs, occ_route, segs, 
     return figs
 
 
+def drilling_figures(qa, name, arr, geom, M, grid, occ_box, occ_route, segs, modes, ref, blobs, z_floor):
+    figs = {}
+    lo = np.array([0, 15, 0.0])
+    hi = np.array([60, 79, 16.0])
+    vmin, vmax = modes["air"], modes["stone"]
+    fig, axes = plt.subplots(len(ROUTES), 3, figsize=(15, 6.2 * len(ROUTES)))
+    for row, r in enumerate(ROUTES):
+        for col, zz in enumerate([z_floor + 1.5, z_floor + 3.5, z_floor + 5.5]):
+            ax = axes[row, col]
+            vals, ext, p, shp = resample_model_plane(arr, geom, M, 2, zz, lo, hi, step=0.1)
+            ax.imshow(vals, cmap="gray", vmin=vmin, vmax=vmax, origin="lower", extent=ext)
+            ijk = geom.phys_to_idx(apply(M, p))
+            ov = np.zeros(shp + (4,))
+            for k, c in [(f"{r}_drilled_allowed", (0.2, 0.9, 0.3, 0.6)), (f"{r}_drilled_forbidden", (1.0, 0.1, 0.2, 0.7)),
+                         ("box_damage", (1.0, 1.0, 0.0, 1.0))]:
+                s = ndi.map_coordinates(segs[k].astype(np.float32), [ijk[:, 2], ijk[:, 1], ijk[:, 0]], order=0)
+                ov[s.reshape(shp) > 0.5] = c
+            ax.imshow(ov, origin="lower", extent=ext)
+            o = grid.sample(occ_route[r], p).reshape(shp)
+            ax.contour(o, levels=[0.5], colors="cyan", linewidths=0.8, linestyles="--", origin="lower", extent=ext)
+            o = grid.sample(occ_box, p).reshape(shp)
+            ax.contour(o, levels=[0.5], colors="orange", linewidths=0.6, origin="lower", extent=ext)
+            ax.set_title(f"{r} route, z = {zz:.1f}: drilled allowed green, forbidden red, PLA damage yellow", fontsize=8)
+    fig.suptitle(f"{name}: stone removed since {ref['name']} (route region cyan, box mesh orange)")
+    fig.tight_layout()
+    figs["drilled"] = f"qa/{name}_drilled.png"
+    fig.savefig(os.path.join(qa, f"{name}_drilled.png"), dpi=80)
+    plt.close(fig)
+    warn = [b for b in blobs if b["warning"]]
+    if warn:
+        n = len(warn)
+        fig, axes = plt.subplots(2, n, figsize=(4 * n, 8), squeeze=False)
+        for c, b in enumerate(warn):
+            pc = np.array(b["centre_model_mm"])
+            axis = 2 if pc[2] > z_floor + 0.5 else 0
+            for rr_, (lab, a_, g_, M_, mm) in enumerate([(ref["name"], ref["arr"], ref["geom"], ref["M"], ref["thresholds"]["modes"]),
+                                                         (name, arr, geom, M, modes)]):
+                vals, ext, p, shp = resample_model_plane(a_, g_, M_, axis, pc[axis], pc - 6, pc + 6, step=0.05)
+                ax = axes[rr_, c]
+                ax.imshow(vals, cmap="gray", origin="lower", extent=ext, vmin=mm["air"], vmax=mm["stone"])
+                ax.contour(grid.sample(occ_box, p).reshape(shp), [0.5], colors="r", linewidths=0.8, origin="lower",
+                           extent=ext)
+                u, w = [k for k in range(3) if k != axis]
+                ax.plot(pc[u], pc[w], "y+", ms=14)
+                ax.set_title(f"{lab}: {b['volume_uL']:.1f} uL, {b['part']}\n{'xyz'[axis]} = {pc[axis]:.1f}", fontsize=9)
+        fig.suptitle(f"{name}: PLA damage (red = CAD mesh; top before drilling, bottom after)")
+        fig.tight_layout()
+        figs["damage"] = f"qa/{name}_damage.png"
+        fig.savefig(os.path.join(qa, f"{name}_damage.png"), dpi=80)
+        plt.close(fig)
+    return figs
+
+
 def write_markdown(path, rep, figs):
     f = rep["fiducials"]
     v = rep["volumes_mL"]
@@ -1094,7 +1314,18 @@ def write_markdown(path, rep, figs):
          f"- Model {rep['version']}, box commit `{rep['model']['version_commit'][:7]}`, route regions from scad "
          f"commit `{rep['model']['paths_scad_commit'][:7]}`; STL hashes match the records.",
          f"- CT: {rep['ct']['size']} voxels, spacing {[round(s, 3) for s in rep['ct']['spacing_mm']]} mm. "
-         f"Run {rep['run_at']}.", "",
+         f"Run {rep['run_at']}.", ""]
+    for w in rep.get("warnings", []):
+        L += ["> [!WARNING]", f"> {w}.", ""]
+    if "pla_damage" in rep:
+        pdm = rep["pla_damage"]
+        if pdm["detected"]:
+            L += ["> [!WARNING]", f"> **PLA DAMAGE DETECTED**: {sum(b['warning'] for b in pdm['blobs'])} spot(s), "
+                  f"{pdm['total_uL']:.1f} uL of PLA removed next to the drilled channel (blobs >= {pdm['min_blob_uL']} uL). "
+                  "They are removed from `box` and saved as `box_damage`. See the Drilling section.", ""]
+        else:
+            L += [f"No PLA damage >= {pdm['min_blob_uL']} uL next to the drilled channel.", ""]
+    L += [
          "## Thresholds", "",
          f"Air|PLA {rep['thresholds']['air_pla']:.0f}, PLA|stone {rep['thresholds']['pla_stone']:.0f} "
          f"({rep['thresholds']['method']}). Modes: "
@@ -1102,11 +1333,14 @@ def write_markdown(path, rep, figs):
          f"![histogram]({figs['histogram']})", "",
          "## Registration", ""]
     if "candidates" in rep["init"]:
-        L += ["Initial pose candidates (PCA axes, proper rotations only, each refined by ICP):", "",
-              "| signs | ICP RMS (mm) | matched | free layer filled | obstacles with stone | score | rotation from chosen |",
-              "|---|---|---|---|---|---|---|"]
+        L += ["Initial pose candidates (PCA axes, proper rotations only, each refined by ICP). Chosen by the divot "
+              "match and confirmed by the obstacle-core match:", "",
+              "| signs | ICP RMS (mm) | matched | divot pockets found (contrast) | free cores filled | obstacle cores with stone "
+              "| obstacle score | rotation from chosen |",
+              "|---|---|---|---|---|---|---|---|"]
         for c in rep["init"]["candidates"]:
             L.append(f"| {tuple(c['signs'])} | {c['icp']['rms_mm']:.3f} | {c['icp']['n_matched']} | "
+                     f"{c['divot_pockets_found']}/9 ({c['divot_pockets_mean']:.2f}) | "
                      f"{c['free_filled']:.2f} | {c['obstacle_stone']:.2f} | {c['obstacle_score']:+.2f} | "
                      f"{c['rotation_from_chosen_deg']:.0f}° |")
         L.append("")
@@ -1139,6 +1373,26 @@ def write_markdown(path, rep, figs):
           f"Stone top (99.5th percentile of stone z, model frame): z = {e['fill_top_z_model']:.2f} mm "
           f"(floor {g['z_floor']}, rim {g['z_rim']}).", "",
           f"![overlay]({figs['overlay']})", "", f"![stone top]({figs['stone_top']})", ""]
+    if "drilled_mL" in rep:
+        d = rep["drilled_mL"]
+        L += ["## Drilling", "", f"Stone removed since `{rep['reference']['name']}` (mapped through the CAD frame; "
+              f"rotation between the scans {rep['reference']['rotation_deg']:.1f}°):", "",
+              "| | removed (mL) | allowed (mL) | forbidden (mL) |", "|---|---|---|---|"]
+        for r in ("left", "right"):
+            L.append(f"| {r} route | {d['drilled']:.2f} | {d[f'{r}_drilled_allowed']:.2f} | "
+                     f"{d[f'{r}_drilled_forbidden']:.2f} |")
+        L += ["", f"![drilled]({figs['drilled']})", ""]
+        blobs = rep["pla_damage"]["blobs"]
+        if blobs:
+            L += ["PLA lost next to the drilled channel (warning at >= "
+                  f"{rep['pla_damage']['min_blob_uL']} uL):", "",
+                  "| volume (uL) | part | centre, model (mm) | centre, CT LPS (mm) | warning |", "|---|---|---|---|---|"]
+            for b in blobs:
+                L.append(f"| {b['volume_uL']:.1f} | {b['part']} | {b['centre_model_mm']} | {b['centre_ct_lps']} | "
+                         f"{'**yes**' if b['warning'] else 'no'} |")
+            L.append("")
+        if "damage" in figs:
+            L += [f"![damage]({figs['damage']})", ""]
     with open(path, "w") as fh:
         fh.write("\n".join(L))
 
