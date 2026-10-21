@@ -186,6 +186,22 @@ def mesh_volume_mL(pd):
     return m.GetVolume() / 1000.0
 
 
+def divot_bottoms(pd, fids, normals, max_depth=5.0):
+    """Bottom of each divot pocket: first mesh hit along -normal from the opening centre."""
+    loc = vtk.vtkCellLocator()
+    loc.SetDataSet(pd)
+    loc.BuildLocator()
+    out = []
+    for f, n in zip(fids, normals):
+        n = n / np.linalg.norm(n)
+        t, x, pc, sub = vtk.reference(0.0), [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], vtk.reference(0)
+        # first hit from the opening centre along the inward normal
+        if not loc.IntersectWithLine((f - 0.01 * n).tolist(), (f - max_depth * n).tolist(), 1e-6, t, x, pc, sub):
+            raise RuntimeError(f"no divot bottom found below {f}")
+        out.append(np.array(x))
+    return np.array(out)
+
+
 def transform_mesh(pd, M):
     pts = vnp.vtk_to_numpy(pd.GetPoints().GetData()).astype(np.float64)
     out = vtk.vtkPolyData()
@@ -576,7 +592,7 @@ def main():
                     "files": prov}
     log(f"[model] {v}: box commit {vj['commit'][:7]}, routes from scad {pj['scad_commit'][:7]}; hashes OK")
 
-    fid_labels, fid_m, _ = read_points_csv(os.path.join(sd, f"saint_phantom_{v}_fiducials.csv"))
+    fid_labels, fid_m, fid_n = read_points_csv(os.path.join(sd, f"saint_phantom_{v}_fiducials.csv"))
     _, surf_m, surf_n = read_points_csv(os.path.join(sd, f"saint_phantom_{v}_surface.csv"))
     log(f"[model] {len(fid_labels)} fiducials, {len(surf_m)} surface points")
 
@@ -886,6 +902,15 @@ def main():
     write_markups(pre + "_fiducials_ct.mrk.json", fid_labels, ct_fid_pts,
                   {l: f"FRE {e:.2f} mm" for l, e in zip(fid_labels, fre)})
     write_markups(pre + "_fiducials_model_in_ct.mrk.json", [l + "m" for l in fid_labels], apply(M, fid_m))
+    # divot bottoms: offset from each CT divot centre by the mesh's centre->bottom vector
+    bot_m = divot_bottoms(pd_box, fid_m, fid_n)
+    depth = np.linalg.norm(bot_m - fid_m, axis=1)
+    bot_ct = ct_fid_pts + (bot_m - fid_m) @ M[:3, :3].T
+    write_markups(pre + "_M.mrk.json", fid_labels, bot_ct,
+                  {l: f"divot bottom, {d:.2f} mm below the opening centre" for l, d in zip(fid_labels, depth)})
+    rep["fiducials"]["divot_bottom_depth_mm"] = dict(zip(fid_labels, depth.round(3).tolist()))
+    rep["fiducials"]["divot_bottoms_ct_lps"] = dict(zip(fid_labels, bot_ct.round(3).tolist()))
+    log("[fid] divot bottoms written (depth from mesh: " + ", ".join(f"{d:.2f}" for d in depth) + " mm)")
 
     # ---- QA figures -----------------------------------------------------------
     qa = os.path.join(out, "qa")

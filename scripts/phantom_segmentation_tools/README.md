@@ -78,6 +78,7 @@ in the report.
 | `<name>_model_to_ct.h5` / `.tfm` | Same transform as an ITK file. ITK stores the resampling direction (CT point → model point), so in Slicer you **put model nodes under it** to move them into CT space |
 | `meshes_in_ct/*.stl` | Box, obstacles and route regions already in CT space (LPS) |
 | `<name>_fiducials_ct.mrk.json` | Divot centres found in the CT (LPS; FRE in each description) |
+| `<name>_M.mrk.json` | Bottom of each divot pocket, M-1…M-9 (LPS): the CT divot centre moved by the mesh's opening-centre → pocket-bottom vector |
 | `<name>_fiducials_model_in_ct.mrk.json` | Model fiducials mapped with the final transform |
 | `<name>_report.json`, `<name>_report.md` | Thresholds, pose candidates, FRE, ICP RMS, volumes vs expected, provenance |
 | `qa/*.png` | Histogram, divot crops, ICP residuals, overlays in the model frame, stone-top height map |
