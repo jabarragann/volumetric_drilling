@@ -57,6 +57,12 @@ ABOVE_RIM = 3.0        # mm of stone accepted above the rim
 BOX_DILATION = 1.0     # mm around the box mesh accepted as PLA
 DAMAGE_MIN_UL = 2.0    # PLA lost next to the drilled channel above this size (uL) raises the warning
 EMPTY_WARN_ML = 0.5    # empty space in the stone (below its top) that suggests a drilled scan
+# --reference must be the same phantom: stone away from the drilled channel and
+# the box must match. Measured on PL07/PL08: same phantom Dice 0.985-0.990, NCC
+# 0.91-0.94; different phantoms Dice 0.90-0.955, NCC 0.34-0.81
+SAME_FAR_MM = 3.0      # stone compared only farther than this from the drilled channel
+SAME_DICE_MIN = 0.97   # stone overlap (reference vs this scan) below this -> different phantom
+SAME_NCC_MIN = 0.85    # CT intensity correlation in that stone below this -> different phantom
 SEG_COLORS = {
     "box": (0.85, 0.85, 0.80),
     "stone": (0.55, 0.65, 0.95),
@@ -905,6 +911,20 @@ def main():
         cs_ = np.bincount(labs.ravel())
         cs_[0] = 0
         drilled = np.isin(labs, np.nonzero(cs_ >= 30)[0])
+        same = same_phantom_check(v0, arr, stone0, stone_int, stone_zone, box_m, drilled, geom)
+        log(f"[ref] same-phantom check: stone > {SAME_FAR_MM:.0f} mm from the channel {same['ref_mL']:.2f} / "
+            f"{same['this_mL']:.2f} mL, Dice {same['dice']:.3f} (min {SAME_DICE_MIN}), "
+            f"NCC {same['ncc']:.3f} (min {SAME_NCC_MIN})")
+        if not same["passed"]:
+            bar = "!" * 78
+            log(bar)
+            log(f"!!! ERROR: {ref['name']} DOES NOT LOOK LIKE THE SAME PHANTOM AS {args.name}")
+            log(f"!!! The stone away from the drilled channel differs between the scans "
+                f"(Dice {same['dice']:.3f}, NCC {same['ncc']:.3f}).")
+            log("!!! Check that --reference is this phantom's pre-drilling output folder. "
+                "Stopped before the segmentation outputs.")
+            log(bar)
+            sys.exit(3)
         # PLA damage: material in D00, air in D01, inside the mesh and touching the
         # drilled channel (lattice flicker elsewhere is ignored)
         mat0 = v0 > 0.5 * (th0["modes"]["air"] + th0["modes"]["pla"])
@@ -941,7 +961,7 @@ def main():
         warn = [d for d in damage_blobs if d["warning"]]
         rep["reference"] = {"dir": os.path.abspath(args.reference), "name": ref["name"],
                             "ref_ct_to_this_ct_LPS": D.tolist(), "rotation_deg": rot_angle_deg(D[:3, :3]),
-                            "ref_thresholds": th0}
+                            "ref_thresholds": th0, "same_phantom_check": same}
         rep["drilled_mL"] = {k: float(segs[k].sum() * vv) for k in
                              ["drilled"] + [f"{r}_drilled_{a}" for r in ROUTES for a in ("allowed", "forbidden")]}
         rep["pla_damage"] = {"detected": bool(warn), "min_blob_uL": DAMAGE_MIN_UL,
@@ -1073,6 +1093,26 @@ def main():
     if args.strict and rep.get("pla_damage", {}).get("detected"):
         log("[strict] exiting with code 2 because PLA damage was detected")
         sys.exit(2)
+
+
+def same_phantom_check(v0, v1, stone0, stone1, stone_zone, box_m, drilled, geom):
+    """Compare the stone of the reference and this scan away from the drilled channel and the box.
+
+    The boxes are printed identically, but every stone pour differs (fill level,
+    surface, bubbles), so a different phantom shows up as stone that moved."""
+    sl = ndi.find_objects(stone_zone.astype(np.uint8))[0]
+    sp = geom.spacing[::-1]
+    far = stone_zone[sl] & ~ndi.binary_dilation(box_m[sl], iterations=max(1, int(round(BOX_DILATION / sp.min()))))
+    if drilled[sl].any():
+        far &= ndi.distance_transform_edt(~drilled[sl], sampling=sp) > SAME_FAR_MM
+    a, c = stone0[sl] & far, stone1[sl] & far
+    vv = float(np.prod(sp)) / 1000
+    dice = float(2 * (a & c).sum() / max(1, a.sum() + c.sum()))
+    m = a | c
+    ncc = float(np.corrcoef(v0[sl][m], v1[sl][m])[0, 1]) if m.sum() > 100 else 0.0
+    return {"far_from_channel_mm": SAME_FAR_MM, "ref_mL": float(a.sum() * vv), "this_mL": float(c.sum() * vv),
+            "dice": dice, "ncc": ncc, "dice_min": SAME_DICE_MIN, "ncc_min": SAME_NCC_MIN,
+            "passed": dice >= SAME_DICE_MIN and ncc >= SAME_NCC_MIN}
 
 
 def load_reference(ref_dir, version):

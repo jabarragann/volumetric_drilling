@@ -53,7 +53,7 @@ It runs outside Slicer. A run takes about 20–40 s.
 | `--ct` | yes | DICOM folder (one series) or a volume file (`.nrrd`, `.nii`, …) |
 | `--name` | yes | Scan name: prefix of every output file and `PatientName` in the segmentations |
 | `--out` | yes | Output folder (created if missing; earlier files are overwritten) |
-| `--reference DIR` | post-drilling | Output folder of the same phantom's pre-drilling run. Must be the same `--version`, and must not itself have been run with `--reference` |
+| `--reference DIR` | post-drilling | Output folder of the same phantom's pre-drilling run. Must be the same `--version`, and must not itself have been run with `--reference`. A reference whose stone doesn't match this scan is rejected (exit code 3) |
 | `--strict` | no | With `--reference`: exit with code 2 when PLA damage is found (for batch runs) |
 | `--ct-fiducials FILE` | no | Divots clicked in Slicer (M-1…M-9) instead of automatic detection. `coordinateSystem` is read; RAS is converted to LPS |
 | `--thresholds AIR_PLA PLA_STONE` | no | Override the histogram thresholds |
@@ -101,6 +101,15 @@ It runs outside Slicer. A run takes about 20–40 s.
 7. **After drilling (`--reference`).** Both runs are registered to the CAD, so
    the pre-drilling CT is mapped onto this scan's grid through the model frame
    (no image-to-image registration), and each scan keeps its own thresholds.
+   - **Same-phantom check:** the boxes are printed identically, but every stone
+     pour differs (fill level, surface, bubbles). Stone more than 3 mm from the
+     drilled channel and 1 mm from the box must match between the reference and
+     this scan: Dice ≥ 0.97 (`SAME_DICE_MIN`) and CT intensity correlation
+     NCC ≥ 0.85 (`SAME_NCC_MIN`). Otherwise the run prints an error banner and
+     exits with code 3 before writing the segmentations. Measured on PL07/PL08:
+     same phantom Dice 0.987–0.990, NCC 0.91–0.93; swapped references Dice
+     0.93–0.96, NCC 0.67–0.75. The values are in `report.json` under
+     `reference.same_phantom_check`.
    - `drilled` = stone in the reference, not stone now (opened, components ≥ 30
      voxels); `<route>_drilled_allowed` = `drilled` ∩ route region,
      `<route>_drilled_forbidden` = `drilled` − allowed.
