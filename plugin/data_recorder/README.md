@@ -62,6 +62,33 @@ ros2 bag info ~/saint_data/<YYYYmmdd_HHMMSS>/rosbag
 
 `data_directory` in the config is relative to the directory the recorder is launched from, and `~` is not expanded. Use an absolute path to always record to the same place.
 
+## Replay
+
+Replays a session into SAINT as if it were live: `ros2 bag play` publishes the Atracsys topics and `/clock`, and `video_replay` serves the video on the same socket as `video_source`, sending each frame when `/clock` reaches the frame's `recorder_reception_ns`. Bag topics and frames are both stamped by the recorder with `CLOCK_REALTIME`, so they stay in sync without any offset.
+
+Stop `video_source` first (both serve the `camera` socket), then start AMBF as usual and, in two terminals:
+
+```
+ros2 run simulation_assisted_navigation_framework video_replay --session ~/saint_data/<YYYYmmdd_HHMMSS>
+ros2 bag play ~/saint_data/<YYYYmmdd_HHMMSS>/rosbag --clock 100
+```
+
+Or both at once (playback is then controlled with the `/rosbag2_player/*` services instead of the keyboard):
+
+```
+ros2 launch simulation_assisted_navigation_framework replay.launch.py session:=<session_dir> [rate:=0.5] [start_offset:=30] [loop:=true]
+```
+
+The video follows everything the bag player does:
+
+| Bag player | Video |
+| --- | --- |
+| `--rate`, arrow keys | plays faster/slower |
+| space, `/rosbag2_player/pause`, `toggle_paused` | holds the current frame |
+| `--start-offset`, `/rosbag2_player/seek`, `--loop` | jumps to the matching frame |
+
+`--clock 100` publishes `/clock` at 100 Hz, so a frame is shown at most 10 ms late. `--offset-ms` shifts the video against the bag (positive: later), e.g. to compensate a measured video latency (see below). Only the first video segment of a stream is replayed.
+
 ## Synchronization (not implemented yet)
 
 Video and ROS data are **not synchronized at capture time**. What exists today:

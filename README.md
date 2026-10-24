@@ -28,7 +28,7 @@ pip install vcs2l
 Libraries to run saint.
 ```
 sudo apt install gstreamer1.0-plugins-bad # Required to read decklink video (decklinkvideosrc, unixfdsink/unixfdsrc)
-sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev # Required to compile stereo_video_source
+sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev nlohmann-json3-dev # Required to compile stereo_video_source and video_replay
 sudo apt install libgtkmm-3.0-dev libjsoncpp-dev gstreamer1.0-plugins-ugly # Required by the data recorder (dvrk_data: GUI, config, x264enc)
 ```
 
@@ -106,6 +106,8 @@ Set `video_source` in `sim_assisted_nav_plugin_config` of `ADF/single_stereo_cam
   ```
 * `decklink`: AMBF opens the Decklink cards directly. No other process can use the cards.
 * `ros`: subscribes to left/right image topics.
+
+To replay a recording made with the [data recorder](plugin/data_recorder/README.md#replay) instead of the live cameras, start `video_replay` in place of `video_source`; SAINT's config does not change.
 
 ## Running registration pipeline
 

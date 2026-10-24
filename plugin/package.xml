@@ -39,6 +39,11 @@
   <depend condition="$ROS_VERSION == 2">cv_bridge</depend>
   <depend condition="$ROS_VERSION == 2">volumetric_drilling_msgs</depend>
   <depend condition="$ROS_VERSION == 2">ambf_server</depend>
+  <depend condition="$ROS_VERSION == 2">rosgraph_msgs</depend>
+  <depend condition="$ROS_VERSION == 2">nlohmann-json-dev</depend>
+  <exec_depend condition="$ROS_VERSION == 2">launch_ros</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">ros2bag</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">rosbag2_storage_mcap</exec_depend>
 
   <export>
     <build_type condition="$ROS_VERSION == 1">catkin</build_type>

@@ -158,6 +158,19 @@ if (GST_FOUND)
 
     if (AMBF_ROS_VERSION EQUAL 2)
         install(TARGETS video_source stereo_viewer RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+        ## Replays a dvrk_data recording, following the /clock of `ros2 bag play --clock`
+        find_package(rosgraph_msgs REQUIRED)
+        find_package(nlohmann_json 3 REQUIRED)
+        pkg_check_modules(GST_ALLOCATORS REQUIRED IMPORTED_TARGET gstreamer-allocators-1.0)
+        add_executable(video_replay
+            ${stereo_video_dir}/executables/video_replay.cpp
+            ${stereo_video_dir}/stereo_video_replay.cpp
+            ${stereo_video_dir}/stereo_video_replay.h)
+        target_link_libraries(video_replay stereo_video PkgConfig::GST_ALLOCATORS Boost::program_options nlohmann_json::nlohmann_json)
+        ament_target_dependencies(video_replay rclcpp rosgraph_msgs)
+        install(TARGETS video_replay RUNTIME DESTINATION lib/${PROJECT_NAME})
+        install(DIRECTORY ${stereo_video_dir}/launch/ DESTINATION share/${PROJECT_NAME}/launch)
     endif()
 
     ## sim_assisted_nav client for the stereo video source (video_source: unixfd)

@@ -63,10 +63,6 @@ public:
 private:
     std::string build_eye_branch(int device, int compositor_pad) const;
 
-    // Removes a stale socket left by a crashed source. Returns false if another
-    // source is still serving on it.
-    bool claim_socket() const;
-
     StereoVideoSourceConfig m_config;
     std::string m_socket_path;
     GstElement *m_pipeline = nullptr;

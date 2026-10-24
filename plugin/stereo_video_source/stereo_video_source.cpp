@@ -14,8 +14,6 @@
 #include "stereo_video_source.h"
 #include "stereo_video_common.h"
 
-#include <gio/gio.h>
-
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -70,31 +68,6 @@ std::string StereoVideoSource::pipeline_description() const
     return ss.str();
 }
 
-bool StereoVideoSource::claim_socket() const
-{
-    if (!std::filesystem::exists(m_socket_path))
-    {
-        return true;
-    }
-
-    // If something accepts connections on the socket, another source owns it.
-    GSocketClient *client = g_socket_client_new();
-    GSocketAddress *address = g_unix_socket_address_new(m_socket_path.c_str());
-    GSocketConnection *connection =
-        g_socket_client_connect(client, G_SOCKET_CONNECTABLE(address), nullptr, nullptr);
-    g_object_unref(address);
-    g_object_unref(client);
-    if (connection)
-    {
-        g_object_unref(connection);
-        cerr << "Another stereo video source is already running on " << m_socket_path << endl;
-        return false;
-    }
-
-    std::filesystem::remove(m_socket_path);
-    return true;
-}
-
 bool StereoVideoSource::start()
 {
     if (m_pipeline)
@@ -102,7 +75,7 @@ bool StereoVideoSource::start()
         return true;
     }
 
-    if (!ensure_gst_initialized() || !claim_socket())
+    if (!ensure_gst_initialized() || !claim_socket(m_socket_path))
     {
         return false;
     }

@@ -13,8 +13,10 @@
 
 #pragma once
 
+#include <gio/gio.h>
 #include <gst/gst.h>
 
+#include <filesystem>
 #include <iostream>
 #include <string>
 
@@ -30,6 +32,33 @@ namespace stereo_video
 inline std::string socket_path_for(const std::string &name)
 {
     return "/tmp/stereo_video_" + name + ".socket";
+}
+
+// Removes a stale socket left by a crashed source. Returns false if another
+// source is still serving on it.
+inline bool claim_socket(const std::string &socket_path)
+{
+    if (!std::filesystem::exists(socket_path))
+    {
+        return true;
+    }
+
+    // If something accepts connections on the socket, another source owns it.
+    GSocketClient *client = g_socket_client_new();
+    GSocketAddress *address = g_unix_socket_address_new(socket_path.c_str());
+    GSocketConnection *connection =
+        g_socket_client_connect(client, G_SOCKET_CONNECTABLE(address), nullptr, nullptr);
+    g_object_unref(address);
+    g_object_unref(client);
+    if (connection)
+    {
+        g_object_unref(connection);
+        std::cerr << "Another stereo video source is already running on " << socket_path << std::endl;
+        return false;
+    }
+
+    std::filesystem::remove(socket_path);
+    return true;
 }
 
 inline bool ensure_gst_initialized()
