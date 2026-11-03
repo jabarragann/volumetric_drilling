@@ -40,6 +40,8 @@ $PY register_cad.py --version v01 --stl-dir $STL/v01 \
 |---|---|
 | `register_cad.py` | The pipeline, one run per scan |
 | `load_in_slicer.py` | Loads a run's outputs into 3D Slicer (optional) |
+| `split_phantoms.py` | Splits a scan of 4 phantoms on one plate into one DICOM series per phantom (run first) |
+| `modify_dicom_info.py` | Rewrites `PatientName` and `PatientID` in a DICOM folder (optional) |
 
 ## Arguments
 

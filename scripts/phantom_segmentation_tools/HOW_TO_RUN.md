@@ -8,6 +8,18 @@ For the method and the full list of outputs, see [README.md](README.md).
 - **CT:** the DICOM series (one series per folder) in `phantoms/Loop-x/processed/`,
   e.g. `2026-11-05_PL09_D00` and later `..._PL09_D01`. Each folder must contain
   only that scan's series.
+- **Several phantoms in one scan:** split it first. The phantoms must lie in a
+  2 × 2 grid on the plate. Give the names in Slicer's sagittal view (anterior on the
+  left), top-left, top-right, bottom-left, bottom-right:
+  ```bash
+  $PY $TOOLS/split_phantoms.py --ct <raw Series folder> --out $DATA/processed \
+      --prefix 2026-11-05 --suffix D00 --names PL09 PL10 PL11 PL12
+  ```
+  The cuts go at the emptiest slice and row in the middle third of the scan: check
+  that the printed occupancy at the cuts is far below the median, or set them with
+  `--cuts SLICE ROW`. Phantoms can be moved or rotated between the pre- and
+  post-drilling scans, so check the names: `register_cad.py --reference` stops with
+  exit code 3 if a post-drilling scan doesn't match its pre-drilling phantom.
 - **Model version:** know which version of the model was printed (`v01`, `v02`,
   `v03`). Its folder `~/research/openscad_models/saint_phantom/stl/<version>/`
   must contain the STLs, the fiducial and surface CSVs, `version.json` and
