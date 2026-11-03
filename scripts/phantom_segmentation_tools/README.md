@@ -55,6 +55,7 @@ It runs outside Slicer. A run takes about 20–40 s.
 | `--out` | yes | Output folder (created if missing; earlier files are overwritten) |
 | `--reference DIR` | post-drilling | Output folder of the same phantom's pre-drilling run. Must be the same `--version`, and must not itself have been run with `--reference`. A reference whose stone doesn't match this scan is rejected (exit code 3) |
 | `--strict` | no | With `--reference`: exit with code 2 when PLA damage is found (for batch runs) |
+| `--no-icp` | no | Keep the fiducial fit as the final transform. ICP is still run and reported. Use it when ICP tilts the pose: fiducial distance after ICP ≥ 0.5 mm, RMS not improved, and the `--reference` check fails only because of this scan |
 | `--ct-fiducials FILE` | no | Divots clicked in Slicer (M-1…M-9) instead of automatic detection. `coordinateSystem` is read; RAS is converted to LPS |
 | `--thresholds AIR_PLA PLA_STONE` | no | Override the histogram thresholds |
 
@@ -113,7 +114,8 @@ It runs outside Slicer. A run takes about 20–40 s.
    - `drilled` = stone in the reference, not stone now (opened, components ≥ 30
      voxels); `<route>_drilled_allowed` = `drilled` ∩ route region,
      `<route>_drilled_forbidden` = `drilled` − allowed.
-   - **PLA damage:** PLA inside the CAD mesh in the reference that is air now,
+   - **PLA damage:** PLA inside the CAD mesh in the reference that is air now
+     (one material level for both scans, from the reference),
      *and touching the drilled channel*. Requiring contact with the channel
      removes the scan-to-scan flicker of the lattice infill, which otherwise gives
      hundreds of tiny "lost" blobs across the box. Fragments within ~1 mm are
@@ -161,6 +163,8 @@ volumes and verify the `.h5` transform direction without the GUI.
 - "Expected" allowed volumes in the report are the route region up to the
   stone-top level (99.5th percentile of stone z). The stone surface isn't flat,
   so treat them as approximate. See `qa/<name>_stone_top.png`.
+- `box_damage` spots below the cavity floor can be lattice flicker that touches the
+  channel: on PL12 the floor skin was intact in the CT. Check them in `*_damage.png`.
 - The PLA damage check can only see damage next to the drilled channel. It
   needs the pre-drilling scan: without it, damage can't be told apart from the
   hollow lattice infill.

@@ -156,3 +156,31 @@ MeshLab GUI (**Filters → Show current filter script → Save Script**) and ove
   `RefMesh=0` / `MeasureMesh=1` line up. The script already loads them in that order.
 - The whole pipeline is keyed off the `P01_D{xx}_..` naming. For other patients/drills,
   adjust `DRILLS` (and the name templates in the scripts) in both stages.
+
+# Assistance vs no-assistance metrics, pilot 2026-10-14 (`analyze_pilot.py`)
+
+Compares PL09-PL12 from the outputs of `phantom_segmentation_tools/register_cad.py`
+(D01 runs made with `--reference`). Phantoms, operators and routes are in `STUDY` at the
+top of the script. Run in conda `saint-env`:
+
+```bash
+python analyze_pilot.py [--out <folder>]   # default experiments/experiment_2026-10-14/analysis
+```
+
+Writes `metrics.csv`, `metrics.json`, `summary.md`, `pilot_drilled.png`, `pilot_compare.png`.
+
+All metrics are against the assigned route, on the main channel only (the largest drilled
+component; smaller patches are reported as `stray_patches_voxels`).
+
+| Metric | Meaning |
+|---|---|
+| `forbidden_*` | Drilled stone outside the route; `_beyond_tol` is more than 0.5 mm past the route wall |
+| `forbidden_above_obstacle_mL` / `_beside_route_mL` | Where that stone was: over an obstacle, or beside the route |
+| `excursion_*`, `excursion_events` | How far past the route wall, and how many separate excursions |
+| `route_completion_pct`, `route_dice` | Share of the route's stone removed, and overlap with it. Below 100 % by design: the drill is narrower than the corridor |
+| `centreline_coverage_pct` | Share of the centreline reached: this is the "finished the route" measure |
+| `obstacle_breach_voxels` | PLA in D00, air in D01 (one level for both scans), in an obstacle, within 1.5 mm of the channel |
+| `obstacle_noise_expected_voxels` | The same rule on obstacle voxels > 3 mm from the channel, scaled. Only counts above this are evidence of a breach. It includes buried infill, so it runs high |
+| `floor_skin_lost_voxels` | The same rule in the top 1 mm of the base. The lattice below flickers and is not counted |
+| `sens_*` | Drilled and forbidden volumes with one stone level for all scans |
+| `task_seconds`, `removal_mL_per_min` | From `session_tags.json` |

@@ -598,6 +598,8 @@ def main():
                                         "run (e.g. cad-registration/PL07_D00). Adds the drilled-stone segments "
                                         "and the PLA damage check")
     ap.add_argument("--strict", action="store_true", help="with --reference: exit with code 2 if PLA damage is found")
+    ap.add_argument("--no-icp", action="store_true", help="keep the fiducial fit as the final transform "
+                    "(ICP is still run and reported); for when ICP tilts the pose, see README")
     ap.add_argument("--thresholds", nargs=2, type=float, metavar=("AIR_PLA", "PLA_STONE"),
                     help="override the histogram-derived thresholds")
     args = ap.parse_args()
@@ -848,17 +850,19 @@ def main():
     fre_icp = np.linalg.norm(apply(M_icp, fid_m) - ct_fid_pts, axis=1)
     st0, st1 = rms_stats(r0), rms_stats(r1)
     diverged = (st1["n_matched"] < 0.6 * len(surf_m)) or move > 2.0
-    M = M_fid if diverged else M_icp
+    M = M_fid if diverged or args.no_icp else M_icp
     rep["icp"] = {"before": st0, "after": st1, "iterations": len(icp_hist),
                   "max_corner_move_vs_fiducial_fit_mm": float(move),
                   "rotation_vs_fiducial_fit_deg": rot_angle_deg(dM[:3, :3]),
                   "fiducial_distance_after_icp_mm": dict(zip(fid_labels, fre_icp.round(3).tolist())),
                   "fiducial_distance_after_icp_rms_mm": float(np.sqrt(np.mean(fre_icp[good] ** 2))),
-                  "diverged": bool(diverged), "final": "fiducial fit" if diverged else "ICP"}
+                  "diverged": bool(diverged), "no_icp": bool(args.no_icp),
+                  "final": "fiducial fit" if diverged or args.no_icp else "ICP"}
     log(f"[icp] RMS {st0['rms_mm']:.3f} -> {st1['rms_mm']:.3f} mm "
         f"(matched {st0['n_matched']} -> {st1['n_matched']}/200); bbox corners move {move:.2f} mm "
         f"vs fiducial fit; fiducial RMS distance after ICP {rep['icp']['fiducial_distance_after_icp_rms_mm']:.3f} mm"
-        + ("; DIVERGED, keeping fiducial fit" if diverged else ""))
+        + ("; DIVERGED, keeping fiducial fit" if diverged else "")
+        + ("; --no-icp, keeping fiducial fit" if args.no_icp else ""))
     assert_proper(M, "final transform")
 
     # ---- map model to CT grid -------------------------------------------------
@@ -927,8 +931,11 @@ def main():
             sys.exit(3)
         # PLA damage: material in D00, air in D01, inside the mesh and touching the
         # drilled channel (lattice flicker elsewhere is ignored)
-        mat0 = v0 > 0.5 * (th0["modes"]["air"] + th0["modes"]["pla"])
-        mat1 = arr > 0.5 * (modes["air"] + modes["pla"])
+        # one level for both scans: the PLA mode is unstable (lattice vs shell peak), and
+        # separate levels flag the whole lattice as lost
+        mat_level = 0.5 * (th0["modes"]["air"] + th0["modes"]["pla"])
+        mat0 = v0 > mat_level
+        mat1 = arr > mat_level
         # no opening: drill damage is often in the thin (~2 voxel) shells. Fragments
         # within ~1 mm of each other count as one spot
         lost = box_m & mat0 & ~mat1
