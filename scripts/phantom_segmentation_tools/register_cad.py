@@ -1,22 +1,38 @@
 #!/usr/bin/env python3
 """Register the Saint Phantom CAD model to a CT scan and segment box, stone and routes.
 
+Step 2 of the phantom pipeline (split_phantoms.py -> register_cad.py; see HOW_TO_RUN.md).
+One run per scan; the input is one phantom's DICOM series from phantoms/Loop-x/processed.
+
 Pipeline (see README.md for details):
   1. load the CT (DICOM folder or NRRD) in LPS physical space
-  2. thresholds air/PLA/stone from a 3-class Otsu of the in-FOV histogram
+  2. thresholds: air|PLA from a 3-class Otsu of the in-FOV histogram, PLA|stone
+     halfway between the PLA and stone peaks
   3. initial pose: principal axes of the phantom mask, all 4 proper rotations
-     (never a reflection), each refined by ICP; the winner is picked by how
-     well the obstacle layout matches the holes in the stone
+     (never a reflection), each refined by ICP; the winner is the pose whose divot
+     pockets show in the CT, confirmed by the obstacle layout in the stone
   4. divots: located in the CT by template matching around their predicted
      positions (or read from --ct-fiducials); paired-point fit + FRE
   5. refinement: robust point-to-plane ICP of the 200 surface points onto the
-     CT air/PLA iso-surface, started from the fiducial fit
-  6. model meshes mapped into CT space and voxelised on the CT grid; segments
-     box, stone, <route>_allowed, <route>_forbidden
-  7. outputs: .seg.nrrd, labelmaps, transforms (.h5/.tfm/4x4), meshes and
+     CT air/PLA iso-surface, started from the fiducial fit (--no-icp keeps the fit)
+  6. align (default; --no-align skips it): the box axes are snapped to the nearest
+     patient axes and the CT is resampled by the remaining tilt about the box
+     centre; the scanner's LPS frame and axis directions are kept
+  7. model meshes voxelised on the (aligned) CT grid; segments box, stone,
+     <route>_allowed, <route>_forbidden; with --reference also the drilled stone
+     and the PLA damage check
+  8. crop (with 6): the aligned grid is cut to the box segmentation plus
+     --margin-xy voxels in x/y and --margin-z voxels in z, box centred
+  9. outputs: .seg.nrrd, labelmaps, transforms (.h5/.tfm/4x4), meshes and
      markups in CT space, QA figures, report.json and report.md
 
 Coordinates: model mm == LPS (as Slicer loads STL). ITK physical space is LPS.
+With alignment (the default) the output CT stays in the scanner's LPS frame with the
+same axis directions (e.g. stone normal towards patient left, divots anterior), only
+the box's tilt is removed, so its edges run along the voxel axes. model -> CT is then a
+signed axis permutation plus translation; <name>_model_to_scanner_LPS.txt keeps the
+registration to the original scanner CT and <name>_aligned_to_scanner_LPS.txt the tilt
+correction. With --no-align the outputs stay on the scanner grid as before.
 
 Usage (conda env saint-env: numpy, scipy, SimpleITK, vtk, pynrrd, matplotlib):
   python register_cad.py --version v01 \
@@ -63,6 +79,9 @@ EMPTY_WARN_ML = 0.5    # empty space in the stone (below its top) that suggests 
 SAME_FAR_MM = 3.0      # stone compared only farther than this from the drilled channel
 SAME_DICE_MIN = 0.97   # stone overlap (reference vs this scan) below this -> different phantom
 SAME_NCC_MIN = 0.85    # CT intensity correlation in that stone below this -> different phantom
+DIVOT_MARGIN_MIN = 0.3 # pose check: divot-contrast margin of the best pose over the next one
+MARGIN_XY = 5          # aligned crop: voxels around the box segmentation in x and y
+MARGIN_Z = 20          # aligned crop: voxels above and below the box segmentation
 SEG_COLORS = {
     "box": (0.85, 0.85, 0.80),
     "stone": (0.55, 0.65, 0.95),
@@ -88,6 +107,7 @@ def log(msg):
 # ----------------------------------------------------------------------------
 
 def rigid(R, t):
+    """4x4 homogeneous matrix from a 3x3 rotation and a translation."""
     M = np.eye(4)
     M[:3, :3] = R
     M[:3, 3] = t
@@ -95,21 +115,25 @@ def rigid(R, t):
 
 
 def apply(M, p):
+    """Apply a 4x4 transform to points p (N x 3)."""
     return p @ M[:3, :3].T + M[:3, 3]
 
 
 def inv(M):
+    """Inverse of a rigid 4x4 transform."""
     R, t = M[:3, :3], M[:3, 3]
     return rigid(R.T, -R.T @ t)
 
 
 def assert_proper(M, what):
+    """Raise if the rotation part of M is not a proper rotation (orthonormal, det +1)."""
     d = np.linalg.det(M[:3, :3])
     if not (abs(d - 1) < 1e-6 and np.allclose(M[:3, :3] @ M[:3, :3].T, np.eye(3), atol=1e-6)):
         raise RuntimeError(f"{what}: not a proper rotation (det={d:.6f})")
 
 
 def rot_angle_deg(R):
+    """Rotation angle of a 3x3 rotation matrix, in degrees."""
     return float(np.degrees(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1))))
 
 
@@ -126,6 +150,7 @@ def kabsch(src, dst, w=None):
 
 
 def expmap(w):
+    """Rotation matrix from an axis-angle vector (Rodrigues formula)."""
     th = np.linalg.norm(w)
     K = np.array([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]])
     if th < 1e-12:
@@ -138,6 +163,8 @@ def expmap(w):
 # ----------------------------------------------------------------------------
 
 class CTGeom:
+    """Geometry of a sitk image: index (i, j, k) <-> LPS point, phys = origin + D @ (ijk * spacing)."""
+
     def __init__(self, img):
         self.origin = np.array(img.GetOrigin())
         self.spacing = np.array(img.GetSpacing())
@@ -157,12 +184,16 @@ class CTGeom:
 
 
 def sample_ct(arr, geom, pts, order=1, cval=-1024.0):
+    """CT values at LPS points (linear by default); outside the volume -> cval."""
     ijk = geom.phys_to_idx(pts)
     return ndi.map_coordinates(arr, [ijk[:, 2], ijk[:, 1], ijk[:, 0]], order=order,
                                cval=cval, mode="constant")
 
 
 def load_ct(path):
+    """Read a CT as float32: a DICOM folder (exactly one series) or a volume file.
+
+    Returns (image, source info for the report)."""
     if os.path.isdir(path):
         r = sitk.ImageSeriesReader()
         ids = r.GetGDCMSeriesIDs(path)
@@ -179,10 +210,105 @@ def load_ct(path):
 
 
 # ----------------------------------------------------------------------------
+# Alignment with the box axes and cropping
+# ----------------------------------------------------------------------------
+# The aligned CT stays in the scanner's LPS frame (the patient axes and their
+# directions are kept, e.g. stone normal towards patient left, divots anterior),
+# but the small tilt of the box relative to those axes is removed: each box axis
+# is snapped to the nearest patient axis (signed permutation P), and the CT is
+# resampled by the residual rotation R_tilt = R P^T about the box centre. The new
+# grid uses the scanner's (snapped) direction matrix, so its voxel axes run along
+# the patient axes AND the box edges, and Slicer's sagittal/axial/coronal views
+# cut the box straight.
+#
+#   scanner point = A @ aligned point,  A = rotation by R_tilt about the box centre
+#   model -> aligned CT = inv(A) @ M_scan  (rotation P, a signed permutation)
+
+def snap_rotation(R):
+    """Closest signed permutation P (det +1) to the rotation R: column a of P is the patient
+    axis nearest to column a of R (model axis a in LPS). Returns (P, smallest |cosine|)."""
+    P = np.zeros((3, 3))
+    for a in range(3):
+        k = int(np.argmax(np.abs(R[:, a])))
+        P[k, a] = np.sign(R[k, a])
+    if sorted(np.argmax(np.abs(P), 0)) != [0, 1, 2] or abs(np.linalg.det(P) - 1) > 1e-6:
+        raise RuntimeError(f"box axes can't be snapped to the patient axes (rotation {R.round(3).tolist()})")
+    return P, float(np.min(np.abs(R[np.abs(P) > 0.5])))
+
+
+def snap_direction(D):
+    """Scanner direction matrix rounded to the nearest signed permutation (Loop-x scans are
+    already axis-aligned; this only removes rounding noise like 3e-5)."""
+    P, _ = snap_rotation(D)
+    return P
+
+
+def tilt_correction(M_scan, centre_model):
+    """A (aligned -> scanner, 4x4), P and the tilt angle: rotation that brings the box axes
+    onto the nearest patient axes, about the box centre (which keeps its scanner position)."""
+    R = M_scan[:3, :3]
+    P, min_cos = snap_rotation(R)
+    R_tilt = R @ P.T
+    c = apply(M_scan, centre_model[None])[0]
+    return rigid(R_tilt, c - R_tilt @ c), P, rot_angle_deg(R_tilt), min_cos
+
+
+def align_to_box(img, A, D_out, corners_aligned, spacing):
+    """Resample a CT onto a grid with direction D_out that covers the given points.
+
+    img              scanner CT
+    A                4x4 aligned -> scanner (from tilt_correction)
+    D_out            3x3 direction of the new grid (signed permutation, LPS)
+    corners_aligned  points (aligned frame, mm) the grid must contain
+    spacing          isotropic voxel size (mm)
+
+    Linear interpolation (B-spline overshoots at the PLA/stone edges); voxels outside
+    the scanner volume get -1024. Values are rounded to integers so the image that
+    is segmented is exactly the one written to <name>_ct.nrrd.
+    """
+    u = corners_aligned @ D_out                      # coordinates along the new index axes
+    u0, u1 = u.min(0), u.max(0)
+    size = [int(np.ceil((h - l) / spacing)) + 1 for l, h in zip(u0, u1)]
+    origin = D_out @ u0
+    t = sitk.AffineTransform(3)                      # maps output (aligned) points to input (scanner) points
+    t.SetMatrix(A[:3, :3].ravel().tolist())
+    t.SetTranslation(A[:3, 3].tolist())
+    out = sitk.Resample(img, size, t, sitk.sitkLinear, origin.tolist(), [spacing] * 3,
+                        D_out.ravel().tolist(), -1024.0, sitk.sitkFloat32)
+    arr = np.rint(sitk.GetArrayFromImage(out)).astype(np.float32)
+    return image_like(arr, out.GetOrigin(), spacing, D_out)
+
+
+def image_like(arr, origin, spacing, direction):
+    """float32 sitk image from an array [z, y, x] with the given origin, isotropic spacing, direction."""
+    img = sitk.GetImageFromArray(arr.astype(np.float32))
+    img.SetOrigin([float(v) for v in origin])
+    img.SetSpacing([float(spacing)] * 3)
+    img.SetDirection(np.asarray(direction, float).ravel().tolist())
+    return img
+
+
+def crop_box(mask, margins):
+    """Index slices of the bounding box of `mask` plus margins (voxels per index axis i, j, k).
+
+    Returns (slices for a [z, y, x] array, lower index (x, y, z), clipped flag).
+    The margins are equal on both sides, so the mask's bounding box is centred."""
+    nz = np.argwhere(mask)                 # rows (k, j, i)
+    lo = nz.min(0)[::-1] - np.asarray(margins)
+    hi = nz.max(0)[::-1] + np.asarray(margins) + 1
+    size = np.array(mask.shape[::-1])
+    clipped = bool((lo < 0).any() or (hi > size).any())
+    lo, hi = np.maximum(lo, 0), np.minimum(hi, size)
+    sl = tuple(slice(int(lo[a]), int(hi[a])) for a in (2, 1, 0))
+    return sl, lo, clipped
+
+
+# ----------------------------------------------------------------------------
 # Mesh helpers
 # ----------------------------------------------------------------------------
 
 def read_stl(path):
+    """Read an STL as cleaned vtkPolyData (duplicate points merged)."""
     r = vtk.vtkSTLReader()
     r.SetFileName(path)
     c = vtk.vtkCleanPolyData()
@@ -192,6 +318,7 @@ def read_stl(path):
 
 
 def mesh_volume_mL(pd):
+    """Enclosed volume of a closed mesh, in mL."""
     t = vtk.vtkTriangleFilter()
     t.SetInputData(pd)
     m = vtk.vtkMassProperties()
@@ -217,6 +344,7 @@ def divot_bottoms(pd, fids, normals, max_depth=5.0):
 
 
 def transform_mesh(pd, M):
+    """Copy of a mesh with its points mapped by the 4x4 transform M."""
     pts = vnp.vtk_to_numpy(pd.GetPoints().GetData()).astype(np.float64)
     out = vtk.vtkPolyData()
     out.DeepCopy(pd)
@@ -227,6 +355,7 @@ def transform_mesh(pd, M):
 
 
 def write_stl(pd, path):
+    """Write a mesh as binary STL."""
     w = vtk.vtkSTLWriter()
     w.SetFileName(path)
     w.SetInputData(pd)
@@ -284,6 +413,7 @@ class ModelGrid:
 # ----------------------------------------------------------------------------
 
 def read_points_csv(path):
+    """Read a fiducial/surface CSV of the model (label, x, y, z, nx, ny, nz): labels, points, normals."""
     rows = np.genfromtxt(path, delimiter=",", names=True, dtype=None, encoding="utf-8")
     labels = [str(l) for l in rows["label"]]
     xyz = np.stack([rows["x"], rows["y"], rows["z"]], 1).astype(float)
@@ -309,6 +439,7 @@ def read_markups(path):
 
 
 def write_markups(path, labels, pts, desc=None):
+    """Write LPS points as a locked Slicer fiducial .mrk.json; desc maps label -> description."""
     cps = []
     for i, (l, p) in enumerate(zip(labels, pts)):
         cps.append({"id": str(i + 1), "label": l, "description": (desc or {}).get(l, ""),
@@ -328,12 +459,17 @@ def write_markups(path, labels, pts, desc=None):
 # Thresholds
 # ----------------------------------------------------------------------------
 
-def find_thresholds(arr):
+def find_thresholds(arr, override=None):
     """air|PLA from a 3-class Otsu; PLA|stone halfway between the PLA and stone peaks.
 
     The stone peak is the highest-intensity prominent peak of the smoothed log
     histogram. After drilling, the channel walls add many partial-volume voxels
     between PLA and stone, and Otsu's upper threshold would land inside them.
+
+    override = (air_pla, pla_stone) from --thresholds: those are returned, and if the
+    histogram has no stone peak the stone mode is taken as the value whose midpoint
+    with the PLA mode is pla_stone (the modes set the ICP iso level and the divot
+    contrast scale).
     """
     vals = arr[arr > -1000].astype(np.float32)   # in field of view
     lo, hi = np.percentile(vals, [0.01, 99.99])
@@ -348,15 +484,22 @@ def find_thresholds(arr):
     lh = ndi.gaussian_filter1d(np.log1p(hist.astype(float)), 2)
     peaks, _ = find_peaks(lh[:-3], prominence=0.3)
     peaks = peaks[centres[peaks] > t_air]
-    if not len(peaks):
-        raise RuntimeError("no stone peak found in the histogram; pass --thresholds")
-    stone = float(centres[peaks[-1]])
 
     def mode(a, b):
         sel = (centres > a) & (centres < b)
         return float(centres[sel][np.argmax(hist[sel])])
-    modes = {"air": mode(lo, t_air), "pla": mode(t_air, 0.5 * (t_air + stone)), "stone": stone}
-    t_stone = 0.5 * (modes["pla"] + modes["stone"])
+    if override:
+        t_air = float(override[0])
+    if len(peaks):
+        stone = float(centres[peaks[-1]])
+        modes = {"air": mode(lo, t_air), "pla": mode(t_air, 0.5 * (t_air + stone)), "stone": stone}
+    elif override:
+        pla = mode(t_air, override[1])
+        modes = {"air": mode(lo, t_air), "pla": pla, "stone": 2 * float(override[1]) - pla}
+    else:
+        raise RuntimeError("no stone peak found in the histogram (stone of unusual density, or little stone in "
+                           "the scan); check qa and pass --thresholds")
+    t_stone = float(override[1]) if override else 0.5 * (modes["pla"] + modes["stone"])
     return float(t_air), float(t_stone), modes, (hist, edges), float(t_otsu_hi)
 
 
@@ -431,6 +574,8 @@ def icp_point_to_plane(src, src_n, tgt_tree, tgt, tgt_n, M0, iters=60,
 
 
 def surface_residuals(M, src, src_n, tgt_tree, tgt, tgt_n, dmax=2.0, normal_cos=0.6, k=12):
+    """Signed point-to-plane distance of each model surface point under M (+ = model outside the CT
+    surface); NaN where no compatible CT surface point lies within dmax."""
     p = apply(M, src)
     n = src_n @ M[:3, :3].T
     d, idx = tgt_tree.query(p, k=k, distance_upper_bound=dmax)
@@ -446,6 +591,7 @@ def surface_residuals(M, src, src_n, tgt_tree, tgt, tgt_n, dmax=2.0, normal_cos=
 
 
 def rms_stats(r):
+    """Summary of signed residuals (NaN = unmatched): count, RMS, median and 95th percentile of |r|."""
     f = r[np.isfinite(r)]
     return {"n_matched": int(len(f)), "n_total": int(len(r)),
             "rms_mm": float(np.sqrt(np.mean(f ** 2))) if len(f) else None,
@@ -524,11 +670,13 @@ def detect_divot(arr, geom, M, fid, box_grid, box_occ, cav_fp, half=(3.5, 3.5, 2
 # ----------------------------------------------------------------------------
 
 def nrrd_header_space(geom):
+    """NRRD 'space directions': row a = LPS direction of index axis a times its spacing."""
     dirs = (geom.D * geom.spacing).T   # row a = direction of index axis a * spacing
     return dirs
 
 
 def write_seg_nrrd(path, geom, segs, ref_name):
+    """Write a Slicer .seg.nrrd with one layer per segment (segs: name -> [z, y, x] bool array)."""
     import nrrd
     names = list(segs)
     data = np.stack([segs[n].transpose(2, 1, 0).astype(np.uint8) for n in names], 0)
@@ -555,6 +703,7 @@ def write_seg_nrrd(path, geom, segs, ref_name):
 
 
 def write_labelmap(path, geom, lab, ref_img):
+    """Write a uint8 labelmap with the geometry of ref_img."""
     img = sitk.GetImageFromArray(lab.astype(np.uint8))
     img.CopyInformation(ref_img)
     sitk.WriteImage(img, path, True)
@@ -565,6 +714,7 @@ def write_labelmap(path, geom, lab, ref_img):
 # ----------------------------------------------------------------------------
 
 def sha256(path):
+    """sha256 hex digest of a file."""
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for b in iter(lambda: f.read(1 << 20), b""):
@@ -573,6 +723,7 @@ def sha256(path):
 
 
 def script_commit():
+    """git HEAD of the repo holding this script, or None."""
     d = os.path.dirname(os.path.abspath(__file__))
     try:
         return subprocess.run(["git", "-C", d, "rev-parse", "HEAD"], capture_output=True,
@@ -586,6 +737,7 @@ def script_commit():
 # ----------------------------------------------------------------------------
 
 def main():
+    """Run the whole pipeline for one scan (see the module docstring and README.md)."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", required=True, help="phantom version, e.g. v01")
     ap.add_argument("--stl-dir", required=True, help="stl/<version> folder of the saint_phantom repo")
@@ -597,11 +749,31 @@ def main():
     ap.add_argument("--reference", help="after drilling only: output folder of the same phantom's pre-drilling "
                                         "run (e.g. cad-registration/PL07_D00). Adds the drilled-stone segments "
                                         "and the PLA damage check")
+    ap.add_argument("--same-ncc-min", type=float, default=SAME_NCC_MIN,
+                    help=f"with --reference: minimum stone CT correlation for the same-phantom check (default "
+                         f"{SAME_NCC_MIN}, calibrated on scans from the same session). Scans days apart correlate "
+                         f"less (stone dries): lower it only after checking the reference against the other "
+                         f"candidate phantoms, see README")
     ap.add_argument("--strict", action="store_true", help="with --reference: exit with code 2 if PLA damage is found")
     ap.add_argument("--no-icp", action="store_true", help="keep the fiducial fit as the final transform "
                     "(ICP is still run and reported); for when ICP tilts the pose, see README")
     ap.add_argument("--thresholds", nargs=2, type=float, metavar=("AIR_PLA", "PLA_STONE"),
                     help="override the histogram-derived thresholds")
+    ap.add_argument("--divot-margin-min", type=float, default=DIVOT_MARGIN_MIN,
+                    help=f"minimum divot-contrast margin between the best and second-best pose (default "
+                         f"{DIVOT_MARGIN_MIN}); lower it only when the obstacle check agrees by a wide margin, see README")
+    ap.add_argument("--pca-erode", type=int, default=0, metavar="N",
+                    help="erode the phantom mask by N voxels before the principal axes (initial pose only), to "
+                         "drop a large mounting plate joined to the base; for 'orientation is ambiguous' with "
+                         "few ICP matches (< 60%%) on every candidate")
+    ap.add_argument("--no-align", action="store_true",
+                    help="skip the align-and-crop step: segment and write the CT on the scanner grid (old behaviour)")
+    ap.add_argument("--margin-xy", type=int, default=MARGIN_XY,
+                    help=f"aligned crop: voxels kept around the box segmentation in x and y (default {MARGIN_XY})")
+    ap.add_argument("--margin-z", type=int, default=MARGIN_Z,
+                    help=f"aligned crop: voxels kept above and below the box segmentation (default {MARGIN_Z})")
+    ap.add_argument("--spacing", type=float,
+                    help="aligned crop: isotropic voxel size in mm (default: the CT's smallest spacing)")
     args = ap.parse_args()
 
     v = args.version
@@ -685,12 +857,8 @@ def main():
     rep["ct"] = {**src, "size": geom.size.tolist(), "spacing_mm": geom.spacing.tolist(),
                  "origin_lps": geom.origin.tolist(), "direction": geom.D.ravel().tolist()}
     log(f"[ct] size {geom.size.tolist()} spacing {np.round(geom.spacing, 4).tolist()}")
-    sitk.WriteImage(img if img.GetPixelID() == sitk.sitkInt16 else sitk.Cast(img, sitk.sitkInt16),
-                    pre + "_ct.nrrd", True)
 
-    t_air, t_stone, modes, (hist, edges), t_otsu_hi = find_thresholds(arr)
-    if args.thresholds:
-        t_air, t_stone = args.thresholds
+    t_air, t_stone, modes, (hist, edges), t_otsu_hi = find_thresholds(arr, args.thresholds)
     rep["thresholds"] = {"air_pla": t_air, "pla_stone": t_stone, "modes": modes, "otsu_upper_for_reference": t_otsu_hi,
                          "method": "override" if args.thresholds else
                          "air|PLA: 3-class Otsu of in-FOV voxels (> -1000); PLA|stone: midpoint of the PLA and "
@@ -718,7 +886,16 @@ def main():
     # ---- initial pose: PCA of masks, 4 proper rotations, each ICP-refined -----
     model_solid = occ_box | cavity
     pm = grid.centres(model_solid)
-    pc = geom.idx_to_phys(np.argwhere(phantom)[:, ::-1].astype(float))
+    # --pca-erode: strip thin structures (a large mounting plate joined to the base)
+    # from the mask used for the principal axes only; the box itself survives
+    pca_mask = phantom
+    if args.pca_erode:
+        er = ndi.binary_erosion(phantom, iterations=args.pca_erode)
+        le, _ = ndi.label(er)
+        se = np.bincount(le.ravel()); se[0] = 0
+        pca_mask = ndi.binary_dilation(le == np.argmax(se), iterations=args.pca_erode) & phantom
+        log(f"[init] --pca-erode {args.pca_erode}: PCA mask {pca_mask.sum() * vv:.1f} of {phantom.sum() * vv:.1f} mL")
+    pc = geom.idx_to_phys(np.argwhere(pca_mask)[:, ::-1].astype(float))
     cm, cc = pm.mean(0), pc.mean(0)
     _, Em = np.linalg.eigh(np.cov((pm - cm).T))
     _, Ec = np.linalg.eigh(np.cov((pc - cc)[::7].T))
@@ -780,16 +957,17 @@ def main():
         agree = by_obs[0] is best
         log(f"[init] divots choose {best['signs']} (contrast margin {div_margin:.2f}); obstacles choose "
             f"{by_obs[0]['signs']} (margin {obs_margin:.2f}) -> {'agree' if agree else 'DISAGREE'}")
-        if not agree or div_margin < 0.3:
-            raise RuntimeError("orientation is ambiguous (divot and obstacle checks disagree, or divot contrast "
-                               "margin < 0.3); annotate the divots and pass --ct-fiducials")
+        if not agree or div_margin < args.divot_margin_min:
+            raise RuntimeError(f"orientation is ambiguous (divot and obstacle checks disagree, or divot contrast "
+                               f"margin < {args.divot_margin_min}); annotate the divots and pass --ct-fiducials")
         rep["init"] = {"method": "PCA (4 proper rotations) + ICP; chosen by divot match, confirmed by the "
                                  "obstacle-core match",
                        "candidates": [{k: (v.tolist() if isinstance(v, np.ndarray) else v)
                                        for k, v in c.items() if k != "M"} |
                                       {"rotation_from_chosen_deg": rot_angle_deg(c["M"][:3, :3] @ best["M"][:3, :3].T)}
                                       for c in by_div],
-                       "divot_margin": div_margin, "obstacle_margin": obs_margin}
+                       "divot_margin": div_margin, "divot_margin_min": args.divot_margin_min,
+                       "obstacle_margin": obs_margin}
         M_init = best["M"]
 
     # ---- divots -------------------------------------------------------------
@@ -865,6 +1043,41 @@ def main():
         + ("; --no-icp, keeping fiducial fit" if args.no_icp else ""))
     assert_proper(M, "final transform")
 
+    # ---- align the CT with the box axes ------------------------------------------
+    # Everything above ran on the scanner grid. From here on the CT is resampled so
+    # that the box edges run along the patient axes (see tilt_correction); every
+    # scanner-frame point p becomes inv(A) p and model -> CT becomes inv(A) M_scan.
+    # The crop to the box happens after segmentation ("crop" below).
+    M_scan, M_fid_scan = M, M_fid
+    A = np.eye(4)
+    if not args.no_align:
+        sp = float(args.spacing or geom.spacing.min())
+        A, P, tilt, min_cos = tilt_correction(M_scan, b.mean(1))
+        D_out = snap_direction(geom.D)
+        M, M_fid = inv(A) @ M_scan, inv(A) @ M_fid_scan
+        ct_fid_pts = apply(inv(A), ct_fid_pts)
+        # generous region: the box mesh plus the PLA dilation, the crop margins and 1 mm
+        pad_xy = BOX_DILATION + args.margin_xy * sp + 1.0
+        pad_z = BOX_DILATION + args.margin_z * sp + 1.0
+        lo = b[:, 0] - [pad_xy, pad_xy, pad_z]
+        hi = np.maximum(b[:, 1], [0, 0, z_rim + ABOVE_RIM]) + [pad_xy, pad_xy, pad_z]
+        corners = np.array([[x, y, z] for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])])
+        img = align_to_box(img, A, D_out, apply(M, corners), sp)
+        geom = CTGeom(img)
+        arr = sitk.GetArrayFromImage(img)
+        # which index axis (i, j, k) carries each model axis -> margin per index axis
+        idx_of_model = [int(np.argmax(np.abs(D_out.T @ M[:3, a]))) for a in range(3)]
+        margins_idx = [args.margin_z if idx_of_model[2] == ax else args.margin_xy for ax in range(3)]
+        axis_names = {idx_of_model[a]: "xyz"[a] for a in range(3)}
+        lps = ["L", "P", "S"]
+        model_dirs = {f"model_{'xyz'[a]}": ("+" if M[np.argmax(np.abs(M[:3, a])), a] > 0 else "-")
+                      + lps[int(np.argmax(np.abs(M[:3, a])))] for a in range(3)}
+        log(f"[align] box tilt vs the patient axes {tilt:.2f} deg removed (about the box centre); model axes "
+            f"along {model_dirs}; grid {geom.size.tolist()} at {sp:.3f} mm (linear)")
+        if min_cos < 0.9:
+            log(f"!!! WARNING: box tilted {tilt:.0f} deg from the patient axes; the snapped orientation may not be "
+                f"the intended one")
+
     # ---- map model to CT grid -------------------------------------------------
     pts_ct = geom.all_centres()
     pts_mod = apply(inv(M), pts_ct)
@@ -915,10 +1128,10 @@ def main():
         cs_ = np.bincount(labs.ravel())
         cs_[0] = 0
         drilled = np.isin(labs, np.nonzero(cs_ >= 30)[0])
-        same = same_phantom_check(v0, arr, stone0, stone_int, stone_zone, box_m, drilled, geom)
+        same = same_phantom_check(v0, arr, stone0, stone_int, stone_zone, box_m, drilled, geom, args.same_ncc_min)
         log(f"[ref] same-phantom check: stone > {SAME_FAR_MM:.0f} mm from the channel {same['ref_mL']:.2f} / "
             f"{same['this_mL']:.2f} mL, Dice {same['dice']:.3f} (min {SAME_DICE_MIN}), "
-            f"NCC {same['ncc']:.3f} (min {SAME_NCC_MIN})")
+            f"NCC {same['ncc']:.3f} (min {args.same_ncc_min})")
         if not same["passed"]:
             bar = "!" * 78
             log(bar)
@@ -1023,7 +1236,49 @@ def main():
         log(f"!!! WARNING: {msg}")
         log(bar)
 
+    # ---- crop around the box ---------------------------------------------------------
+    # The aligned grid is cut to the bounding box of the box segmentation plus
+    # --margin-xy / --margin-z voxels on each side, so the box is centred and every
+    # scan of the same model has about the same amount of empty space around it.
+    if not args.no_align:
+        sl, lo_idx, clipped = crop_box(segs["box"], margins_idx)
+        outside = {k: int(m.sum() - m[sl].sum()) for k, m in segs.items() if m.sum() - m[sl].sum() > 0}
+        segs = {k: np.ascontiguousarray(m[sl]) for k, m in segs.items()}
+        box = segs["box"]
+        arr = np.ascontiguousarray(arr[sl])
+        img = image_like(arr, geom.idx_to_phys(lo_idx.astype(float)), geom.spacing[0], geom.D)
+        geom = CTGeom(img)
+        shape = tuple(geom.size[::-1])
+        pts_mod = apply(inv(M), geom.all_centres())
+        zt = pts_mod[:, 2].reshape(shape)
+        # margins actually left between the box segmentation and the volume faces, per index axis
+        nzb = np.argwhere(box)[:, ::-1]
+        got = {f"{'ijk'[ax]} (model {axis_names[ax]})": [int(nzb[:, ax].min()), int(geom.size[ax] - 1 - nzb[:, ax].max())]
+               for ax in range(3)}
+        rep["alignment"] = {
+            "method": "box axes snapped to the nearest patient (LPS) axes; CT resampled (linear, rounded) by the "
+                      "residual tilt about the box centre onto a grid with the scanner's direction matrix, then "
+                      "cropped to the box segmentation's bounding box plus the margins",
+            "tilt_removed_deg": tilt, "model_axes_in_patient": model_dirs,
+            "spacing_mm": float(geom.spacing[0]), "size": geom.size.tolist(), "origin_lps": geom.origin.tolist(),
+            "direction": geom.D.ravel().tolist(),
+            "margins_requested_voxels": {"xy": args.margin_xy, "z": args.margin_z},
+            "margins_voxels": got, "clipped_by_resampled_region": clipped,
+            "segment_voxels_outside_crop": outside,
+            "aligned_to_scanner_LPS": A.tolist(),
+            "note": "x_scanner = aligned_to_scanner_LPS @ x_aligned (a small rotation about the box centre)"}
+        log(f"[crop] {geom.size.tolist()} voxels at {geom.spacing[0]:.3f} mm; margins around the box (low, high) "
+            + ", ".join(f"{k} {v}" for k, v in got.items()))
+        if clipped or outside:
+            msg = (f"aligned crop: the margins were clipped by the resampled region ({clipped}) or segment voxels "
+                   f"fall outside the crop {outside}")
+            rep["warnings"].append(msg)
+            log(f"!!! WARNING: {msg}")
+
     # ---- outputs ----------------------------------------------------------------
+    ct_out = sitk.Cast(sitk.Round(img), sitk.sitkInt16) if not args.no_align else \
+        (img if img.GetPixelID() == sitk.sitkInt16 else sitk.Cast(img, sitk.sitkInt16))
+    sitk.WriteImage(ct_out, pre + "_ct.nrrd", True)
     seg_files = {k: list(names) for k, names in SEG_FILES.items()}
     if args.reference:
         seg_files["all_combinations"] += ["drilled"] + [f"{r}_drilled_{a}" for r in ROUTES
@@ -1049,10 +1304,21 @@ def main():
           "model_to_ct_LPS": M.tolist(), "ct_to_model_LPS": inv(M).tolist(),
           "model_to_ct_RAS_slicer_matrix": (F @ M @ F).tolist(),
           "fiducial_fit_model_to_ct_LPS": M_fid.tolist(),
-          "rotation_deg": rot_angle_deg(M[:3, :3]), "det": float(np.linalg.det(M[:3, :3]))}
+          "rotation_deg": rot_angle_deg(M[:3, :3]), "det": float(np.linalg.det(M[:3, :3])),
+          # the registration on the scanner grid (before alignment); equal to model_to_ct with --no-align
+          "model_to_scanner_ct_LPS": M_scan.tolist(), "fiducial_fit_model_to_scanner_ct_LPS": M_fid_scan.tolist(),
+          "aligned": not args.no_align}
+    if not args.no_align:
+        tr["convention"] += ("; the CT is aligned with the box (tilt removed, patient axes kept): model_to_ct is a "
+                             "signed axis permutation plus translation. model_to_scanner_ct_LPS maps model points "
+                             "into the original scanner CT; aligned_to_scanner_LPS maps aligned-CT points there")
+        tr["aligned_to_scanner_LPS"] = A.tolist()
     with open(pre + "_transform.json", "w") as f:
         json.dump(tr, f, indent=2)
     np.savetxt(pre + "_model_to_ct_LPS.txt", M, fmt="%.9f")
+    np.savetxt(pre + "_model_to_scanner_LPS.txt", M_scan, fmt="%.9f")
+    if not args.no_align:
+        np.savetxt(pre + "_aligned_to_scanner_LPS.txt", A, fmt="%.9f")
     # ITK file convention: maps fixed (CT) points to moving (model) points; Slicer
     # applies it to model nodes as model -> CT.
     t_itk = sitk.AffineTransform(3)
@@ -1061,7 +1327,8 @@ def main():
     t_itk.SetTranslation(Mi[:3, 3].tolist())
     sitk.WriteTransform(t_itk, pre + "_model_to_ct.h5")
     sitk.WriteTransform(t_itk, pre + "_model_to_ct.tfm")
-    rep["transform"] = {k: tr[k] for k in ("model_to_ct_LPS", "rotation_deg", "det")}
+    rep["transform"] = {k: tr[k] for k in ("model_to_ct_LPS", "model_to_scanner_ct_LPS", "rotation_deg", "det",
+                                           "aligned")}
     rep["transform"]["files"] = {"json": os.path.basename(pre + "_transform.json"),
                                  "itk": os.path.basename(pre + "_model_to_ct.h5"),
                                  "itk_note": "ITK resampling convention (CT point -> model point). "
@@ -1076,9 +1343,19 @@ def main():
     # divot bottoms: offset from each CT divot centre by the mesh's centre->bottom vector
     bot_m = divot_bottoms(pd_box, fid_m, fid_n)
     depth = np.linalg.norm(bot_m - fid_m, axis=1)
-    bot_ct = ct_fid_pts + (bot_m - fid_m) @ M[:3, :3].T
+    # a divot dropped from the fit (NCC < 0.3 or peak on the search edge, e.g. a pocket
+    # filled with stone) has no trustworthy CT position: use the model divot under the
+    # final pose instead, so the M markups never carry a wandered detection
+    base = np.where(good[:, None], ct_fid_pts, apply(M, fid_m))
+    bot_ct = base + (bot_m - fid_m) @ M[:3, :3].T
     write_markups(pre + "_M.mrk.json", fid_labels, bot_ct,
-                  {l: f"divot bottom, {d:.2f} mm below the opening centre" for l, d in zip(fid_labels, depth)})
+                  {l: f"divot bottom, {d:.2f} mm below the opening centre"
+                      + ("" if g else "; NOT DETECTED in the CT, placed from the registered model")
+                   for l, d, g in zip(fid_labels, depth, good)})
+    rep["fiducials"]["M_from_model_not_detected"] = [l for l, g in zip(fid_labels, good) if not g]
+    if not good.all():
+        log("[fid] divots not detected, M markup placed from the registered model: "
+            + ", ".join(l for l, g in zip(fid_labels, good) if not g))
     rep["fiducials"]["divot_bottom_depth_mm"] = dict(zip(fid_labels, depth.round(3).tolist()))
     rep["fiducials"]["divot_bottoms_ct_lps"] = dict(zip(fid_labels, bot_ct.round(3).tolist()))
     log("[fid] divot bottoms written (depth from mesh: " + ", ".join(f"{d:.2f}" for d in depth) + " mm)")
@@ -1102,7 +1379,7 @@ def main():
         sys.exit(2)
 
 
-def same_phantom_check(v0, v1, stone0, stone1, stone_zone, box_m, drilled, geom):
+def same_phantom_check(v0, v1, stone0, stone1, stone_zone, box_m, drilled, geom, ncc_min=SAME_NCC_MIN):
     """Compare the stone of the reference and this scan away from the drilled channel and the box.
 
     The boxes are printed identically, but every stone pour differs (fill level,
@@ -1118,11 +1395,15 @@ def same_phantom_check(v0, v1, stone0, stone1, stone_zone, box_m, drilled, geom)
     m = a | c
     ncc = float(np.corrcoef(v0[sl][m], v1[sl][m])[0, 1]) if m.sum() > 100 else 0.0
     return {"far_from_channel_mm": SAME_FAR_MM, "ref_mL": float(a.sum() * vv), "this_mL": float(c.sum() * vv),
-            "dice": dice, "ncc": ncc, "dice_min": SAME_DICE_MIN, "ncc_min": SAME_NCC_MIN,
-            "passed": dice >= SAME_DICE_MIN and ncc >= SAME_NCC_MIN}
+            "dice": dice, "ncc": ncc, "dice_min": SAME_DICE_MIN, "ncc_min": ncc_min,
+            "passed": dice >= SAME_DICE_MIN and ncc >= ncc_min}
 
 
 def load_reference(ref_dir, version):
+    """Load a pre-drilling run (CT, model -> CT transform, thresholds) for --reference.
+
+    Works with aligned and with --no-align references: each run's CT and transform
+    are consistent with each other, and the comparison goes through the model frame."""
     reps = [f for f in os.listdir(ref_dir) if f.endswith("_report.json")]
     if len(reps) != 1:
         raise RuntimeError(f"{ref_dir}: expected one *_report.json, found {len(reps)}")
@@ -1160,6 +1441,10 @@ def resample_model_plane(arr, geom, M, axis, value, lo, hi, step=0.1):
 def qa_figures(qa, name, arr, geom, M, grid, occ_box, occ_obs, occ_route, segs, hist, edges, t_air, t_stone,
                modes, iso_level, det, fid_labels, fid_m, ct_fid_pts, fre, r0, r1, z_floor, z_rim, fill_top,
                zt, pts_mod, shape):
+    """QA figures (histogram, model-frame overlays, divot crops, stone-top map, ICP residuals).
+
+    Works on any grid: CT values are always sampled through the model frame with M.
+    Returns {figure key: path relative to the output folder}."""
     figs = {}
     # 1. histogram
     fig, ax = plt.subplots(figsize=(9, 4))
@@ -1300,6 +1585,7 @@ def qa_figures(qa, name, arr, geom, M, grid, occ_box, occ_obs, occ_route, segs, 
 
 
 def drilling_figures(qa, name, arr, geom, M, grid, occ_box, occ_route, segs, modes, ref, blobs, z_floor):
+    """QA for --reference runs: drilled stone per route, and before/after crops of each PLA damage spot."""
     figs = {}
     lo = np.array([0, 15, 0.0])
     hi = np.array([60, 79, 16.0])
@@ -1353,6 +1639,7 @@ def drilling_figures(qa, name, arr, geom, M, grid, occ_box, occ_route, segs, mod
 
 
 def write_markdown(path, rep, figs):
+    """Human-readable <name>_report.md from the report dict."""
     f = rep["fiducials"]
     v = rep["volumes_mL"]
     e = rep["expected_mL"]
@@ -1361,7 +1648,16 @@ def write_markdown(path, rep, figs):
          f"- Model {rep['version']}, box commit `{rep['model']['version_commit'][:7]}`, route regions from scad "
          f"commit `{rep['model']['paths_scad_commit'][:7]}`; STL hashes match the records.",
          f"- CT: {rep['ct']['size']} voxels, spacing {[round(s, 3) for s in rep['ct']['spacing_mm']]} mm. "
-         f"Run {rep['run_at']}.", ""]
+         f"Run {rep['run_at']}."]
+    if "alignment" in rep:
+        a = rep["alignment"]
+        L += [f"- Output CT in the scanner frame with the box tilt ({a['tilt_removed_deg']:.2f}°) removed, model axes "
+              f"along {a['model_axes_in_patient']}, cropped: {a['size']} voxels at "
+              f"{a['spacing_mm']:.3f} mm; margins around the box segmentation (voxels, low/high) "
+              + ", ".join(f"{k} {v}" for k, v in a["margins_voxels"].items()) + "."]
+    else:
+        L += ["- Output CT on the scanner grid (`--no-align`)."]
+    L += [""]
     for w in rep.get("warnings", []):
         L += ["> [!WARNING]", f"> {w}.", ""]
     if "pla_damage" in rep:

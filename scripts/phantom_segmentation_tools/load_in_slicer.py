@@ -8,6 +8,8 @@ or from a shell:
     Slicer --python-script load_in_slicer.py --out <dir> --name <name> [--stl-dir <stl/v01>] [--check]
 
 Loads the CT, the segmentation, the meshes and fiducials already in CT space.
+Outputs aligned with the box (the default of register_cad.py) keep the scanner frame
+with the box tilt removed; <name>_model_to_ct.h5 then maps the STLs onto that CT.
 With --stl-dir it also loads the original model STL under <name>_model_to_ct.h5,
 which shows the transform direction: model nodes go under it to land in CT space.
 --check compares that transformed STL with the pre-transformed one, prints the
