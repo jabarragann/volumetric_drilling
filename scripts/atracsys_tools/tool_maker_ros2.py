@@ -50,6 +50,8 @@ class PoseCollector(Node):
         for m in msg.poses:
             if m.position.z < self.filter_distance:
                 new_pose_array.append(m)
+            else:
+                print("filtered out marker with z value: ", m.position.z)
 
         if len(new_pose_array) != self.expected_marker_count:
             print(f"error detected {len(new_pose_array)}")
