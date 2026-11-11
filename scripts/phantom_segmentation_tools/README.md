@@ -135,7 +135,8 @@ It runs outside Slicer. A run takes about 20–40 s.
      within 1 mm outside it, but not below the base's bottom plane, where the
      mounting plate/table touches. With `--reference`, PLA damage is removed from it.
    - `stone` = stone-intensity voxels in the cavity footprint, from the floor to
-     3 mm above the rim (also over the wall above the rim), minus `box`.
+     the top of the route regions (10 mm above the rim with the 2026-11-11 meshes,
+     3 mm with older ones; also over the wall above the rim), minus `box`.
      Components < 30 voxels are removed.
    - `<route>_allowed` = `stone` ∩ route region; `<route>_forbidden` = `stone` − allowed.
 8. **After drilling (`--reference`).** Both runs are registered to the CAD, so

@@ -69,7 +69,8 @@ SEG_FILES = {
     "box_dental_right_path": ("box", "right_allowed", "right_forbidden"),
 }
 MODEL_STEP = 0.2       # mm, model-frame voxelisation grid
-ABOVE_RIM = 3.0        # mm of stone accepted above the rim
+ABOVE_RIM = 3.0        # mm of stone accepted above the rim when paths.json has no region_mesh_top_z
+                       # (newer paths.json: up to the top of the route regions, 10 mm above the rim)
 BOX_DILATION = 1.0     # mm around the box mesh accepted as PLA
 DAMAGE_MIN_UL = 2.0    # PLA lost next to the drilled channel above this size (uL) raises the warning
 EMPTY_WARN_ML = 0.5    # empty space in the stone (below its top) that suggests a drilled scan
@@ -821,7 +822,10 @@ def main():
     pd_route = {r: read_stl(f_route[r]) for r in ROUTES}
     b = np.array(pd_box.GetBounds()).reshape(3, 2)
     z_floor, z_rim = pj["region_z_range"]
-    grid = ModelGrid(b[:, 0] - 3, b[:, 1] + [3, 3, 3 + ABOVE_RIM], MODEL_STEP)
+    # stone is looked for up to the top of the route regions, so overfill above the
+    # rim inside a route counts as that route's stone
+    above_rim = float(pj.get("region_mesh_top_z", z_rim + ABOVE_RIM)) - z_rim
+    grid = ModelGrid(b[:, 0] - 3, b[:, 1] + [3, 3, 3 + above_rim], MODEL_STEP)
     occ_box = grid.voxelise(pd_box)
     occ_obs = grid.voxelise(pd_obs)
     occ_route = {r: grid.voxelise(pd_route[r]) for r in ROUTES}
@@ -839,11 +843,13 @@ def main():
     geo = {"box_mesh_mL": mesh_volume_mL(pd_box), "obstacles_mesh_mL": mesh_volume_mL(pd_obs),
            "cavity_gross_mL": float(cavity.sum() * vox_mL),
            "cavity_footprint_mm2": float(cav_fp.sum() * MODEL_STEP ** 2),
-           "z_floor": z_floor, "z_rim": z_rim, "obstacle_top_z": float(obs_top)}
+           "z_floor": z_floor, "z_rim": z_rim, "stone_accepted_above_rim_mm": above_rim,
+           "obstacle_top_z": float(obs_top)}
     for r in ROUTES:
         geo[f"{r}_region_mesh_mL"] = mesh_volume_mL(pd_route[r])
         geo[f"{r}_region_voxel_mL"] = float(occ_route[r].sum() * vox_mL)
-        geo[f"{r}_region_expected_mL"] = pj["meshes"][f"path_{r}"]["volume_mL"]
+        geo[f"{r}_region_expected_mL"] = pj["meshes"][f"path_{r}"].get("mesh_volume_mL", pj["meshes"][f"path_{r}"]["volume_mL"])
+        geo[f"{r}_region_to_rim_mL"] = pj["meshes"][f"path_{r}"]["volume_mL"]
     rep["model_geometry"] = geo
     log(f"[model] cavity {geo['cavity_gross_mL']:.2f} mL gross, footprint {geo['cavity_footprint_mm2']:.0f} mm2; "
         + ", ".join(f"{r} region {geo[f'{r}_region_mesh_mL']:.2f} mL (expected {geo[f'{r}_region_expected_mL']})"
@@ -1060,7 +1066,7 @@ def main():
         pad_xy = BOX_DILATION + args.margin_xy * sp + 1.0
         pad_z = BOX_DILATION + args.margin_z * sp + 1.0
         lo = b[:, 0] - [pad_xy, pad_xy, pad_z]
-        hi = np.maximum(b[:, 1], [0, 0, z_rim + ABOVE_RIM]) + [pad_xy, pad_xy, pad_z]
+        hi = np.maximum(b[:, 1], [0, 0, z_rim + above_rim]) + [pad_xy, pad_xy, pad_z]
         corners = np.array([[x, y, z] for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])])
         img = align_to_box(img, A, D_out, apply(M, corners), sp)
         geom = CTGeom(img)
@@ -1092,8 +1098,8 @@ def main():
     zt = pts_mod[:, 2].reshape(shape)
     xy_c = grid.sample2d(cav_fp, pts_mod).reshape(shape) >= 0.5
     xy_o = grid.sample2d(outer, pts_mod).reshape(shape) >= 0.5
-    stone_zone = (xy_c & (zt >= z_floor - 0.5) & (zt <= z_rim + ABOVE_RIM)) | \
-                 (xy_o & (zt >= z_rim) & (zt <= z_rim + ABOVE_RIM))
+    stone_zone = (xy_c & (zt >= z_floor - 0.5) & (zt <= z_rim + above_rim)) | \
+                 (xy_o & (zt >= z_rim) & (zt <= z_rim + above_rim))
     box_zone = ndi.binary_dilation(box_m, iterations=max(1, int(round(BOX_DILATION / geom.spacing.min()))))
 
     # ---- segments -------------------------------------------------------------
@@ -1212,7 +1218,7 @@ def main():
                 "box_added_outside_mesh": float(extra.sum() * vv),
                 "pla_like_below_bottom_rejected": float(rejected_below.sum() * vv)})
     for r in ROUTES:
-        vol[f"{r}_region_on_ct_grid"] = float(region[r].sum() * vv)
+        vol[f"{r}_region_on_ct_grid"] = float((region[r] & (zt <= z_rim)).sum() * vv)   # up to the rim, as volume_mL
     h = (min(fill_top, z_rim) - z_floor) if fill_top else 0
     exp = {"stone_full_fill_mL": None, "fill_top_z_model": fill_top, "fill_height_mm": h}
     exp["cavity_net_to_fill_mL"] = float(((cav_ct & ~box_m) & (zt <= (fill_top or 0))).sum() * vv)
