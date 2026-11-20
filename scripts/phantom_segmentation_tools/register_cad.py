@@ -755,6 +755,10 @@ def main():
                          f"{SAME_NCC_MIN}, calibrated on scans from the same session). Scans days apart correlate "
                          f"less (stone dries): lower it only after checking the reference against the other "
                          f"candidate phantoms, see README")
+    ap.add_argument("--same-dice-min", type=float, default=SAME_DICE_MIN,
+                    help=f"with --reference: minimum stone overlap for the same-phantom check (default "
+                         f"{SAME_DICE_MIN}). Lower it (e.g. 0) only when the identity is known and the stone "
+                         f"changed between the scans (a defect, refill or sanding)")
     ap.add_argument("--strict", action="store_true", help="with --reference: exit with code 2 if PLA damage is found")
     ap.add_argument("--no-icp", action="store_true", help="keep the fiducial fit as the final transform "
                     "(ICP is still run and reported); for when ICP tilts the pose, see README")
@@ -767,6 +771,10 @@ def main():
                     help="erode the phantom mask by N voxels before the principal axes (initial pose only), to "
                          "drop a large mounting plate joined to the base; for 'orientation is ambiguous' with "
                          "few ICP matches (< 60%%) on every candidate")
+    ap.add_argument("--stone-min", type=float, metavar="HU",
+                    help="stone = cavity voxels above this level instead of the PLA|stone threshold, for this scan "
+                         "and (with --reference) for the reference stone too. For stone that wasn't set when "
+                         "scanned (e.g. PL22/PL23 D00: 55, read off Slicer). The box/PLA split is unchanged")
     ap.add_argument("--no-align", action="store_true",
                     help="skip the align-and-crop step: segment and write the CT on the scanner grid (old behaviour)")
     ap.add_argument("--margin-xy", type=int, default=MARGIN_XY,
@@ -868,7 +876,7 @@ def main():
     rep["thresholds"] = {"air_pla": t_air, "pla_stone": t_stone, "modes": modes, "otsu_upper_for_reference": t_otsu_hi,
                          "method": "override" if args.thresholds else
                          "air|PLA: 3-class Otsu of in-FOV voxels (> -1000); PLA|stone: midpoint of the PLA and "
-                         "stone histogram peaks"}
+                         "stone histogram peaks", "stone_min": args.stone_min}
     log(f"[thr] air|PLA {t_air:.0f}, PLA|stone {t_stone:.0f}; modes {', '.join(f'{k} {v:.0f}' for k, v in modes.items())}")
 
     # phantom mask: largest component above the air threshold, holes filled
@@ -1104,7 +1112,13 @@ def main():
 
     # ---- segments -------------------------------------------------------------
     pla_int = (arr > t_air) & (arr <= t_stone)
-    stone_int = arr > t_stone
+    # stone level: normally the PLA|stone threshold; --stone-min lowers it for stone that
+    # wasn't set when scanned (low density). It also applies to the reference stone below,
+    # so both scans use the same level. Box/PLA classification keeps t_stone.
+    t_stone_seg = t_stone if args.stone_min is None else float(args.stone_min)
+    if args.stone_min is not None:
+        log(f"[thr] --stone-min: stone = voxels > {t_stone_seg:.0f} in the cavity (box/PLA still split at {t_stone:.0f})")
+    stone_int = arr > t_stone_seg
     # PLA-intensity voxels near the mesh, but never below its bottom plane: the
     # mounting plate / table touches the base there and has PLA-like values
     z_bottom = b[2, 0]
@@ -1128,15 +1142,17 @@ def main():
         # both runs are registered to the CAD: D01 voxel -> model -> D00 CT
         v0 = sample_ct(ref["arr"], ref["geom"], apply(ref["M"], pts_mod)).reshape(shape)
         th0 = ref["thresholds"]
-        stone0 = (v0 > th0["pla_stone"]) & stone_zone & ~box_m
+        t_stone0 = th0["pla_stone"] if args.stone_min is None else float(args.stone_min)
+        stone0 = (v0 > t_stone0) & stone_zone & ~box_m
         drilled = ndi.binary_opening(stone0 & ~stone_int)
         labs, _ = ndi.label(drilled)
         cs_ = np.bincount(labs.ravel())
         cs_[0] = 0
         drilled = np.isin(labs, np.nonzero(cs_ >= 30)[0])
-        same = same_phantom_check(v0, arr, stone0, stone_int, stone_zone, box_m, drilled, geom, args.same_ncc_min)
+        same = same_phantom_check(v0, arr, stone0, stone_int, stone_zone, box_m, drilled, geom, args.same_ncc_min,
+                                  args.same_dice_min)
         log(f"[ref] same-phantom check: stone > {SAME_FAR_MM:.0f} mm from the channel {same['ref_mL']:.2f} / "
-            f"{same['this_mL']:.2f} mL, Dice {same['dice']:.3f} (min {SAME_DICE_MIN}), "
+            f"{same['this_mL']:.2f} mL, Dice {same['dice']:.3f} (min {args.same_dice_min}), "
             f"NCC {same['ncc']:.3f} (min {args.same_ncc_min})")
         if not same["passed"]:
             bar = "!" * 78
@@ -1187,7 +1203,7 @@ def main():
         warn = [d for d in damage_blobs if d["warning"]]
         rep["reference"] = {"dir": os.path.abspath(args.reference), "name": ref["name"],
                             "ref_ct_to_this_ct_LPS": D.tolist(), "rotation_deg": rot_angle_deg(D[:3, :3]),
-                            "ref_thresholds": th0, "same_phantom_check": same}
+                            "ref_thresholds": th0, "ref_stone_level": t_stone0, "same_phantom_check": same}
         rep["drilled_mL"] = {k: float(segs[k].sum() * vv) for k in
                              ["drilled"] + [f"{r}_drilled_{a}" for r in ROUTES for a in ("allowed", "forbidden")]}
         rep["pla_damage"] = {"detected": bool(warn), "min_blob_uL": DAMAGE_MIN_UL,
@@ -1385,7 +1401,8 @@ def main():
         sys.exit(2)
 
 
-def same_phantom_check(v0, v1, stone0, stone1, stone_zone, box_m, drilled, geom, ncc_min=SAME_NCC_MIN):
+def same_phantom_check(v0, v1, stone0, stone1, stone_zone, box_m, drilled, geom, ncc_min=SAME_NCC_MIN,
+                       dice_min=SAME_DICE_MIN):
     """Compare the stone of the reference and this scan away from the drilled channel and the box.
 
     The boxes are printed identically, but every stone pour differs (fill level,
@@ -1401,8 +1418,8 @@ def same_phantom_check(v0, v1, stone0, stone1, stone_zone, box_m, drilled, geom,
     m = a | c
     ncc = float(np.corrcoef(v0[sl][m], v1[sl][m])[0, 1]) if m.sum() > 100 else 0.0
     return {"far_from_channel_mm": SAME_FAR_MM, "ref_mL": float(a.sum() * vv), "this_mL": float(c.sum() * vv),
-            "dice": dice, "ncc": ncc, "dice_min": SAME_DICE_MIN, "ncc_min": ncc_min,
-            "passed": dice >= SAME_DICE_MIN and ncc >= ncc_min}
+            "dice": dice, "ncc": ncc, "dice_min": dice_min, "ncc_min": ncc_min,
+            "passed": dice >= dice_min and ncc >= ncc_min}
 
 
 def load_reference(ref_dir, version):
