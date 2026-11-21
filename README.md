@@ -107,7 +107,21 @@ Set `video_source` in `sim_assisted_nav_plugin_config` of `ADF/single_stereo_cam
 * `decklink`: AMBF opens the Decklink cards directly. No other process can use the cards.
 * `ros`: subscribes to left/right image topics.
 
-To replay a recording made with the [data recorder](plugin/data_recorder/README.md#replay) instead of the live cameras, start `video_replay` in place of `video_source`; SAINT's config does not change.
+### Replay recordings
+
+To replay a recording made with the [data recorder](plugin/data_recorder/README.md#replay) instead of the live cameras, start `video_replay` in place of `video_source`; SAINT's config does not change. `video_replay` only sends frames while the ros bag is playing with `--clock`.
+
+```
+# Terminal 1 - video_replay source
+ros2 run simulation_assisted_navigation_framework video_replay -s recordings/20261014_173959/
+# Terminal 2 - ros bag play
+ros2 bag play recordings/20261014_173959/rosbag --clock 100
+
+# Terminal 3 - Saint
+run_saint
+```
+
+
 
 ## Running registration pipeline
 
