@@ -21,14 +21,15 @@ Pipeline
      segments may overlap:
         gt_*                  the GT segments, copied as they are
         twin_box, twin_stone  the twin, resampled
-        sim_drilled           stone the simulation removed (twin-ref stone minus twin stone)
+        twin_drilled          stone the simulation removed (twin-ref stone minus twin stone)
+        stone_both            stone in both GT and twin
         stone_gt_only         GT has stone, twin does not -> sim removed stone the real
                               drill left (sim over-drilled)
         stone_twin_only       twin has stone, GT does not -> real drill removed stone the
                               sim left (sim under-drilled)
         box_gt_only / box_twin_only   the same for the box (PLA)
         drilled_both / drilled_real_only / drilled_sim_only
-                              overlap of sim_drilled with GT 'drilled' (needs twin-ref and
+                              overlap of twin_drilled with GT 'drilled' (needs twin-ref and
                               a GT 'drilled' segment)
   4. Print metrics (volumes, Dice, voxel counts) and save them as JSON next to the output,
      so a run can be scored when tuning simulation parameters.
@@ -60,7 +61,8 @@ from scipy import ndimage as ndi
 COLORS = {
     "twin_box": (0.55, 0.55, 0.50),
     "twin_stone": (0.30, 0.40, 0.80),
-    "sim_drilled": (0.95, 0.60, 0.10),
+    "twin_drilled": (0.95, 0.60, 0.10),
+    "stone_both": (0.55, 0.65, 0.95),
     "stone_gt_only": (0.90, 0.10, 0.60),
     "stone_twin_only": (0.10, 0.80, 0.80),
     "box_gt_only": (0.60, 0.20, 0.90),
@@ -221,7 +223,7 @@ def main():
     ap.add_argument("--twin", required=True, help="AMBF digital twin .seg.nrrd (D00 frame)")
     ap.add_argument("--twin-markers", required=True, help="D00 fiducials .mrk.json")
     ap.add_argument("--twin-ref", default=None,
-                    help="D00 .seg.nrrd the twin started from (same grid). Enables sim_drilled "
+                    help="D00 .seg.nrrd the twin started from (same grid). Enables twin_drilled "
                          "and the drilled_* comparison.")
     ap.add_argument("--gt", required=True, help="Ground-truth D01 .seg.nrrd")
     ap.add_argument("--gt-markers", required=True, help="D01 fiducials .mrk.json")
@@ -249,7 +251,7 @@ def main():
         ref = SegVolume(args.twin_ref)
         if not ref.same_grid(twin):
             raise ValueError("--twin-ref must be on the same grid as --twin")
-        to_resample["sim_drilled"] = ref.mask("stone") & ~twin.mask("stone")
+        to_resample["twin_drilled"] = ref.mask("stone") & ~twin.mask("stone")
     rs = resample_masks(twin, to_resample, gt, r, t)
 
     # 3. Segments to write.
@@ -260,15 +262,16 @@ def main():
         ("twin_box", tw_box),
         ("twin_stone", tw_stone),
     ])
-    if "sim_drilled" in rs:
-        derived["sim_drilled"] = rs["sim_drilled"]
+    if "twin_drilled" in rs:
+        derived["twin_drilled"] = rs["twin_drilled"]
+    derived["stone_both"] = gt_stone & tw_stone
     derived["stone_gt_only"] = gt_stone & ~tw_stone
     derived["stone_twin_only"] = tw_stone & ~gt_stone
     derived["box_gt_only"] = gt_box & ~tw_box
     derived["box_twin_only"] = tw_box & ~gt_box
-    has_drilled = "sim_drilled" in rs and "drilled" in gt.masks
+    has_drilled = "twin_drilled" in rs and "drilled" in gt.masks
     if has_drilled:
-        real_d, sim_d = gt.mask("drilled"), rs["sim_drilled"]
+        real_d, sim_d = gt.mask("drilled"), rs["twin_drilled"]
         derived["drilled_both"] = real_d & sim_d
         derived["drilled_real_only"] = real_d & ~sim_d
         derived["drilled_sim_only"] = sim_d & ~real_d
