@@ -107,7 +107,18 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager
     }
 
     vector<int> drillTypes = {1, 2, 4, 6};
-    vector<int> voxelRemovalThresholds = {1, 3, 6, 10};
+    // Burr diameter and removal threshold come from the command line
+    // (--burr_diameter_mm, --voxel_removal_threshold) so they can be tuned
+    // without rebuilding. Every loaded drill body uses the same values.
+    double burrDiameterMM = var_map["burr_diameter_mm"].as<double>();
+    int voxelRemovalThreshold = var_map["voxel_removal_threshold"].as<int>();
+    if (burrDiameterMM <= 0.0 || voxelRemovalThreshold <= 0)
+    {
+        cerr << "ERROR! --burr_diameter_mm and --voxel_removal_threshold must be > 0" << endl;
+        return -1;
+    }
+    cerr << "INFO! BURR DIAMETER " << burrDiameterMM << " mm, VOXEL REMOVAL THRESHOLD "
+         << voxelRemovalThreshold << endl;
     
 
     // For saint only one drill will be loaded at a time as TF is controlling the drill body.
@@ -121,9 +132,8 @@ int DrillManager::init(afWorldPtr a_worldPtr, CameraPanelManager *a_panelManager
             Drill *drill = new Drill();
             drill->m_name = drillName;
             drill->m_rigidBody = drillRB;
-            // drill->m_burr_diameter = drillTypes[i] * m_units_mmToSim;
-            drill->m_burr_diameter = 1.2 * m_units_mmToSim;
-            drill->setVoxelRemvalThreshold(voxelRemovalThresholds[i]);
+            drill->m_burr_diameter = burrDiameterMM * m_units_mmToSim;
+            drill->setVoxelRemvalThreshold(voxelRemovalThreshold);
             m_drills.push_back(drill);
         }
     }
