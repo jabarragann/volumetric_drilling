@@ -111,7 +111,8 @@ protected:
 
     void publishDrillTipLocationInsideVolume();
 
-    // Save every Z slice of the current volume as <dir>/plane00<z>.png.
+    // Save every Z slice of the current volume as <dir>/plane00<z>.png, with z
+    // zero-padded to the digits of the last slice index (e.g. plane00009.png).
     // Empty a_outputDir uses resources/intermediate_volumes/<volume>/<timestamp>.
     // Returns the number of slices written (-1 on error); a_savedDir receives the folder.
     int saveIntermediateVolumes(const std::string &a_outputDir = "", std::string *a_savedDir = nullptr);

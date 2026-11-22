@@ -841,6 +841,12 @@ int afVolmetricDrillingPlugin::saveIntermediateVolumes(const std::string &a_outp
         return -1;
     }
 
+    // Zero-pad the slice index to the digits of the last index so the names
+    // sort correctly (plane00009 ... plane00186). AMBF's loader
+    // (cMultiImage::loadFromFiles) and update_seg_nrrd_data_from_pngs.py accept
+    // both padded and unpadded indices.
+    const int indexWidth = (int)std::to_string(std::max(sizeZ - 1, 0)).size();
+
     // Hold the voxel mutex so physics cannot remove voxels while slices are copied.
     int saved = 0;
     m_mutexVoxel.acquire();
@@ -861,7 +867,9 @@ int afVolmetricDrillingPlugin::saveIntermediateVolumes(const std::string &a_outp
             }
         }
 
-        std::string filename = dir_name + "/plane00" + std::to_string(z) + ".png";
+        std::ostringstream filename_ss;
+        filename_ss << dir_name << "/plane00" << std::setw(indexWidth) << std::setfill('0') << z << ".png";
+        std::string filename = filename_ss.str();
         if (chai3d::cSaveFilePNG(imageSlice, filename))
         {
             saved++;
