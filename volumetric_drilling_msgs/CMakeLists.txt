@@ -45,6 +45,7 @@ else (catkin_FOUND)
       msg/Voxels.msg
       msg/DrillSize.msg
       msg/VolumeInfo.msg
+      srv/SaveVolume.srv
       DEPENDENCIES builtin_interfaces std_msgs geometry_msgs
       )
 

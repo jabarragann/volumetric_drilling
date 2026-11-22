@@ -45,6 +45,8 @@
 
 #include "volumetric_drilling.h"
 #include <boost/program_options.hpp>
+#include <filesystem>
+#include <sstream>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 #include <iomanip>
@@ -331,6 +333,8 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     m_simAssistedNavRosInterface.display_mode_3d_pub->publish(display_mode_msg);
     cerr << "INFO! INITIAL DISPLAY MODE: " << (m_simAssistedNavRosInterface.display_mode_3d ? "3D" : "2D") << endl;
 
+    initSaveVolumeService(m_worldPtr->getNamespace());
+
     return 1;
 }
 
@@ -398,7 +402,16 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
             // if (m_drillManager.m_isOn)
             if (true)
             {
-                int removalCount = cMin(m_drillManager.m_activeDrill->getVoxelRemovalThreshold(), (int)contact->m_events.size());
+                int threshold = m_drillManager.m_activeDrill->getVoxelRemovalThreshold();
+                int numEvents = (int)contact->m_events.size();
+                int removalCount = cMin(threshold, numEvents);
+                m_removalTicks++;
+                m_contactEvents += numEvents;
+                m_voxelsRemoved += removalCount;
+                if (numEvents > threshold)
+                {
+                    m_cappedTicks++;
+                }
                 m_drillManager.m_drillingPub->clearVoxelMsg();
                 m_mutexVoxel.acquire();
                 for (int cIdx = 0; cIdx < removalCount; cIdx++)
@@ -799,7 +812,7 @@ void afVolmetricDrillingPlugin::publishDrillTipLocationInsideVolume()
     m_drillManager.m_drillingPub->publishDrillLocationInVolume(drill_coordinates, m_worldPtr->getCurrentTimeStamp());
 }
 
-void afVolmetricDrillingPlugin::saveIntermediateVolumes()
+int afVolmetricDrillingPlugin::saveIntermediateVolumes(const std::string &a_outputDir, std::string *a_savedDir)
 {
     chai3d::cImagePtr multiImage = m_voxelObj->m_texture->m_image;
 
@@ -807,52 +820,135 @@ void afVolmetricDrillingPlugin::saveIntermediateVolumes()
     int sizeX = multiImage->getWidth();
     int sizeY = multiImage->getHeight();
     int sizeZ = multiImage->getImageCount(); // Slices along Z;
-    string volumeName = m_volumeObject->getName();
-    char date[20];
-    std::time_t t = std::time(nullptr);
-    std::strftime(date, sizeof date, "%Y-%m-%d_%H%M%S", std::localtime(&t));
 
-    // If any folder doesn't exist the code will not save the images.
-    mode_t mode = 0755; // Permissions: rwxr-xr-x (owner: read, write, execute; group, others: read, execute)
-    string dir_name = ("resources/intermediate_volumes/" + volumeName + "/" + date);
-    mkdir("resources/", mode);
-    mkdir("resources/intermediate_volumes/", mode);
-    mkdir(("resources/intermediate_volumes/" + volumeName).c_str(), mode);
-    mkdir(dir_name.c_str(), mode);
-
-    struct stat st;
-    if (stat(dir_name.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
-        cerr << "ERROR! Output directory was not created: " << dir_name << endl;
-        return;
+    std::string dir_name = a_outputDir;
+    if (dir_name.empty())
+    {
+        char date[20];
+        std::time_t t = std::time(nullptr);
+        std::strftime(date, sizeof date, "%Y-%m-%d_%H%M%S", std::localtime(&t));
+        dir_name = "resources/intermediate_volumes/" + m_volumeObject->getName() + "/" + date;
     }
 
-    // Loop through each Z-slice and save it as a 2D image
-    for (int z = 0; z < sizeZ; z++){
+    std::error_code ec;
+    std::filesystem::create_directories(dir_name, ec);
+    if (!std::filesystem::is_directory(dir_name))
+    {
+        cerr << "ERROR! Output directory was not created: " << dir_name
+             << (ec ? " (" + ec.message() + ")" : "") << endl;
+        return -1;
+    }
+
+    // Hold the voxel mutex so physics cannot remove voxels while slices are copied.
+    int saved = 0;
+    m_mutexVoxel.acquire();
+    for (int z = 0; z < sizeZ; z++)
+    {
         // Create a new cImage to hold the 2D slice
-        chai3d::cImage* imageSlice = new chai3d::cImage();
+        chai3d::cImage *imageSlice = new chai3d::cImage();
         imageSlice->allocate(sizeX, sizeY, GL_RGBA);
 
         // Copy the voxel data for the current slice into the new 2D image
-        for (int y = 0; y < sizeY; y++){
-            for (int x = 0; x < sizeX; x++){
-                // Get the color of the voxel at (x, y, z)
+        for (int y = 0; y < sizeY; y++)
+        {
+            for (int x = 0; x < sizeX; x++)
+            {
                 chai3d::cColorb color;
                 multiImage->getVoxelColor(x, y, z, color);
-                // Assign the color to the corresponding pixel in the slice image
                 imageSlice->setPixelColor(x, y, color);
             }
         }
 
-        // Construct a filename for the slice (e.g., "slice_000.png")
         std::string filename = dir_name + "/plane00" + std::to_string(z) + ".png";
-
-        // Save the 2D image to a file
-        bool success = chai3d::cSaveFilePNG(imageSlice, filename);
-
-        // Clean up the temporary image
+        if (chai3d::cSaveFilePNG(imageSlice, filename))
+        {
+            saved++;
+        }
+        else
+        {
+            cerr << "ERROR! Failed to save slice " << filename << endl;
+        }
         delete imageSlice;
     }
-    cout << "INFO! SAVED INTERMIDIATE VOLUME SLICES in " << dir_name << endl;
+    m_mutexVoxel.release();
+
+    if (a_savedDir)
+    {
+        *a_savedDir = dir_name;
+    }
+    cout << "INFO! SAVED " << saved << "/" << sizeZ << " INTERMEDIATE VOLUME SLICES in " << dir_name << endl;
+    return saved == sizeZ ? saved : -1;
+}
+
+std::string afVolmetricDrillingPlugin::contactStatsString()
+{
+    uint64_t ticks = m_removalTicks.load();
+    uint64_t capped = m_cappedTicks.load();
+    uint64_t events = m_contactEvents.load();
+    uint64_t removed = m_voxelsRemoved.load();
+    std::ostringstream os;
+    os << "removal stats: burr_diameter_mm="
+       << m_drillManager.m_activeDrill->m_burr_diameter / m_drillManager.m_units_mmToSim
+       << " voxel_removal_threshold=" << m_drillManager.m_activeDrill->getVoxelRemovalThreshold()
+       << " removal_steps=" << ticks
+       << " capped_steps=" << capped
+       << " capped_pct=" << (ticks ? 100.0 * capped / ticks : 0.0)
+       << " mean_contacts_per_step=" << (ticks ? double(events) / ticks : 0.0)
+       << " voxels_removed=" << removed;
+    return os.str();
+}
+
+void afVolmetricDrillingPlugin::initSaveVolumeService(const std::string &a_namespace)
+{
+    if (!rclcpp::ok())
+    {
+        cerr << "WARNING! rclcpp not initialized, save_volume service not started" << endl;
+        return;
+    }
+    std::string ns = a_namespace;
+    if (!ns.empty() && ns.back() == '/')
+    {
+        ns.pop_back();
+    }
+    std::string service_name = ns + "/volumetric_drilling/save_volume";
+
+    m_serviceNode = std::make_shared<rclcpp::Node>("volumetric_drilling_services");
+    m_saveVolumeService = m_serviceNode->create_service<volumetric_drilling_msgs::srv::SaveVolume>(
+        service_name,
+        std::bind(&afVolmetricDrillingPlugin::onSaveVolume, this, std::placeholders::_1, std::placeholders::_2));
+    m_serviceExecutor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    m_serviceExecutor->add_node(m_serviceNode);
+    m_serviceThread = std::thread([this]() { m_serviceExecutor->spin(); });
+    cerr << "INFO! SAVE VOLUME SERVICE: " << service_name << endl;
+}
+
+void afVolmetricDrillingPlugin::shutdownSaveVolumeService()
+{
+    if (m_serviceExecutor)
+    {
+        m_serviceExecutor->cancel();
+    }
+    if (m_serviceThread.joinable())
+    {
+        m_serviceThread.join();
+    }
+    m_saveVolumeService.reset();
+    m_serviceExecutor.reset();
+    m_serviceNode.reset();
+}
+
+void afVolmetricDrillingPlugin::onSaveVolume(
+    const std::shared_ptr<volumetric_drilling_msgs::srv::SaveVolume::Request> a_req,
+    std::shared_ptr<volumetric_drilling_msgs::srv::SaveVolume::Response> a_res)
+{
+    std::string saved_dir;
+    int n = saveIntermediateVolumes(a_req->output_dir, &saved_dir);
+    std::string stats = contactStatsString();
+    cout << "INFO! " << stats << endl;
+    a_res->success = n > 0;
+    a_res->num_slices = n > 0 ? n : 0;
+    a_res->output_dir = saved_dir;
+    a_res->message = (n > 0 ? "saved; " : "failed to save all slices; ") + stats;
 }
 
 void afVolmetricDrillingPlugin::initializeLabels()
@@ -1101,6 +1197,7 @@ void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, 
         // option - save the intermidiate volumes 
         else if (a_key == GLFW_KEY_L) {
             saveIntermediateVolumes();
+            cout << "INFO! " << contactStatsString() << endl;
         }
         // toggles size of drill burr/tip tool cursor
         else if (a_key == GLFW_KEY_N)
@@ -1518,6 +1615,7 @@ void afVolmetricDrillingPlugin::reset()
 
 bool afVolmetricDrillingPlugin::close()
 {
+    shutdownSaveVolumeService();
     m_drillManager.cleanup();
     return true;
 }

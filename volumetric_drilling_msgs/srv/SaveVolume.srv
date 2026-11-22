@@ -1,0 +1,17 @@
+# Save the current (drilled) volume as a stack of PNG slices (plane00<z>.png),
+# the same output as Ctrl+L in the volumetric drilling plugin.
+#
+# Request
+#   output_dir: folder to write the slices into (created if missing). Relative
+#               paths are relative to the simulator's working directory. Empty
+#               uses the Ctrl+L default:
+#               resources/intermediate_volumes/<volume name>/<timestamp>
+string output_dir
+---
+# Response
+bool success
+string message
+# Folder the slices were written to
+string output_dir
+# Number of slices written
+int32 num_slices

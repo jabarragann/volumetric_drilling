@@ -52,6 +52,10 @@
 #include "ros_interface.h"
 #include <iosfwd>
 #include <string>
+#include <atomic>
+#include <thread>
+#include <rclcpp/rclcpp.hpp>
+#include <volumetric_drilling_msgs/srv/save_volume.hpp>
 
 using namespace std;
 using namespace ambf;
@@ -107,7 +111,21 @@ protected:
 
     void publishDrillTipLocationInsideVolume();
 
-    void saveIntermediateVolumes();
+    // Save every Z slice of the current volume as <dir>/plane00<z>.png.
+    // Empty a_outputDir uses resources/intermediate_volumes/<volume>/<timestamp>.
+    // Returns the number of slices written (-1 on error); a_savedDir receives the folder.
+    int saveIntermediateVolumes(const std::string &a_outputDir = "", std::string *a_savedDir = nullptr);
+
+    // ROS 2 service <ns>/volumetric_drilling/save_volume (SaveVolume.srv), served
+    // from its own node + executor thread so it works without the keyboard.
+    void initSaveVolumeService(const std::string &a_namespace);
+    void shutdownSaveVolumeService();
+    void onSaveVolume(const std::shared_ptr<volumetric_drilling_msgs::srv::SaveVolume::Request> a_req,
+                      std::shared_ptr<volumetric_drilling_msgs::srv::SaveVolume::Response> a_res);
+
+    // Summary of voxel-removal contacts so far (used to check whether the
+    // voxel removal threshold actually limits removal).
+    std::string contactStatsString();
 
 private:
     cVoxelObject *m_voxelObj;
@@ -117,6 +135,18 @@ private:
     double m_opticalDensity;
 
     cMutex m_mutexVoxel;
+
+    // Save-volume service (ROS 2 only).
+    rclcpp::Node::SharedPtr m_serviceNode;
+    rclcpp::executors::SingleThreadedExecutor::SharedPtr m_serviceExecutor;
+    rclcpp::Service<volumetric_drilling_msgs::srv::SaveVolume>::SharedPtr m_saveVolumeService;
+    std::thread m_serviceThread;
+
+    // Voxel-removal contact statistics, written by the physics thread.
+    std::atomic<uint64_t> m_removalTicks{0};   // physics steps that removed voxels
+    std::atomic<uint64_t> m_cappedTicks{0};    // ... where contacts > removal threshold
+    std::atomic<uint64_t> m_contactEvents{0};  // total contact events in those steps
+    std::atomic<uint64_t> m_voxelsRemoved{0};  // total voxels removed
 
     cCollisionAABBBox m_volumeUpdate;
 
