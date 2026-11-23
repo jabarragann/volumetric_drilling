@@ -19,9 +19,11 @@ Pipeline
      mask, then >= 0.5).
   3. Write a layered .seg.nrrd on the GT grid. Each segment has its own layer, so
      segments may overlap:
-        gt_*                  the GT segments, copied as they are
+        gt_*                  the GT segments, copied as they are (GT 'drilled' is written
+                              as gt_drilled_stone and 'box_damage' as gt_drilled_box)
         twin_box, twin_stone  the twin, resampled
-        twin_drilled          stone the simulation removed (twin-ref stone minus twin stone)
+        twin_drilled_stone    stone the simulation removed (twin-ref stone minus twin stone)
+        twin_drilled_box      box the simulation removed (twin-ref box minus twin box)
         stone_both            stone in both GT and twin
         stone_gt_only         GT has stone, twin does not -> sim removed stone the real
                               drill left (sim over-drilled)
@@ -29,8 +31,9 @@ Pipeline
                               sim left (sim under-drilled)
         box_gt_only / box_twin_only   the same for the box (PLA)
         drilled_both / drilled_real_only / drilled_sim_only
-                              overlap of twin_drilled with GT 'drilled' (needs twin-ref and
-                              a GT 'drilled' segment)
+                              overlap of twin_drilled_stone with gt_drilled_stone (needs
+                              twin-ref and a GT 'drilled' segment). Stone only: box damage
+                              is not scored (unreliable in the GT).
   4. Print metrics (volumes, Dice, voxel counts) and save them as JSON next to the output,
      so a run can be scored when tuning simulation parameters.
 
@@ -61,7 +64,8 @@ from scipy import ndimage as ndi
 COLORS = {
     "twin_box": (0.55, 0.55, 0.50),
     "twin_stone": (0.30, 0.40, 0.80),
-    "twin_drilled": (0.95, 0.60, 0.10),
+    "twin_drilled_stone": (0.95, 0.60, 0.10),
+    "twin_drilled_box": (0.80, 0.45, 0.25),
     "stone_both": (0.55, 0.65, 0.95),
     "stone_gt_only": (0.90, 0.10, 0.60),
     "stone_twin_only": (0.10, 0.80, 0.80),
@@ -71,6 +75,10 @@ COLORS = {
     "drilled_real_only": (0.90, 0.20, 0.20),
     "drilled_sim_only": (0.20, 0.40, 0.95),
 }
+
+
+# Output names for GT segments that are not written as gt_<name>.
+GT_NAMES = {"drilled": "gt_drilled_stone", "box_damage": "gt_drilled_box"}
 
 
 # --------------------------------------------------------------------------- I/O
@@ -223,7 +231,7 @@ def main():
     ap.add_argument("--twin", required=True, help="AMBF digital twin .seg.nrrd (D00 frame)")
     ap.add_argument("--twin-markers", required=True, help="D00 fiducials .mrk.json")
     ap.add_argument("--twin-ref", default=None,
-                    help="D00 .seg.nrrd the twin started from (same grid). Enables twin_drilled "
+                    help="D00 .seg.nrrd the twin started from (same grid). Enables twin_drilled_* "
                          "and the drilled_* comparison.")
     ap.add_argument("--gt", required=True, help="Ground-truth D01 .seg.nrrd")
     ap.add_argument("--gt-markers", required=True, help="D01 fiducials .mrk.json")
@@ -251,27 +259,29 @@ def main():
         ref = SegVolume(args.twin_ref)
         if not ref.same_grid(twin):
             raise ValueError("--twin-ref must be on the same grid as --twin")
-        to_resample["twin_drilled"] = ref.mask("stone") & ~twin.mask("stone")
+        to_resample["twin_drilled_stone"] = ref.mask("stone") & ~twin.mask("stone")
+        to_resample["twin_drilled_box"] = ref.mask("box") & ~twin.mask("box")
     rs = resample_masks(twin, to_resample, gt, r, t)
 
     # 3. Segments to write.
     gt_box, gt_stone = gt.mask("box"), gt.mask("stone")
     tw_box, tw_stone = rs["twin_box"], rs["twin_stone"]
-    segments = [(f"gt_{n}", m, gt.colors[n]) for n, m in gt.masks.items()]
+    segments = [(GT_NAMES.get(n, f"gt_{n}"), m, gt.colors[n]) for n, m in gt.masks.items()]
     derived = OrderedDict([
         ("twin_box", tw_box),
         ("twin_stone", tw_stone),
     ])
-    if "twin_drilled" in rs:
-        derived["twin_drilled"] = rs["twin_drilled"]
+    for n in ("twin_drilled_stone", "twin_drilled_box"):
+        if n in rs:
+            derived[n] = rs[n]
     derived["stone_both"] = gt_stone & tw_stone
     derived["stone_gt_only"] = gt_stone & ~tw_stone
     derived["stone_twin_only"] = tw_stone & ~gt_stone
     derived["box_gt_only"] = gt_box & ~tw_box
     derived["box_twin_only"] = tw_box & ~gt_box
-    has_drilled = "twin_drilled" in rs and "drilled" in gt.masks
+    has_drilled = "twin_drilled_stone" in rs and "drilled" in gt.masks
     if has_drilled:
-        real_d, sim_d = gt.mask("drilled"), rs["twin_drilled"]
+        real_d, sim_d = gt.mask("drilled"), rs["twin_drilled_stone"]
         derived["drilled_both"] = real_d & sim_d
         derived["drilled_real_only"] = real_d & ~sim_d
         derived["drilled_sim_only"] = sim_d & ~real_d
