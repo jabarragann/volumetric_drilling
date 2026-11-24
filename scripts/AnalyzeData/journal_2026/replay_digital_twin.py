@@ -33,6 +33,12 @@ start with -g false):
         --experiment .../pilot_experiments/P4/with-assistance \\
         --burr-mm 1.2 --threshold 30 \\
         --out .../pilot_experiments/P4/with-assistance/digital_twin/burr1.2_thr30
+
+Off-screen runs (no window on the desktop; several runs can go in parallel with different
+--ros-domain-id): --virtual-display starts a private Xvfb display and runs the simulator under
+VirtualGL so the volume still renders on the GPU (needs the xvfb and virtualgl packages):
+
+    python replay_digital_twin.py ... --virtual-display --ros-domain-id 78
 """
 
 import argparse
@@ -145,6 +151,23 @@ def parse_removal_stats(message):
     return stats
 
 
+def start_xvfb(first=100, last=199):
+    """Start Xvfb on the first free display number; returns (process, ':N')."""
+    for n in range(first, last + 1):
+        if os.path.exists(f"/tmp/.X11-unix/X{n}") or os.path.exists(f"/tmp/.X{n}-lock"):
+            continue
+        proc = subprocess.Popen(["Xvfb", f":{n}", "-screen", "0", "1920x1080x24", "-nolisten", "tcp"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(50):
+            if os.path.exists(f"/tmp/.X11-unix/X{n}"):
+                return proc, f":{n}"
+            if proc.poll() is not None:
+                break
+            time.sleep(0.1)
+        proc.kill()
+    raise SystemExit(f"Could not start Xvfb on displays :{first}-:{last}")
+
+
 def stop(proc, name, timeout_s=15):
     if proc.poll() is not None:
         return
@@ -177,6 +200,9 @@ def main():
     ap.add_argument("--no-gui", action="store_true", help="Pass -g false (currently crashes AMBF on load)")
     ap.add_argument("--startup-timeout", type=float, default=120.0)
     ap.add_argument("--settle-s", type=float, default=3.0, help="Wait after service appears / bag ends (s)")
+    ap.add_argument("--virtual-display", nargs="?", const="/dev/dri/card2", default=None, metavar="VGL_DEVICE",
+                    help="Run off-screen: private Xvfb display + vglrun -d VGL_DEVICE (default /dev/dri/card2, "
+                         "the NVIDIA GPU on this machine; egl0 also works)")
     ap.add_argument("--physics-log", action="store_true",
                     help="Ask the drilling plugin for a per-physics-step diagnostic log (<out>/physics_log.csv): "
                          "step timing, tip contact, voxels removed, tip goal/proxy voxel position")
@@ -217,18 +243,25 @@ def main():
         raise SystemExit("ambf_simulator not on PATH (source the SAINT workspace) or pass --ambf")
     if shutil.which("ros2") is None:
         raise SystemExit("ros2 not on PATH (source the SAINT workspace)")
-    if not args.no_gui and not os.environ.get("DISPLAY"):
+    if not args.no_gui and not args.virtual_display and not os.environ.get("DISPLAY"):
         raise SystemExit("No DISPLAY set; the simulator needs a display (e.g. export DISPLAY=:1)")
 
     env = dict(os.environ)
     if args.ros_domain_id is not None:
         env["ROS_DOMAIN_ID"] = str(args.ros_domain_id)
+    xvfb_proc = None
+    if args.virtual_display:
+        for exe in ("Xvfb", "vglrun"):
+            if shutil.which(exe) is None:
+                raise SystemExit(f"--virtual-display needs {exe} (apt install xvfb / virtualgl)")
+        xvfb_proc, env["DISPLAY"] = start_xvfb()
 
     twin_seg = os.path.join(out, f"{phantom}_D01_ambf.seg.nrrd")
     run = {
         "experiment": experiment, "recording": rec, "phantom": phantom,
         "burr_diameter_mm": args.burr_mm, "voxel_removal_threshold": args.threshold,
         "bag_rate": args.bag_rate, "ros_domain_id": env.get("ROS_DOMAIN_ID"),
+        "display": env.get("DISPLAY"), "virtual_display": args.virtual_display,
         "started": datetime.datetime.now().isoformat(timespec="seconds"),
         "twin_ref": twin_ref, "gt": gt_seg, "twin": twin_seg,
     }
@@ -239,6 +272,8 @@ def main():
     if args.physics_log:
         run["physics_log"] = os.path.join(out, "physics_log.csv")
         cmd += ["--physics_log", run["physics_log"]]
+    if args.virtual_display:
+        cmd = ["vglrun", "-d", args.virtual_display] + cmd
     run["ambf_command"] = cmd
     ambf_log = open(os.path.join(out, "ambf.log"), "w")
     t0 = time.time()
@@ -273,6 +308,9 @@ def main():
         # 5. Stop the simulator.
         stop(ambf_proc, "ambf_simulator")
         ambf_log.close()
+        if xvfb_proc is not None:
+            xvfb_proc.terminate()
+            xvfb_proc.wait()
 
     # 6. Slices -> seg.nrrd.
     log("updating segmentation from slices")
