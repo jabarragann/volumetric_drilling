@@ -177,6 +177,9 @@ def main():
     ap.add_argument("--no-gui", action="store_true", help="Pass -g false (currently crashes AMBF on load)")
     ap.add_argument("--startup-timeout", type=float, default=120.0)
     ap.add_argument("--settle-s", type=float, default=3.0, help="Wait after service appears / bag ends (s)")
+    ap.add_argument("--physics-log", action="store_true",
+                    help="Ask the drilling plugin for a per-physics-step diagnostic log (<out>/physics_log.csv): "
+                         "step timing, tip contact, voxels removed, tip goal/proxy voxel position")
     ap.add_argument("--keep-slices", action="store_true", help="Keep the PNG slices (deleted after the seg.nrrd is written by default)")
     args = ap.parse_args()
 
@@ -233,6 +236,9 @@ def main():
 
     # 1-2. Simulator.
     cmd = [ambf] + ambf_args(cfg.get("saint_run", {}) or {}, args.burr_mm, args.threshold, not args.no_gui)
+    if args.physics_log:
+        run["physics_log"] = os.path.join(out, "physics_log.csv")
+        cmd += ["--physics_log", run["physics_log"]]
     run["ambf_command"] = cmd
     ambf_log = open(os.path.join(out, "ambf.log"), "w")
     t0 = time.time()

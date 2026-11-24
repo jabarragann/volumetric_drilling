@@ -54,6 +54,8 @@
 #include <string>
 #include <atomic>
 #include <thread>
+#include <mutex>
+#include <fstream>
 #include <rclcpp/rclcpp.hpp>
 #include <volumetric_drilling_msgs/srv/save_volume.hpp>
 
@@ -128,6 +130,10 @@ protected:
     // voxel removal threshold actually limits removal).
     std::string contactStatsString();
 
+    // Optional per-physics-step diagnostic log (--physics_log <file>, off by default).
+    void writePhysicsLogLine(double dt);
+    void flushPhysicsLog();
+
 private:
     cVoxelObject *m_voxelObj;
 
@@ -148,6 +154,14 @@ private:
     std::atomic<uint64_t> m_cappedTicks{0};    // ... where contacts > removal threshold
     std::atomic<uint64_t> m_contactEvents{0};  // total contact events in those steps
     std::atomic<uint64_t> m_voxelsRemoved{0};  // total voxels removed
+
+    // Per-physics-step diagnostic log (enabled only with --physics_log).
+    bool m_physicsLogOn = false;
+    std::ofstream m_physicsLog;
+    std::mutex m_physicsLogMutex;
+    int m_logColorOk = -1;   // -1 tip not in contact / not target, 0 non-drillable voxel, 1 drillable
+    int m_logEvents = 0;
+    int m_logRemoved = 0;
 
     cCollisionAABBBox m_volumeUpdate;
 

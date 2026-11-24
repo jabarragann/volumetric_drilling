@@ -124,6 +124,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
         ("sagittal_slice_idx", p_opt::value<int>()->default_value(70), "Initial fixed sagittal slice index. Default 70")
         ("hmd_window_offset_h", p_opt::value<float>()->default_value(0.0), "Initial horizontal offset of the HMD sim-assisted-nav small window. Default 0.0")
         ("hmd_window_offset_v", p_opt::value<float>()->default_value(0.0), "Initial vertical offset of the HMD sim-assisted-nav small window. Default 0.0")
+        ("physics_log", p_opt::value<string>()->default_value(""), "Write a per-physics-step diagnostic log (timing, contact, removal, tip/proxy voxel position) to this file. Off when empty (default).")
         ("cpf", p_opt::value<string>()->default_value(""), "Path to a YAML file with the main_camera pose (location / look at / up). Overrides the pose from world.yaml, including the Ctrl+V reset pose. If empty or the file is missing, world.yaml is used.");
     // clang-format on
 
@@ -199,6 +200,23 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     if (!m_drillManager.init(a_afWorld, &m_panelManager, var_map))
     {
         return -1;
+    }
+
+    std::string physicsLogPath = var_map["physics_log"].as<std::string>();
+    if (!physicsLogPath.empty())
+    {
+        m_physicsLog.open(physicsLogPath);
+        if (m_physicsLog.is_open())
+        {
+            m_physicsLogOn = true;
+            m_physicsLog << "wall_s,sim_s,dt_s,target_idx,max_err_mm,tip_contact,color_ok,events,removed,"
+                            "goal_i,goal_j,goal_k,proxy_i,proxy_j,proxy_k,tip_err_mm\n";
+            cout << "INFO! WRITING PHYSICS STEP LOG TO " << physicsLogPath << endl;
+        }
+        else
+        {
+            cerr << "WARNING! COULD NOT OPEN PHYSICS LOG " << physicsLogPath << endl;
+        }
     }
 
     m_volumeObject = m_worldPtr->getVolume("mastoidectomy_volume");
@@ -387,6 +405,10 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
     m_drillManager.update(dt);
 
+    m_logColorOk = -1;
+    m_logEvents = 0;
+    m_logRemoved = 0;
+    bool logTipContact = m_physicsLogOn && m_drillManager.m_toolCursorList[0]->isInContact(m_voxelObj);
 
     if (m_drillManager.m_toolCursorList[0]->isInContact(m_voxelObj) && m_drillManager.m_targetToolCursorIdx == 0 /*&& (userSwitches == 2)*/)
     {
@@ -399,6 +421,7 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
 
         m_voxelObj->m_texture->m_image->getVoxelColor(uint(orig.x()), uint(orig.y()), uint(orig.z()), m_storedColor);
 
+        m_logColorOk = (m_storedColor != m_zeroColor && m_storedColor != m_nonDrillColor) ? 1 : 0;
         if (m_storedColor != m_zeroColor && m_storedColor != m_nonDrillColor)
         {
             // if (m_drillManager.m_isOn)
@@ -410,6 +433,8 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
                 m_removalTicks++;
                 m_contactEvents += numEvents;
                 m_voxelsRemoved += removalCount;
+                m_logEvents = numEvents;
+                m_logRemoved = removalCount;
                 if (numEvents > threshold)
                 {
                     m_cappedTicks++;
@@ -452,6 +477,16 @@ void afVolmetricDrillingPlugin::physicsUpdate(double dt)
     for (int i = 0; i < m_drillManager.m_toolCursorList.size(); i++)
     {
         m_drillManager.m_toolCursorList[i]->computeInteractionForces();
+    }
+
+    if (m_physicsLogOn)
+    {
+        m_logColorOk = logTipContact ? m_logColorOk : -1;
+        if (logTipContact && m_logColorOk == -1)
+        {
+            m_logColorOk = -2; // tip in contact but a shaft cursor was the target (no removal)
+        }
+        writePhysicsLogLine(dt);
     }
 
     // check if device remains stuck inside voxel object
@@ -890,6 +925,40 @@ int afVolmetricDrillingPlugin::saveIntermediateVolumes(const std::string &a_outp
     return saved == sizeZ ? saved : -1;
 }
 
+void afVolmetricDrillingPlugin::writePhysicsLogLine(double dt)
+{
+    cToolCursor *tip = m_drillManager.m_toolCursorList[0];
+    cVector3d goalW = tip->m_hapticPoint->getGlobalPosGoal();
+    cVector3d proxyW = tip->m_hapticPoint->getGlobalPosProxy();
+    cTransform T_volume_world = m_volumeObject->getGlobalTransform();
+    T_volume_world.invert();
+    cVector3d goalV, proxyV, goalIdx(-1, -1, -1), proxyIdx(-1, -1, -1);
+    T_volume_world.mulr(goalW, goalV);
+    T_volume_world.mulr(proxyW, proxyV);
+    m_volumeObject->localPosToVoxelIndex(goalV, goalIdx);
+    m_volumeObject->localPosToVoxelIndex(proxyV, proxyIdx);
+    double toMm = 1.0 / m_drillManager.m_units_mmToSim;
+
+    std::lock_guard<std::mutex> lock(m_physicsLogMutex);
+    m_physicsLog << std::fixed << std::setprecision(6)
+                 << m_worldPtr->getWallTime() << "," << m_worldPtr->getSimulationTime() << "," << dt << ","
+                 << m_drillManager.m_targetToolCursorIdx << "," << std::setprecision(4) << m_drillManager.m_maxError * toMm << ","
+                 << (m_logColorOk != -1 ? 1 : 0) << "," << m_logColorOk << "," << m_logEvents << "," << m_logRemoved << ","
+                 << std::setprecision(2)
+                 << goalIdx.x() << "," << goalIdx.y() << "," << goalIdx.z() << ","
+                 << proxyIdx.x() << "," << proxyIdx.y() << "," << proxyIdx.z() << ","
+                 << std::setprecision(4) << cDistance(goalW, proxyW) * toMm << "\n";
+}
+
+void afVolmetricDrillingPlugin::flushPhysicsLog()
+{
+    if (m_physicsLogOn)
+    {
+        std::lock_guard<std::mutex> lock(m_physicsLogMutex);
+        m_physicsLog.flush();
+    }
+}
+
 std::string afVolmetricDrillingPlugin::contactStatsString()
 {
     uint64_t ticks = m_removalTicks.load();
@@ -951,6 +1020,7 @@ void afVolmetricDrillingPlugin::onSaveVolume(
     const std::shared_ptr<volumetric_drilling_msgs::srv::SaveVolume::Request> a_req,
     std::shared_ptr<volumetric_drilling_msgs::srv::SaveVolume::Response> a_res)
 {
+    flushPhysicsLog();
     std::string saved_dir;
     int n = saveIntermediateVolumes(a_req->output_dir, &saved_dir);
     std::string stats = contactStatsString();
@@ -1625,6 +1695,7 @@ void afVolmetricDrillingPlugin::reset()
 
 bool afVolmetricDrillingPlugin::close()
 {
+    flushPhysicsLog();
     shutdownSaveVolumeService();
     m_drillManager.cleanup();
     return true;
