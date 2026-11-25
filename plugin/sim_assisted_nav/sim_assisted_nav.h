@@ -94,7 +94,8 @@ public:
 
     cTexture2dPtr m_hmdImageTexture;
     // Holds the image uploaded to m_hmdImageTexture: left+right concatenated in
-    // MODE_3D, or just the left eye in MODE_2D.
+    // both modes (the 2D shader samples only the left half), so the texture
+    // size never changes when switching modes.
     cv::Mat m_output_img;
 
     void assignGLFWCallbacks();

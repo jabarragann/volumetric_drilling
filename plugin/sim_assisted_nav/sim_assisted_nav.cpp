@@ -435,19 +435,14 @@ void afCameraHMD::update_textures_for_headset()
 
     // m_output_img must be a member: chai3d's setData stores the pointer
     // without copying, so the buffer backing it must outlive this function.
-    if (m_display_mode == NavDisplayMode::MODE_3D)
-    {
-        // Picture-over-picture: left+right eyes side by side, one per half of
-        // the window (see sim_assisted_shader_3d.fs).
-        cv::hconcat(left_img, right_img, m_output_img);
-    }
-    else
-    {
-        // Single eye stretched across the full window width (see
-        // sim_assisted_shader_2d.fs). right_img is still grabbed above (the
-        // camera interface always produces a stereo pair) but unused here.
-        m_output_img = left_img;
-    }
+    // Left+right eyes side by side in both modes. The 3D shader shows each eye
+    // in its half of the window (picture-over-picture); the 2D shader shows
+    // only the left half, stretched across the full window. Do not upload just
+    // the left eye in 2D mode: chai3d allocates the GL texture once and later
+    // updates use glTexSubImage2D, so a half-width image only refreshes the
+    // left half of the texture and the old right image stays frozen in the
+    // other half.
+    cv::hconcat(left_img, right_img, m_output_img);
 
     cv::flip(m_output_img, m_output_img, 0);
 

@@ -11,7 +11,12 @@
 #version 120
 
 // UNIFORMS
-// Single eye image, stretched across the full window (2D mode).
+// Left+right eye images side by side, exactly as in 3D mode. Only the left
+// half (the left eye) is shown, stretched across the full window. The texture
+// keeps the stereo-pair size in both modes because chai3d only allocates the
+// GL texture once and later uploads overwrite it in place (glTexSubImage2D):
+// uploading just the left eye would refresh the left half of the texture and
+// leave a frozen copy of the last right image in the other half.
 uniform sampler2D rosImageTexture;
 // Texture containing the simulation assisted navigation view.
 uniform sampler2D frameBufferTexture;
@@ -67,6 +72,8 @@ void main()
 {
     // output_loc is the fragment location on screen from [0,1]x[0,1]
     vec2 output_loc = gl_TexCoord[0].xy;
+    // Matching location in the left eye: left half of rosImageTexture.
+    vec2 left_eye_loc = vec2(0.5 * output_loc.x, output_loc.y);
 
     // Rectangle boundaries in normalized device coordinates
     vec2 rectMin = small_window_pos;
@@ -77,10 +84,10 @@ void main()
         output_loc.y >= rectMin.y && output_loc.y <= rectMax.y)
     {
         vec2 output_loc2 = remap_little_window(output_loc, rectMin, rectMax);
-        gl_FragColor = mix(texture2D(frameBufferTexture, output_loc2), texture2D(rosImageTexture, output_loc), 0.1);
+        gl_FragColor = mix(texture2D(frameBufferTexture, output_loc2), texture2D(rosImageTexture, left_eye_loc), 0.1);
     }
     else
     {
-        gl_FragColor = texture2D(rosImageTexture, output_loc);
+        gl_FragColor = texture2D(rosImageTexture, left_eye_loc);
     }
 }
