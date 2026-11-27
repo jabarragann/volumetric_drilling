@@ -11,3 +11,7 @@ repositories:
     type: git
     url: https://github.com/LCSR-CIIS/ambf_tf_plugin.git
     version: ros2
+  ambf:
+    type: git
+    url: https://github.com/WPI-AIM/ambf.git
+    version: ambf-3.0
