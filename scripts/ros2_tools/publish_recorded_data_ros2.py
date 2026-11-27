@@ -6,10 +6,17 @@ from pathlib import Path
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
-from pyprojroot.here import here  # type: ignore
+
+try:
+    from pyprojroot.here import here  # type: ignore
+
+    REPO_ROOT = here()
+except ImportError:
+    # Without pyprojroot, assume the script is run from the repo root.
+    REPO_ROOT = Path.cwd()
 
 TOPIC = "/atracsys/drill_marker/measured_cp"
-DEFAULT_CSV_FILE = here() / "resources/ros2_test_assets/phantom01/motions/atracsys_touching_surface.csv"
+DEFAULT_CSV_FILE = REPO_ROOT /"resources/ros2_test_assets/phantom01/motions/atracsys_touching_surface.csv"
 APPLY_PERIOD = 0.01  # 100 ms
 
 
